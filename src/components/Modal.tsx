@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -25,14 +26,18 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     };
   }, [isOpen, onClose]);
 
-  return (
+  // Use portal to render modal outside of any transformed containers
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[2000] flex items-center justify-center p-4 font-mono"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
           onClick={onClose}
         >
           {/* Backdrop */}
@@ -67,6 +72,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

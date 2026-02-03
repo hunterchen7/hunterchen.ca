@@ -5,9 +5,6 @@ const config = {
     locales: ["en"],
     defaultLocale: "en",
   },
-  turbopack: {
-    root: process.cwd(),
-  },
 };
 
 export default config;

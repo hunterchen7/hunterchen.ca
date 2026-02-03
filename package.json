@@ -11,7 +11,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@hunterchen/canvas": "^0.9.0",
+    "@hunterchen/canvas": "file:../..",
     "clsx": "^2.1.1",
     "framer-motion": "^12.10.5",
     "git-mosaic": "github:hunterchen7/git-mosaic",

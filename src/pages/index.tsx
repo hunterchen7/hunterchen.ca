@@ -6,6 +6,8 @@ import {
   DefaultWrapperBackground,
   canvasWidth,
   canvasHeight,
+  GROW_TRANSITION,
+  BLUR_TRANSITION,
 } from "@hunterchen/canvas";
 import { coordinates, navItems } from "../constants/coordinates";
 import HeroSection from "../components/HeroSection";
@@ -13,7 +15,8 @@ import AboutSection from "../components/AboutSection";
 import ProjectsSection from "../components/ProjectsSection";
 import GallerySection from "../components/GallerySection";
 import ContactSection from "../components/ContactSection";
-import GitMosaicOverlay from "../components/GitMosaicOverlay";
+import { motion } from "framer-motion";
+import StyledGitMosaic from "~/components/StyledGitMosaic";
 
 // Canvas gradient - warm purple radial emanating from bottom
 const CANVAS_GRADIENT = `radial-gradient(ellipse ${canvasWidth}px ${canvasHeight}px at ${canvasWidth / 2}px ${canvasHeight}px, #150f1d 0%, #2a1f3d 30%, #3e2d55 55%, #150f1d 100%)`;
@@ -84,6 +87,14 @@ export default function Home() {
               style: { backgroundColor: "#1a1520", color: "#ede8f2" },
             },
           }}
+          growTransition={{
+            ...GROW_TRANSITION,
+            delay: GROW_TRANSITION.delay + 2,
+          }}
+          blurTransition={{
+            ...BLUR_TRANSITION,
+            duration: BLUR_TRANSITION.duration + 2,
+          }}
         >
           <HeroSection offset={coordinates.hero} />
           <AboutSection offset={coordinates.about} />
@@ -91,7 +102,15 @@ export default function Home() {
           <GallerySection offset={coordinates.gallery} />
           <ContactSection offset={coordinates.contact} />
         </Canvas>
-        <GitMosaicOverlay />
+
+        <motion.div
+          className="pointer-events-none fixed inset-0 z-[1000] flex items-center justify-center pt-10"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 1, delay: 7 }}
+        >
+          <StyledGitMosaic />
+        </motion.div>
       </main>
     </>
   );

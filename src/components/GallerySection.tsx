@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ExternalLink } from "lucide-react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
@@ -72,43 +73,50 @@ export default function GallerySection({ offset }: GallerySectionProps) {
         <ExternalLink className="h-3 w-3" />
       </a>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-        {selectedPhoto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 p-8"
-            onClick={() => setSelectedPhoto(null)}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute right-6 top-6 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-            >
-              <X className="h-6 w-6" />
-            </button>
-
-            {/* Photo */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="max-h-[80vh] max-w-[80vw]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Placeholder for actual image */}
-              <div
-                className={`flex h-96 w-[500px] items-center justify-center rounded-lg bg-gradient-to-br ${selectedPhoto.color}`}
+      {/* Lightbox - rendered via portal to escape canvas transforms */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {selectedPhoto && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 p-8 font-mono"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                onClick={() => setSelectedPhoto(null)}
               >
-                <span className="text-8xl">{selectedPhoto.emoji}</span>
-              </div>
-              <p className="mt-4 text-center text-fuchsia-200">{selectedPhoto.title}</p>
-            </motion.div>
-          </motion.div>
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedPhoto(null)}
+                  className="absolute right-6 top-6 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+
+                {/* Photo */}
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="max-h-[80vh] max-w-[80vw]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Placeholder for actual image */}
+                  <div
+                    className={`flex h-96 w-[500px] items-center justify-center rounded-lg bg-gradient-to-br ${selectedPhoto.color}`}
+                  >
+                    <span className="text-8xl">{selectedPhoto.emoji}</span>
+                  </div>
+                  <p className="mt-4 text-center text-fuchsia-200">
+                    {selectedPhoto.title}
+                  </p>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
     </CanvasComponent>
   );

@@ -1,12 +1,13 @@
 import { GitMosaic, type GitMosaicHandle, colorSchemes } from "git-mosaic";
 import { animate, useMotionValue } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+import { ExternalLink } from "lucide-react";
 
 // Initial parameters (intro state)
 const INITIAL = {
   speed: 2.94,
   lifetimeSeconds: 30,
-  maxRadius: 0.78,
+  maxRadius: 0.89,
   spawnRate: 7.23,
   particleGlow: 0,
   spiralTurnRate: 4.211,
@@ -17,19 +18,19 @@ const INITIAL = {
 
 // Final parameters (settled state)
 const FINAL = {
-  speed: 4.71,
+  speed: 1.5,
   lifetimeSeconds: 37,
-  maxRadius: 1.21,
+  maxRadius: 1,
   spawnRate: 3,
   particleGlow: 0.0,
-  spiralTurnRate: 0.881,
-  spiralExpansion: 0.453,
+  spiralTurnRate: 1.279,
+  spiralExpansion: 0.408,
   spiralCenterOffset: -0.16,
   particleScale: 1,
 };
 
-const TRANSITION_DELAY = 9; // seconds before transition starts
-const TRANSITION_DURATION = 15; // seconds for transition
+const TRANSITION_DELAY = 6; // seconds before transition starts
+const TRANSITION_DURATION = 12; // seconds for transition
 
 // Phase 2: transition turn rate to 0
 const PHASE2_DELAY = TRANSITION_DELAY + TRANSITION_DURATION; // 24s
@@ -56,6 +57,7 @@ const BASE_COLORS = ["#2d1b4e", "#4a1f7c", "#7b2cbf", "#9d4edd", "#c77dff"];
 const COLOR_CYCLE_START = 8; // seconds before starting color cycling
 const COLOR_CYCLE_MIN = 10; // minimum seconds between color changes
 const COLOR_CYCLE_MAX = 15; // maximum seconds between color changes
+const FIBONACCI_COLOR_START = 10; // seconds before starting fibonacci color additions
 
 // Color presets to cycle through
 const CYCLE_PRESETS = ["ember", "nebula", "ocean", "cosmic"] as const;
@@ -73,9 +75,19 @@ function getRandomInterval(): number {
   );
 }
 
+// Generate a random bright color (HSL with high saturation, medium lightness)
+function generateBrightColor(): string {
+  const hue = Math.floor(Math.random() * 360);
+  const saturation = 70 + Math.floor(Math.random() * 30); // 70-100%
+  const lightness = 45 + Math.floor(Math.random() * 20); // 45-65%
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
 export default function StyledGitMosaic() {
   const [params, setParams] = useState(INITIAL);
   const mosaicRef = useRef<GitMosaicHandle>(null);
+  const fibonacciColorsRef = useRef<string[]>([]);
+  const currentPresetRef = useRef<CyclePreset>("nebula");
 
   // Motion values for smooth interpolation
   const speed = useMotionValue(INITIAL.speed);
@@ -199,16 +211,22 @@ export default function StyledGitMosaic() {
     };
   }, []);
 
+  // Helper to get combined colors (preset + fibonacci)
+  const getCombinedColors = (preset: CyclePreset) => {
+    return [...colorSchemes[preset].primary, ...fibonacciColorsRef.current];
+  };
+
   // Cycle through color presets
   useEffect(() => {
-    let currentPreset: CyclePreset = "nebula"; // Start with nebula (matches BASE_COLORS)
     let timeoutId: NodeJS.Timeout;
 
     const cycleColors = () => {
-      const nextPreset = getRandomPreset(currentPreset);
-      currentPreset = nextPreset;
-      console.log(`[GitMosaic] Switching to ${nextPreset} colors`);
-      mosaicRef.current?.setColors(colorSchemes[nextPreset].primary);
+      const nextPreset = getRandomPreset(currentPresetRef.current);
+      currentPresetRef.current = nextPreset;
+      console.log(
+        `[GitMosaic] Switching to ${nextPreset} colors (+ ${fibonacciColorsRef.current.length} fibonacci)`,
+      );
+      mosaicRef.current?.setColors(getCombinedColors(nextPreset));
 
       // Schedule next cycle with random interval
       timeoutId = setTimeout(cycleColors, getRandomInterval());
@@ -222,6 +240,48 @@ export default function StyledGitMosaic() {
     return () => {
       clearTimeout(startTimer);
       clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Add random colors with Fibonacci falloff timing
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+    let fib1 = 1;
+    let fib2 = 1;
+
+    const scheduleNextColor = () => {
+      const delay = fib1;
+
+      // Advance Fibonacci sequence
+      const nextFib = fib1 + fib2;
+      fib1 = fib2;
+      fib2 = nextFib;
+
+      const timer = setTimeout(() => {
+        const newColor = generateBrightColor();
+        fibonacciColorsRef.current = [...fibonacciColorsRef.current, newColor];
+        console.log(
+          `[GitMosaic] Adding fibonacci color (delay was ${delay}s):`,
+          newColor,
+        );
+        mosaicRef.current?.setColors(
+          getCombinedColors(currentPresetRef.current),
+        );
+        scheduleNextColor();
+      }, delay * 1000);
+
+      timers.push(timer);
+    };
+
+    // Start after initial delay
+    const startTimer = setTimeout(() => {
+      console.log("[GitMosaic] Starting fibonacci color additions");
+      scheduleNextColor();
+    }, FIBONACCI_COLOR_START * 1000);
+    timers.push(startTimer);
+
+    return () => {
+      timers.forEach(clearTimeout);
     };
   }, []);
 
@@ -255,26 +315,37 @@ export default function StyledGitMosaic() {
   }, []);
 
   return (
-    <GitMosaic
-      ref={mosaicRef}
-      username="hunterchen7"
-      variant="daily-spiral"
-      customColors={{
-        background: "#000000",
-        primary: BASE_COLORS,
-        accent: "#2d1b4e",
-      }}
-      width={600}
-      height={600}
-      speed={params.speed}
-      lifetimeSeconds={params.lifetimeSeconds}
-      maxRadius={params.maxRadius}
-      spawnRate={params.spawnRate}
-      particleGlow={params.particleGlow}
-      spiralTurnRate={params.spiralTurnRate}
-      spiralExpansion={params.spiralExpansion}
-      spiralCenterOffset={params.spiralCenterOffset}
-      particleScale={params.particleScale}
-    />
+    <div className="group relative">
+      <GitMosaic
+        ref={mosaicRef}
+        username="hunterchen7"
+        variant="daily-spiral"
+        customColors={{
+          background: "#000000",
+          primary: BASE_COLORS,
+          accent: "#2d1b4e",
+        }}
+        width={600}
+        height={600}
+        speed={params.speed}
+        lifetimeSeconds={params.lifetimeSeconds}
+        maxRadius={params.maxRadius}
+        spawnRate={params.spawnRate}
+        particleGlow={params.particleGlow}
+        spiralTurnRate={params.spiralTurnRate}
+        spiralExpansion={params.spiralExpansion}
+        spiralCenterOffset={params.spiralCenterOffset}
+        particleScale={params.particleScale}
+      />
+      <a
+        href="https://github.com/hunterchen7/git-mosaic"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute right-2 top-2 p-2 text-white/60 opacity-0 transition-all hover:text-white group-hover:opacity-100"
+        aria-label="View git-mosaic on GitHub"
+      >
+        <ExternalLink className="h-5 w-5" />
+      </a>
+    </div>
   );
 }
