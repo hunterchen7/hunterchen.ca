@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { useState } from "react";
 import {
   Canvas,
   DefaultCanvasBackground,
@@ -33,6 +34,8 @@ const BOX_GRADIENT =
 const DOT_COLOR = "#7a5a99";
 
 export default function Home() {
+  const [showMosaic, setShowMosaic] = useState(true);
+
   return (
     <>
       <Head>
@@ -52,7 +55,7 @@ export default function Home() {
               titleClassName="text-fuchsia-300"
             />
           }
-          loadingText="LOADING"
+          loadingText=""
           canvasBackground={
             <DefaultCanvasBackground
               gradientStyle={CANVAS_GRADIENT}
@@ -103,14 +106,25 @@ export default function Home() {
           <ContactSection offset={coordinates.contact} />
         </Canvas>
 
-        <motion.div
-          className="pointer-events-none fixed inset-0 z-[1000] flex items-center justify-center pt-10"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ duration: 1, delay: 7 }}
-        >
-          <StyledGitMosaic />
-        </motion.div>
+        {showMosaic && (
+          <motion.div
+            className="pointer-events-none fixed inset-0 z-[1000] flex items-center justify-center md:pt-10"
+            initial={{ opacity: 1, scale: 0.25, y: "33vh" }}
+            animate={{
+              opacity: [1, 1, 1, 1, 0],
+              scale: [0.25, 0.25, 1, 1, 1],
+              y: ["37vh", "37vh", "0vh", "0vh", "0vh"],
+            }}
+            transition={{
+              duration: 10,
+              times: [0, 0.6, 0.7, 0.8, 1],
+              ease: [0.65, 0, 0.35, 1],
+            }}
+            onAnimationComplete={() => setShowMosaic(false)}
+          >
+            <StyledGitMosaic />
+          </motion.div>
+        )}
       </main>
     </>
   );
