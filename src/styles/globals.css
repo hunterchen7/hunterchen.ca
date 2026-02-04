@@ -82,3 +82,23 @@ html {
   animation: wave 2.5s ease-in-out infinite;
   transform-origin: 70% 70%;
 }
+
+/* String sway animation for bulletin board */
+@keyframes string-sway {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  25% {
+    transform: translateX(4px);
+  }
+  50% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.animate-string-sway {
+  animation: string-sway 5s ease-in-out infinite;
+}

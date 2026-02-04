@@ -1,123 +1,193 @@
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, ExternalLink } from "lucide-react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
+import { motion } from "framer-motion";
 
 interface GallerySectionProps {
   offset: SectionCoordinates;
 }
 
 interface Photo {
-  id: string;
-  title: string;
-  color: string;
-  emoji: string;
+  caption: string;
+  rotation?: string;
+  url?: string;
+  thumbnailUrl?: string;
 }
 
-// Placeholder photos - will be replaced with real images
 const photos: Photo[] = [
-  { id: "1", title: "Mountain Landscape", color: "from-sky-300 to-blue-400", emoji: "🏔️" },
-  { id: "2", title: "City Lights", color: "from-amber-300 to-orange-400", emoji: "🌃" },
-  { id: "3", title: "Nature Trail", color: "from-green-300 to-emerald-400", emoji: "🌲" },
-  { id: "4", title: "Airshow", color: "from-slate-300 to-gray-400", emoji: "✈️" },
-  { id: "5", title: "Sunset", color: "from-rose-300 to-pink-400", emoji: "🌅" },
-  { id: "6", title: "Wildlife", color: "from-lime-300 to-green-400", emoji: "🦌" },
+  // plane moon
+  {
+    caption: "2025/09/06 01:52:21",
+    rotation: "3deg",
+    url: "https://photos.hunterchen.ca/HC_08284.jpg",
+    thumbnailUrl: "https://photos.hunterchen.ca/HC_08284-thumb.webp",
+  },
+  // pigon
+  {
+    caption: "2025/08/19 20:59:29",
+    rotation: "6deg",
+    url: "https://photos.hunterchen.ca/HC_02986.jpg",
+    thumbnailUrl: "https://photos.hunterchen.ca/HC_02986-thumb.webp",
+  },
+  // raven
+  {
+    caption: "2024/08/23 21:19:35",
+    rotation: "-2deg",
+    url: "https://photos.hunterchen.ca/HC_01728-Enhanced-NR.jpg",
+    thumbnailUrl:
+      "https://photos.hunterchen.ca/HC_01728-Enhanced-NR-thumb.webp",
+  },
+  // deer
+  {
+    caption: "2025/08/23 22:17:27",
+    rotation: "-4deg",
+    url: "https://photos.hunterchen.ca/HC_04701.jpg",
+    thumbnailUrl: "https://photos.hunterchen.ca/HC_04701-thumb.webp",
+  },
+  // plane upsdie don
+  {
+    caption: "2025/09/05 23:20:11",
+    rotation: "-2deg",
+    url: "https://photos.hunterchen.ca/HC_06296-Enhanced-NR.jpg",
+    thumbnailUrl:
+      "https://photos.hunterchen.ca/HC_06296-Enhanced-NR-thumb.webp",
+  },
+  // ny
+  {
+    caption: "2025/08/20 23:27:07",
+    rotation: "-4deg",
+    url: "https://photos.hunterchen.ca/HC_03358.jpg",
+    thumbnailUrl: "https://photos.hunterchen.ca/HC_03358-thumb.webp",
+  },
+  // plane sanwich
+  {
+    caption: "2025/09/06 00:30:04",
+    rotation: "2deg",
+    url: "https://photos.hunterchen.ca/HC_07534.jpg",
+    thumbnailUrl: "https://photos.hunterchen.ca/HC_07534-thumb.webp",
+  },
+  // boat
+  {
+    caption: "2024/08/29 01:09:31",
+    rotation: "3deg",
+    url: "https://photos.hunterchen.ca/HC_04198.jpg",
+    thumbnailUrl: "https://photos.hunterchen.ca/HC_04198-thumb.webp",
+  },
 ];
 
-export default function GallerySection({ offset }: GallerySectionProps) {
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+const PolaroidCard = ({
+  caption,
+  className,
+  rotation,
+  thumbnailUrl,
+}: {
+  caption: string;
+  className?: string;
+  rotation?: string;
+  thumbnailUrl?: string;
+}) => {
+  return (
+    <motion.div
+      className={`relative h-[300px] w-[260px] cursor-pointer transition-all hover:scale-[1.02] ${className}`}
+      style={{ perspective: 1200, rotate: rotation }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {/* Polaroid card */}
+      <div className="absolute inset-0 bg-white shadow-xl">
+        {/* Image area */}
+        <div className="m-3 h-[240px] bg-gray-200 flex items-center justify-center overflow-hidden">
+          {thumbnailUrl ? (
+            <img
+              src={thumbnailUrl}
+              alt={caption}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="text-4xl text-gray-400">📷</div>
+          )}
+        </div>
+        {/* Caption area */}
+        <div className="px-4">
+          <p className="text-center font-mono text-xs leading-tight text-gray-700">
+            {caption}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
+export default function GallerySection({ offset }: GallerySectionProps) {
   return (
     <CanvasComponent offset={offset}>
-      <div className="flex h-full w-full flex-col items-center justify-center p-8">
-      <h2 className="mb-2 text-3xl font-thin text-fuchsia-200">gallery</h2>
-      <p className="mb-8 text-sm text-fuchsia-300/60">
-        a collection of some photos I took that I like :)
-      </p>
+      <div className="flex h-full w-full items-center justify-center pb-8 sm:pb-0 sm:pt-4">
+        <div className="mx-auto flex items-center gap-16">
+          {/* Left 2 polaroids */}
+          <div className="flex flex-col gap-12">
+            <PolaroidCard
+              caption={photos[0]!.caption}
+              rotation={photos[0]!.rotation}
+              thumbnailUrl={photos[0]!.thumbnailUrl}
+            />
+            <PolaroidCard
+              caption={photos[1]!.caption}
+              rotation={photos[1]!.rotation}
+              thumbnailUrl={photos[1]!.thumbnailUrl}
+            />
+          </div>
 
-      {/* Photo Grid */}
-      <div className="grid grid-cols-3 gap-3">
-        {photos.map((photo, index) => (
-          <motion.button
-            key={photo.id}
-            onClick={() => setSelectedPhoto(photo)}
-            className={`relative overflow-hidden rounded-lg shadow-md transition-all hover:-translate-y-1 hover:shadow-xl border border-fuchsia-800/20 ${
-              index === 0 ? "col-span-2 row-span-2" : ""
-            }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {/* Placeholder gradient */}
-            <div
-              className={`flex items-center justify-center bg-gradient-to-br ${photo.color} ${
-                index === 0 ? "h-48 w-full" : "h-20 w-24"
-              }`}
-            >
-              <span className={index === 0 ? "text-5xl" : "text-2xl"}>
-                {photo.emoji}
-              </span>
+          {/* Middle section with cards and title */}
+          <div className="flex flex-col items-center gap-14">
+            <div className="flex gap-12">
+              <PolaroidCard
+                caption={photos[2]!.caption}
+                rotation={photos[2]!.rotation}
+                thumbnailUrl={photos[2]!.thumbnailUrl}
+              />
+              <PolaroidCard
+                caption={photos[3]!.caption}
+                rotation={photos[3]!.rotation}
+                thumbnailUrl={photos[3]!.thumbnailUrl}
+              />
             </div>
-          </motion.button>
-        ))}
+
+            <div className="flex w-96 flex-col items-center justify-center">
+              <h2 className="mb-4 text-center text-2xl font-thin text-fuchsia-200">
+                gallery
+              </h2>
+              <div className="w-2/3 text-center text-sm text-fuchsia-300/60">
+                a collection of some photos i took that i like :)
+              </div>
+            </div>
+
+            <div className="flex gap-12">
+              <PolaroidCard
+                caption={photos[4]!.caption}
+                rotation={photos[4]!.rotation}
+                thumbnailUrl={photos[4]!.thumbnailUrl}
+              />
+              <PolaroidCard
+                caption={photos[5]!.caption}
+                rotation={photos[5]!.rotation}
+                thumbnailUrl={photos[5]!.thumbnailUrl}
+              />
+            </div>
+          </div>
+
+          {/* Right 2 polaroids */}
+          <div className="flex flex-col gap-12">
+            <PolaroidCard
+              caption={photos[6]!.caption}
+              rotation={photos[6]!.rotation}
+              thumbnailUrl={photos[6]!.thumbnailUrl}
+            />
+            <PolaroidCard
+              caption={photos[7]!.caption}
+              rotation={photos[7]!.rotation}
+              thumbnailUrl={photos[7]!.thumbnailUrl}
+            />
+          </div>
+        </div>
       </div>
-
-      {/* Link to full gallery */}
-      <a
-        href="https://hunterchen.ca/gallery"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-8 flex items-center gap-2 text-sm text-fuchsia-400 underline-offset-4 hover:text-fuchsia-300 hover:underline"
-      >
-        View full gallery
-        <ExternalLink className="h-3 w-3" />
-      </a>
-
-      {/* Lightbox - rendered via portal to escape canvas transforms */}
-      {typeof document !== "undefined" &&
-        createPortal(
-          <AnimatePresence>
-            {selectedPhoto && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 p-8 font-mono"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                onClick={() => setSelectedPhoto(null)}
-              >
-                {/* Close button */}
-                <button
-                  onClick={() => setSelectedPhoto(null)}
-                  className="absolute right-6 top-6 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-
-                {/* Photo */}
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  className="max-h-[80vh] max-w-[80vw]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Placeholder for actual image */}
-                  <div
-                    className={`flex h-96 w-[500px] items-center justify-center rounded-lg bg-gradient-to-br ${selectedPhoto.color}`}
-                  >
-                    <span className="text-8xl">{selectedPhoto.emoji}</span>
-                  </div>
-                  <p className="mt-4 text-center text-fuchsia-200">
-                    {selectedPhoto.title}
-                  </p>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
-    </div>
     </CanvasComponent>
   );
 }

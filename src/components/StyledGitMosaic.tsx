@@ -315,7 +315,7 @@ export default function StyledGitMosaic() {
   }, []);
 
   return (
-    <div className="group relative">
+    <div className="group relative scale-[80%] md:scale-100 -my-16 md:my-auto">
       <GitMosaic
         ref={mosaicRef}
         username="hunterchen7"
