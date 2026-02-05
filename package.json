@@ -13,6 +13,7 @@
   "dependencies": {
     "@hunterchen/canvas": "file:../..",
     "clsx": "^2.1.1",
+    "exifreader": "^4.36.1",
     "framer-motion": "^12.10.5",
     "git-mosaic": "github:hunterchen7/git-mosaic",
     "lucide-react": "^0.483.0",

@@ -37,8 +37,11 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[2000] flex items-center justify-center p-4 font-mono"
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          style={{ fontFamily: "'JetBrains Mono', monospace", touchAction: "none" }}
           onClick={onClose}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
         >
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -49,26 +52,28 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-fuchsia-950/95 border border-fuchsia-800/40 p-6 shadow-2xl"
+            className="relative aspect-square w-[min(80vw,80vh)] overflow-hidden rounded-2xl bg-fuchsia-950/95 border border-fuchsia-800/40 p-6 shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-full p-1 text-fuchsia-400 transition-colors hover:bg-fuchsia-900/50 hover:text-fuchsia-200"
+              className="absolute right-4 top-4 rounded-full p-1 text-fuchsia-400 transition-colors hover:bg-fuchsia-900/50 hover:text-fuchsia-200 z-10"
             >
               <X className="h-5 w-5" />
             </button>
 
             {/* Title */}
             {title && (
-              <h2 className="mb-4 text-2xl font-semibold text-fuchsia-100">
+              <h2 className="mb-4 text-2xl font-semibold text-fuchsia-100 flex-shrink-0">
                 {title}
               </h2>
             )}
 
             {/* Content */}
-            {children}
+            <div className="flex-1 min-h-0 overflow-auto">
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       )}

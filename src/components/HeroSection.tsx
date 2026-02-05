@@ -19,7 +19,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
             </span>
           </h1>
           <p className="mx-auto mt-6 text-base md:text-lg text-fuchsia-300/80 w-[90vw] md:w-auto">
-            and i like building things.. feel free to look around :)
+            welcome to my web page! feel free to look around :)
           </p>
 
           {/* Git Activity Mosaic - fades in as overlay fades out */}

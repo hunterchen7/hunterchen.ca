@@ -1,5 +1,5 @@
 import { type AppType } from "next/app";
-import { JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Caveat } from "next/font/google";
 
 // Canvas styles first, then our overrides
 import "@hunterchen/canvas/styles.css";
@@ -11,10 +11,15 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-caveat",
+});
+
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <PerformanceProvider>
-      <main className={`${jetbrainsMono.variable} font-mono`}>
+      <main className={`${jetbrainsMono.variable} ${caveat.variable} font-mono`}>
         <Component {...pageProps} />
       </main>
     </PerformanceProvider>

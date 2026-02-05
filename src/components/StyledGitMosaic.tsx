@@ -1,4 +1,9 @@
-import { GitMosaic, type GitMosaicHandle, colorSchemes } from "git-mosaic";
+import {
+  GitMosaic,
+  type GitMosaicHandle,
+  type GitMosaicProps,
+  colorSchemes,
+} from "git-mosaic";
 import { animate, useMotionValue } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import { ExternalLink } from "lucide-react";
@@ -13,12 +18,16 @@ const INITIAL = {
   spiralTurnRate: 4.211,
   spiralExpansion: 0.017,
   spiralCenterOffset: -3,
-  particleScale: 1,
-};
+  spiralClockwise: true,
+  particleScale: 1.05,
+  mouseRepel: true,
+  repelStrength: 0,
+  repelRadius: 0,
+} satisfies Partial<GitMosaicProps>;
 
 // Final parameters (settled state)
 const FINAL = {
-  speed: 1.5,
+  speed: 1,
   lifetimeSeconds: 37,
   maxRadius: 1,
   spawnRate: 3,
@@ -27,7 +36,10 @@ const FINAL = {
   spiralExpansion: 0.408,
   spiralCenterOffset: -0.16,
   particleScale: 1,
-};
+  mouseRepel: true,
+  repelStrength: 4,
+  repelRadius: 150,
+} satisfies Partial<GitMosaicProps>;
 
 const TRANSITION_DELAY = 6; // seconds before transition starts
 const TRANSITION_DURATION = 12; // seconds for transition
@@ -42,10 +54,11 @@ const RANDOM_TRANSITION_DURATION = 15;
 
 // Random parameter ranges
 const RANDOM_RANGES = {
-  speed: { min: 0.1, max: 3 },
-  spiralTurnRate: { min: 0, max: 1.2 },
-  spiralExpansion: { min: 0.1, max: 0.8 },
+  speed: { min: 0.067, max: 3.5 },
+  spiralTurnRate: { min: 0, max: 3.5 },
+  spiralExpansion: { min: 0, max: 0.67 },
   spiralCenterOffset: { min: -0.5, max: 0.5 },
+  spawnRate: { min: 1, max: 4 },
 };
 
 // Cubic bezier easing (ease-in-out style)
@@ -85,6 +98,9 @@ function generateBrightColor(): string {
 
 export default function StyledGitMosaic() {
   const [params, setParams] = useState(INITIAL);
+  const [spiralClockwise, setSpiralClockwise] = useState<boolean>(
+    INITIAL.spiralClockwise,
+  );
   const mosaicRef = useRef<GitMosaicHandle>(null);
   const fibonacciColorsRef = useRef<string[]>([]);
   const currentPresetRef = useRef<CyclePreset>("nebula");
@@ -99,6 +115,8 @@ export default function StyledGitMosaic() {
   const spiralExpansion = useMotionValue(INITIAL.spiralExpansion);
   const spiralCenterOffset = useMotionValue(INITIAL.spiralCenterOffset);
   const particleScale = useMotionValue(INITIAL.particleScale);
+  const repelStrength = useMotionValue(INITIAL.repelStrength);
+  const repelRadius = useMotionValue(INITIAL.repelRadius);
 
   // Helper to generate random value in range
   const randomInRange = (min: number, max: number) =>
@@ -123,6 +141,8 @@ export default function StyledGitMosaic() {
       animate(spiralExpansion, FINAL.spiralExpansion, animConfig);
       animate(spiralCenterOffset, FINAL.spiralCenterOffset, animConfig);
       animate(particleScale, FINAL.particleScale, animConfig);
+      animate(repelStrength, FINAL.repelStrength, animConfig);
+      animate(repelRadius, FINAL.repelRadius, animConfig);
     }, TRANSITION_DELAY * 1000);
     timers.push(phase1Timer);
 
@@ -168,6 +188,14 @@ export default function StyledGitMosaic() {
         ),
         animConfig,
       );
+      animate(
+        spawnRate,
+        randomInRange(RANDOM_RANGES.spawnRate.min, RANDOM_RANGES.spawnRate.max),
+        animConfig,
+      );
+      if (speed.get() * spiralTurnRate.get() < 2) {
+        setSpiralClockwise(Math.random() > 0.5);
+      }
 
       // Continue randomizing every 15s
       randomInterval = setInterval(() => {
@@ -201,6 +229,17 @@ export default function StyledGitMosaic() {
           ),
           animConfig,
         );
+        animate(
+          spawnRate,
+          randomInRange(
+            RANDOM_RANGES.spawnRate.min,
+            RANDOM_RANGES.spawnRate.max,
+          ),
+          animConfig,
+        );
+        if (speed.get() * spiralTurnRate.get() < 2) {
+          setSpiralClockwise(Math.random() > 0.5);
+        }
       }, RANDOM_TRANSITION_DURATION * 1000);
     }, PHASE3_DELAY * 1000);
     timers.push(phase3Timer);
@@ -309,6 +348,12 @@ export default function StyledGitMosaic() {
       particleScale.on("change", (v) =>
         setParams((p) => ({ ...p, particleScale: v })),
       ),
+      repelStrength.on("change", (v) =>
+        setParams((p) => ({ ...p, repelStrength: v })),
+      ),
+      repelRadius.on("change", (v) =>
+        setParams((p) => ({ ...p, repelRadius: v })),
+      ),
     ];
 
     return () => unsubscribers.forEach((unsub) => unsub());
@@ -336,6 +381,12 @@ export default function StyledGitMosaic() {
         spiralExpansion={params.spiralExpansion}
         spiralCenterOffset={params.spiralCenterOffset}
         particleScale={params.particleScale}
+        mouseRepel={params.mouseRepel}
+        repelStrength={params.repelStrength}
+        repelRadius={params.repelRadius}
+        spiralClockwise={spiralClockwise}
+        fadeInDuration={1.67}
+        showAllDays={true}
       />
       <a
         href="https://github.com/hunterchen7/git-mosaic"

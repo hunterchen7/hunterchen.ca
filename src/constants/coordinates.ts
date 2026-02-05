@@ -48,7 +48,7 @@ export const coordinates = {
   projects: {
     x: RIGHT_X,
     y: TOP_Y,
-    width: SECTION_WIDTH,
+    width: 1200,
     height: SECTION_HEIGHT,
   },
   gallery: {
