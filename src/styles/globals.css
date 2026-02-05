@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer base {
+  :root {
+    /* ============== Amethyst Glow Theme ============== */
+    /* Warmer purple tones with subtle magenta undertones */
+
+    /* Base colors */
+    --background: 270 30% 7%;
+    --foreground: 270 15% 88%;
+
+    --primary: 280 45% 58%;
+    --primary-foreground: 270 15% 95%;
+
+    --secondary: 270 22% 14%;
+    --secondary-foreground: 270 15% 82%;
+
+    --muted: 270 18% 17%;
+    --muted-foreground: 270 12% 55%;
+
+    --accent: 285 50% 55%;
+    --accent-foreground: 270 15% 95%;
+
+    --border: 270 22% 20%;
+    --input: 270 22% 16%;
+    --ring: 285 50% 55%;
+
+    --radius: 0.5rem;
+  }
+}
+
+/* ============== Canvas Library Overrides ============== */
+/* These must be outside @layer to override the library's defaults */
+:root {
+  --canvas-offwhite: #1a1520;
+  --canvas-highlight: #271f30;
+  --canvas-pushed: #3d2a50;
+  --canvas-emphasis: #c084fc;
+  --canvas-medium: #9580a8;
+  --canvas-light: #5c4d6b;
+  --canvas-heavy: #ede8f2;
+  --canvas-border-light: 270 22% 20%;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* Wave animation for emoji */
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(0deg); }
+}
+
+.animate-wave {
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+/* String sway animation for bulletin board */
+@keyframes string-sway {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  25% {
+    transform: translateX(4px);
+  }
+  50% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.animate-string-sway {
+  animation: string-sway 5s ease-in-out infinite;
+}
