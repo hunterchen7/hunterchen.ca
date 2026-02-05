@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ExternalLink, Github, Link as LinkIcon } from "lucide-react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
-import Modal from "./Modal";
-import { AnimatedLink } from "./AnimatedLink";
+import ProjectCarousel from "./ProjectCarousel";
 
 interface ProjectsSectionProps {
   offset: SectionCoordinates;
@@ -23,6 +22,7 @@ interface Project {
   images?: string[];
 }
 
+// Projects shown as cards on canvas
 const featuredProjects: Project[] = [
   {
     id: "calc",
@@ -43,7 +43,8 @@ const featuredProjects: Project[] = [
         >
           CEmu
         </a>
-        .
+        . Android app is built with Kotlin/Jetpack Compose, iOS app with Swift,
+        and web with TypeScript/React.
       </>
     ),
     tech: ["Rust", "C/C++", "Swift", "Kotlin", "TypeScript", "WASM"],
@@ -69,7 +70,7 @@ const featuredProjects: Project[] = [
     title: "documind",
     overview: "AI-native Chrome extension PDF viewer with annotations",
     description:
-      "A Chrome MV3 extension for viewing PDFs with virtualized rendering, annotations (highlights, notes, ink drawing), zoom controls, and persistent state. AI features include term extraction, page summaries, RAG-based chat with Gemini, and text-to-speech via ElevenLabs.",
+      "A Chrome MV3 extension for viewing PDFs with virtualized rendering, annotations (highlights, notes, ink drawing), zoom controls, and persistent state. AI features include term extraction, page summaries, RAG-based chat with Gemini, and text-to-speech via ElevenLabs. Built for Hack the Valley 2025",
     tech: ["TypeScript", "React", "Chrome Extension"],
     github: "https://github.com/WangNatalie/documind",
   },
@@ -107,6 +108,266 @@ const featuredProjects: Project[] = [
     images: ["/projects/dechess/image.webp", "/projects/dechess/image2.webp"],
   },
 ];
+
+// Additional projects only shown in the carousel
+const carouselOnlyProjects: Project[] = [
+  {
+    id: "chessbench",
+    title: "chessbench LLM",
+    overview:
+      "Benchmarking LLMs on solving chess puzzles, also play chess against llama-4-scout",
+    description:
+      "Play chess against llama-4-scout. Contains benchmarks from different LLMs playing chess puzzles, with their Elo ratings. Models also play games against each other. React frontend, TS cloudflare worker backend.",
+    tech: ["TypeScript", "React", "Python"],
+    github: "https://github.com/hunterchen7/chessbench-llm",
+    demo: "https://chessbench.pages.dev/",
+    images: [
+      "/projects/chessbench/image.webp",
+      "/projects/chessbench/game.webp",
+    ],
+  },
+  {
+    id: "hw-archive",
+    title: "hack western archive",
+    overview: "Compilation of the past 10 years of hack western websites",
+    description:
+      "Compilation of the past 10 years of hack western websites; features a mix of Next.js, CRA, Vue, Pug, Express, PHP, Bootstrap & JQuery sites, all compiled & combined into a single static site.",
+    tech: ["TypeScript", "JavaScript", "React", "Next.js"],
+    demo: "https://archive.hackwestern.com/",
+    images: ["/projects/hw-archive/image.webp"],
+  },
+  {
+    id: "marvin",
+    title: "marvin",
+    overview: "AI Discord bot that can chat and generate images",
+    description:
+      "AI discord chat bot that can also generate images from user prompts. Uses llama-4-maverick for text gen and gemini flash 2.0 for image gen. A modified version has sent 1,000+ messages!",
+    tech: ["TypeScript"],
+    github: "https://github.com/hunterchen7/marvin",
+    video: "/projects/marvin/video.webm",
+  },
+  {
+    id: "viewr",
+    title: "viewr",
+    overview:
+      "High-performance image viewer with multi-threaded buffering & caching",
+    description:
+      "A high-performance image viewer with multi-threaded buffering & caching, built with C++ and Qt. Decompresses JPEGs into memory for near instant loading times; for 20 MP images, loading times go from ~200 ms to <1 ms.",
+    tech: ["C++"],
+    github: "https://github.com/hunterchen7/viewr",
+    images: [
+      "/projects/viewr/image.webp",
+      "/projects/viewr/image2.webp",
+      "/projects/viewr/image3.webp",
+    ],
+  },
+  {
+    id: "pawfect",
+    title: '"pawfect pitch"',
+    overview: "AI-driven speech coaching web app",
+    description:
+      "AI-driven speech coaching; upload audio to get feedback. Built for NWhacks 2025. React frontend, Python/fastAPI backend, uses local ~1B LLM & whisper.",
+    tech: ["TypeScript", "React", "Python"],
+    github: "https://github.com/hunterchen7/pawfect-pitch",
+    demo: "https://devpost.com/software/pawfect-pitch",
+    video: "/projects/pawfect/video.webm",
+    images: [
+      "/projects/pawfect/1.webp",
+      "/projects/pawfect/2.webp",
+      "/projects/pawfect/3.webp",
+      "/projects/pawfect/4.webp",
+    ],
+  },
+  {
+    id: "hw11",
+    title: "hack western 11",
+    overview:
+      "Website, Application & Hacker portal for the 11th Iteration of Hack Western",
+    description:
+      "2024's iteration of Hack Western; built components for event website and application portal, created internal review dashboard. Implemented CI/CD pipelines and email automation.",
+    tech: ["TypeScript", "React", "Next.js", "PostgreSQL"],
+    github: "https://github.com/hackwestern/hackwestern/tree/hw11",
+    demo: "https://2024.hackwestern.com",
+    video: "/projects/hw11/video.webm",
+    images: ["/projects/hw11/image.webp", "/projects/hw11/live.webp"],
+  },
+  {
+    id: "typing",
+    title: "typing game",
+    overview: "Typing game where you destroy falling asteroids by typing words",
+    description:
+      "Led a group of 4 to build a Java/LibGDX typing game where you type words to destroy asteroids. Designed database schema to store user profiles, game stats and word lists.",
+    tech: ["Java", "SQLite"],
+    github: "https://github.com/hunterchen7/typing-game",
+    demo: "https://www.youtube.com/watch?v=1PN8l_tNcNQ",
+    video: "/projects/typing/video.webm",
+  },
+  {
+    id: "docket",
+    title: "docket",
+    overview: "Markdown note-taking chrome extension",
+    description:
+      "Markdown note-taking chrome extension. My friend built most of it but I implemented a couple features :)",
+    tech: ["TypeScript"],
+    github: "https://github.com/LordExodius/docket",
+    demo: "https://chromewebstore.google.com/detail/docket/hlfjljigolpdfpljaogaiklelolbemfc",
+    images: ["/projects/docket/image.webp"],
+  },
+  {
+    id: "pointless",
+    title: "pointless",
+    overview: "Infinite drawing canvas desktop app built with Tauri & React",
+    description:
+      "Not my app! Infinite drawing canvas desktop app built with Tauri (Rust) and React. Added the colour picker feature - my first open source contribution!",
+    tech: ["Rust", "React", "JavaScript"],
+    github: "https://github.com/kkoomen/pointless",
+    images: ["/projects/pointless/image.webp"],
+  },
+  {
+    id: "gameoflife",
+    title: "WASM game of life",
+    overview: "Conway's Game of Life in Rust & WebAssembly",
+    description:
+      "A Rust implementation of Conway's Game of Life, compiled to WebAssembly. Based on a tutorial from the rustwasm book.",
+    tech: ["Rust", "TypeScript", "WASM"],
+    github: "https://github.com/hunterchen7/wasm-game-of-life",
+    demo: "https://hunterchen7.github.io/wasm-game-of-life/",
+    video: "/projects/gameoflife/video.webm",
+  },
+  {
+    id: "scavenger",
+    title: "HW scavenger hunt",
+    overview:
+      "Scavenger hunt game for hack western 11 and 12 organizer socials",
+    description:
+      "A scavenger hunt game for the first hack western 11 organizer social, and updated/reused for hack western 12. Use code 1023 for a demo.",
+    tech: ["TypeScript", "React", "Next.js", "PostgreSQL"],
+    github: "https://github.com/hunterchen7/scavenger-hunt",
+    demo: "https://scavenger-hunt-pink.vercel.app/",
+    video: "/projects/scavenger/video.webm",
+    images: [
+      "/projects/scavenger/image.webp",
+      "/projects/scavenger/submission.webp",
+    ],
+  },
+  {
+    id: "bluefin",
+    title: "bluefin",
+    overview:
+      "WIP (abandoned) MCTS chess engine using bitboards, built with Rust",
+    description:
+      "A WIP (abandoned) MCTS (monte-carlo tree-search) chess engine using bitboards, built with Rust.",
+    tech: ["Rust"],
+    github: "https://github.com/bluefin-chess/bluefin",
+    images: ["/projects/bluefin/image.webp"],
+  },
+  {
+    id: "voyage",
+    title: "voyage",
+    overview: "WIP (abandoned) magic-bitboard chess move-generator",
+    description:
+      "A WIP (abandoned) magic-bitboard chess move-generator intended for use in bluefin. Written in Rust, based on Gigantua.",
+    tech: ["Rust"],
+    github: "https://github.com/bluefin-chess/voyage",
+    otherUrl:
+      "https://www.codeproject.com/Articles/5313417/Worlds-Fastest-Bitboard-Chess-Movegenerator",
+    images: ["/projects/voyage/image.webp"],
+  },
+  {
+    id: "ballotbox",
+    title: "ballotbox",
+    overview: "Anonymous data marketplace using zero-knowledge proofs",
+    description:
+      "Anonymous data marketplace using zero-knowledge proofs; built for the 2023 FVM spacewarp hackathon.",
+    tech: ["TypeScript", "React"],
+    github: "https://github.com/KingGizzard/Ballotbox",
+    demo: "https://ethglobal.com/showcase/ballotbox-23fge",
+    images: [
+      "/projects/ballotbox/architecture.webp",
+      "/projects/ballotbox/answerer.webp",
+      "/projects/ballotbox/asker.webp",
+    ],
+  },
+  {
+    id: "daovoz",
+    title: "DAOVOZ website",
+    overview: "Website for DAOVOZ, a DAO forum based in Davos, Switzerland",
+    description:
+      "DAOVOZ is a DAO forum for DAOs; built website to promote & sell tickets to in-person event in Davos, Switzerland.",
+    tech: ["TypeScript", "React", "Next.js"],
+    github: "https://github.com/hunterchen7/daovos-website",
+    demo: "https://daovoz.pages.dev/",
+    video: "/projects/daovoz/video.webm",
+  },
+  {
+    id: "spacestagram",
+    title: "spacestagram",
+    overview:
+      '"Image sharing from the final frontier" - see some images from NASA\'s API',
+    description:
+      "\"Image sharing from the final frontier\" - see some images from NASA's API, built for Shopify's 2021 Frontend Developer Intern Challenge.",
+    tech: ["JavaScript", "React"],
+    github: "https://github.com/hunterchen7/spacestagram",
+    demo: "https://spacestagram.hunterchen.ca",
+    video: "/projects/spacestagram/video.webm",
+    images: [
+      "/projects/spacestagram/image.webp",
+      "/projects/spacestagram/image2.webp",
+    ],
+  },
+  {
+    id: "coinport",
+    title: "coinport",
+    overview: "DeFi (decentralized finance) portfolio dashboard",
+    description:
+      "A dashboard that breaks down the makeup & history of your DeFi portfolio. Python/flask backend, displayed with chartJS. Won $1000 USD from Covalent - first ever hackathon win!",
+    tech: ["Python", "JavaScript"],
+    github: "https://github.com/Coin-Port/CoinPort",
+    demo: "https://ethglobal.com/showcase/coinport-todjy",
+    video: "/projects/coinport/video.webm",
+    images: ["/projects/coinport/image.webp", "/projects/coinport/image2.webp"],
+  },
+  {
+    id: "benchmark",
+    title: "human benchmark bot",
+    overview:
+      "AI bot that automates tasks from Human Benchmark at 99+ percentiles",
+    description:
+      "A python bot that automates tasks from Human Benchmark using pyautogui, tesseract, and other libraries, getting in the top 0.1% of 5 tasks.",
+    tech: ["Python"],
+    github: "https://github.com/hunterchen7/HumanBenchmarkBot",
+    images: ["/projects/benchmark/image.webp"],
+  },
+  {
+    id: "secrypt",
+    title: "seCrypt",
+    overview: "Simple file encryption/decryption tool",
+    description:
+      "A simple file encryption/decryption tool built with python using tkinter and fernet.",
+    tech: ["Python"],
+    github: "https://github.com/hunterchen7/SeCrypt",
+    images: ["/projects/secrypt/image.webp", "/projects/secrypt/image2.webp"],
+  },
+  {
+    id: "tank",
+    title: "tank game",
+    overview: "Birds-eye view tank game built with gamemaker",
+    description:
+      "A birds-eye view tank game I made in high school with gamemaker. Has a tutorial, 3 normal levels, a boss level, different enemy types, ammo types and a menu screen. I've included the originl .gmz (gamemaker project) and the compiled .exe, run at your own risk!",
+    tech: [],
+    demo: "https://hunterchen.ca/tank/tankgame.exe",
+    otherUrl: "https://hunterchen.ca/tank/tankgame.gmz",
+    video: "/projects/tank/video.webm",
+    images: [
+      "/projects/tank/level1.webp",
+      "/projects/tank/level2.webp",
+      "/projects/tank/level3.webp",
+    ],
+  },
+];
+
+// All projects for the carousel
+const allProjects: Project[] = [...featuredProjects, ...carouselOnlyProjects];
 
 function ProjectCard({
   project,
@@ -257,14 +518,22 @@ function ProjectCard({
 }
 
 export default function ProjectsSection({ offset }: ProjectsSectionProps) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState<number | null>(null);
+  const [lastOpenedIndex, setLastOpenedIndex] = useState<number>(
+    featuredProjects.length,
+  );
+
+  const handleIndexChange = (index: number) => {
+    setCarouselIndex(index);
+    setLastOpenedIndex(index);
+  };
 
   return (
     <CanvasComponent offset={offset}>
       <div className="flex h-full w-full flex-col items-center justify-center p-8 md:scale-110">
         <h2 className="mb-2 text-3xl font-thin text-fuchsia-200">projects</h2>
         <p className="mb-6 text-sm text-fuchsia-300/60">
-          a compilation of some things i've enjoyed working on
+          a compilation of some things i've worked on..
         </p>
 
         {/* Project Cards Grid */}
@@ -274,108 +543,26 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
               key={project.id}
               project={project}
               index={index}
-              onClick={() => setSelectedProject(project)}
+              onClick={() => handleIndexChange(index)}
             />
           ))}
         </div>
 
-        {/* See all link */}
-        <AnimatedLink
-          href="https://hunterchen.ca/projects"
-          className="mt-6 text-sm"
+        {/* See more button - opens carousel at last viewed position */}
+        <button
+          onClick={() => setCarouselIndex(lastOpenedIndex)}
+          className="mt-6 text-sm text-fuchsia-400 hover:text-fuchsia-300 transition-colors"
         >
           see more →
-        </AnimatedLink>
+        </button>
 
-        {/* Project Detail Modal */}
-        <Modal
-          isOpen={!!selectedProject}
-          onClose={() => setSelectedProject(null)}
-          title={selectedProject?.title}
-        >
-          {selectedProject && (
-            <div className="h-full flex flex-col gap-4">
-              {/* Media preview in modal */}
-              {(selectedProject.video ||
-                (selectedProject.images &&
-                  selectedProject.images.length > 0)) && (
-                <div className="w-full flex-1 min-h-0 bg-black rounded-lg overflow-hidden">
-                  {selectedProject.video ? (
-                    <video
-                      src={selectedProject.video}
-                      className="w-full h-full object-contain"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
-                  ) : selectedProject.images && selectedProject.images[0] ? (
-                    <img
-                      src={selectedProject.images[0]}
-                      alt={selectedProject.title}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : null}
-                </div>
-              )}
-
-              <div className="text-sm text-fuchsia-200/90 leading-relaxed flex-shrink-0">
-                {selectedProject.description}
-              </div>
-
-              {/* Tech stack and links row */}
-              <div className="flex items-center justify-between gap-4 flex-shrink-0">
-                <div className="flex flex-wrap gap-2">
-                  {selectedProject.tech.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-full bg-fuchsia-900/50 px-3 py-1 text-sm text-fuchsia-200"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Links */}
-                <div className="flex gap-3">
-                  {selectedProject.github && (
-                    <a
-                      href={selectedProject.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-full bg-fuchsia-800/60 px-4 py-2 text-sm text-fuchsia-200 transition-transform hover:scale-105"
-                    >
-                      <Github className="h-4 w-4" />
-                      Code
-                    </a>
-                  )}
-                  {selectedProject.demo && (
-                    <a
-                      href={selectedProject.demo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-full bg-fuchsia-600/60 px-4 py-2 text-sm text-fuchsia-100 transition-transform hover:scale-105"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Demo
-                    </a>
-                  )}
-                  {selectedProject.otherUrl && (
-                    <a
-                      href={selectedProject.otherUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-full bg-fuchsia-700/60 px-4 py-2 text-sm text-fuchsia-100 transition-transform hover:scale-105"
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                      More
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </Modal>
+        {/* Project Carousel */}
+        <ProjectCarousel
+          projects={allProjects}
+          currentIndex={carouselIndex}
+          onClose={() => setCarouselIndex(null)}
+          onIndexChange={handleIndexChange}
+        />
       </div>
     </CanvasComponent>
   );
