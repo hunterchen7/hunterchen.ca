@@ -68,7 +68,8 @@ const featuredProjects: Project[] = [
   {
     id: "documind",
     title: "documind",
-    overview: "AI-native Chrome extension PDF viewer with annotations",
+    overview:
+      "AI-native Chrome extension PDF viewer with advanced annotation & export features",
     description:
       "A Chrome MV3 extension for viewing PDFs with virtualized rendering, annotations (highlights, notes, ink drawing), zoom controls, and persistent state. AI features include term extraction, page summaries, RAG-based chat with Gemini, and text-to-speech via ElevenLabs. Built for Hack the Valley 2025",
     tech: ["TypeScript", "React", "Chrome Extension"],
@@ -97,15 +98,15 @@ const featuredProjects: Project[] = [
     images: ["/projects/waveformer/graph.webp"],
   },
   {
-    id: "dechess",
-    title: "deChess",
-    overview: "Decentralized p2p chess web app with tradeable NFT chess pieces",
+    id: "git-mosaic",
+    title: "git mosaic",
+    overview: "Animated particle visualizations from GitHub contribution data",
     description:
-      "Decentralized p2p chess web app built for ETHGlobal hackathon(s). Won 6k+ USD in prizes, and got a 5k USD grant from Streamr. Also built to let you mint NFTs of chess pieces. My first time using React!",
-    tech: ["JavaScript", "React", "Solidity"],
-    github: "https://github.com/deChess/deChess",
-    demo: "https://ethglobal.com/showcase/dechess-yzza8",
-    images: ["/projects/dechess/image.webp", "/projects/dechess/image2.webp"],
+      "A React component library that transforms GitHub contribution data into abstract animated particle visualizations. Features multiple variants (spiral, bloom, rings), color schemes, interactive mouse effects, and customizable animation controls.",
+    tech: ["TypeScript", "React", "Canvas"],
+    github: "https://github.com/hunterchen7/git-mosaic",
+    demo: "https://git-mosaic.pages.dev/",
+    video: "/projects/mosaic/video.webm",
   },
 ];
 
@@ -300,6 +301,17 @@ const carouselOnlyProjects: Project[] = [
     video: "/projects/daovoz/video.webm",
   },
   {
+    id: "dechess",
+    title: "deChess",
+    overview: "Decentralized p2p chess web app with tradeable NFT chess pieces",
+    description:
+      "Decentralized p2p chess web app built for ETHGlobal hackathon(s). Won 6k+ USD in prizes, and got a 5k USD grant from Streamr. Also built to let you mint NFTs of chess pieces. My first time using React!",
+    tech: ["JavaScript", "React", "Solidity"],
+    github: "https://github.com/deChess/deChess",
+    demo: "https://ethglobal.com/showcase/dechess-yzza8",
+    images: ["/projects/dechess/image.webp", "/projects/dechess/image2.webp"],
+  },
+  {
     id: "spacestagram",
     title: "spacestagram",
     overview:
@@ -384,6 +396,9 @@ function ProjectCard({
   useEffect(() => {
     if (!mediaRef.current || !videoRef.current) return;
 
+    // Explicitly pause to load first frame
+    // videoRef.current.pause();
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -397,8 +412,17 @@ function ProjectCard({
       { threshold: 0.25 },
     );
 
-    observer.observe(mediaRef.current);
-    return () => observer.disconnect();
+    // Wait 9 seconds after page load before starting video autoplay
+    const timeout = setTimeout(() => {
+      if (mediaRef.current) {
+        observer.observe(mediaRef.current);
+      }
+    }, 9000);
+
+    return () => {
+      clearTimeout(timeout);
+      observer.disconnect();
+    };
   }, []);
 
   const handleClick = useCallback(
@@ -480,7 +504,7 @@ function ProjectCard({
               ref={videoRef}
               src={project.thumbnailVideo || project.video}
               className="w-full h-full object-cover"
-              preload="none"
+              preload="metadata"
               muted
               loop
               playsInline

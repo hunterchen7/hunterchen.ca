@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X,
   ChevronLeft,
   ChevronRight,
   Github,
@@ -336,17 +335,6 @@ export default function ProjectCarousel({
             onClick={onClose}
           />
 
-          {/* Close button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="absolute right-6 top-6 z-50 rounded-full p-2 bg-fuchsia-950/80 border border-fuchsia-800/40 text-fuchsia-400 transition-colors hover:bg-fuchsia-900/80 hover:text-fuchsia-200 pointer-events-auto"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
           {/* Navigation Arrows */}
           <button
             onClick={(e) => {
@@ -396,7 +384,7 @@ export default function ProjectCarousel({
           </div>
 
           {/* Position indicators */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto">
+          <div className="absolute top-6 md:top-auto md:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto">
             {projects.map((_, idx) => (
               <button
                 key={idx}
