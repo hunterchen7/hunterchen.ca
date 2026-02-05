@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ExternalLink, Github, Link as LinkIcon } from "lucide-react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import Modal from "./Modal";
+import { AnimatedLink } from "./AnimatedLink";
 
 interface ProjectsSectionProps {
   offset: SectionCoordinates;
@@ -18,6 +19,7 @@ interface Project {
   otherUrl?: string;
   video?: string;
   thumbnailVideo?: string; // Cropped/alternate video for card preview
+  thumbnailImage?: string; // Cropped/alternate image for card preview
   images?: string[];
 }
 
@@ -44,7 +46,7 @@ const featuredProjects: Project[] = [
         .
       </>
     ),
-    tech: ["Rust", "Swift", "Kotlin", "TypeScript", "WASM"],
+    tech: ["Rust", "C/C++", "Swift", "Kotlin", "TypeScript", "WASM"],
     github: "https://github.com/hunterchen7/calc",
     demo: "https://ti84ce.pages.dev/",
     video: "/projects/calc/video.webm",
@@ -90,6 +92,7 @@ const featuredProjects: Project[] = [
       "A Rust program that converts images into a series of parametric equations using a combination of fourier transforms and edge detection algorithms.",
     tech: ["Rust"],
     github: "https://github.com/hunterchen7/waveformer",
+    thumbnailImage: "/projects/waveformer/graph-thumb.webp",
     images: ["/projects/waveformer/graph.webp"],
   },
   {
@@ -223,9 +226,10 @@ function ProjectCard({
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
             />
-          ) : project.images && project.images.length > 0 ? (
+          ) : project.thumbnailImage ||
+            (project.images && project.images.length > 0) ? (
             <img
-              src={project.images[0]}
+              src={project.thumbnailImage || project.images?.[0]}
               alt={project.title}
               className="w-full h-full object-cover"
               draggable={false}
@@ -276,14 +280,12 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
         </div>
 
         {/* See all link */}
-        <a
+        <AnimatedLink
           href="https://hunterchen.ca/projects"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 text-sm text-fuchsia-400 underline-offset-4 hover:text-fuchsia-300 hover:underline"
+          className="mt-6 text-sm"
         >
           see more →
-        </a>
+        </AnimatedLink>
 
         {/* Project Detail Modal */}
         <Modal

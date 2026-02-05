@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Camera, Aperture, ImageIcon, Telescope } from "lucide-react";
 import { fetchExifFromUrl, type ExifData } from "../utils/exif";
+import { AnimatedLink } from "./AnimatedLink";
 
 interface GallerySectionProps {
   offset: SectionCoordinates;
@@ -28,21 +29,21 @@ interface SelectedPhoto {
 const photos: Photo[] = [
   // plane moon
   {
-    caption: "2025/09/06 01:52:21",
+    caption: "2025/09/06",
     rotation: "3deg",
     url: "https://photos.hunterchen.ca/HC_08284.jpg",
     thumbnailUrl: "https://photos.hunterchen.ca/HC_08284-thumb.webp",
   },
   // pigon
   {
-    caption: "2025/08/19 20:59:29",
+    caption: "2025/08/19",
     rotation: "6deg",
     url: "https://photos.hunterchen.ca/HC_02986.jpg",
     thumbnailUrl: "https://photos.hunterchen.ca/HC_02986-thumb.webp",
   },
   // raven
   {
-    caption: "2024/08/23 21:19:35",
+    caption: "2024/08/23",
     rotation: "-2deg",
     url: "https://photos.hunterchen.ca/HC_01728-Enhanced-NR.jpg",
     thumbnailUrl:
@@ -50,14 +51,14 @@ const photos: Photo[] = [
   },
   // deer
   {
-    caption: "2025/08/23 22:17:27",
+    caption: "2025/08/23",
     rotation: "-4deg",
     url: "https://photos.hunterchen.ca/HC_04701.jpg",
     thumbnailUrl: "https://photos.hunterchen.ca/HC_04701-thumb.webp",
   },
   // plane upsdie don
   {
-    caption: "2025/09/05 23:20:11",
+    caption: "2025/09/05",
     rotation: "-2deg",
     url: "https://photos.hunterchen.ca/HC_06296-Enhanced-NR.jpg",
     thumbnailUrl:
@@ -65,21 +66,21 @@ const photos: Photo[] = [
   },
   // ny
   {
-    caption: "2025/08/20 23:27:07",
+    caption: "2025/08/20",
     rotation: "-4deg",
     url: "https://photos.hunterchen.ca/HC_03358.jpg",
     thumbnailUrl: "https://photos.hunterchen.ca/HC_03358-thumb.webp",
   },
   // plane sanwich
   {
-    caption: "2025/09/06 00:30:04",
+    caption: "2025/09/06",
     rotation: "2deg",
     url: "https://photos.hunterchen.ca/HC_07534.jpg",
     thumbnailUrl: "https://photos.hunterchen.ca/HC_07534-thumb.webp",
   },
   // boat
   {
-    caption: "2024/08/29 01:09:31",
+    caption: "2024/08/29",
     rotation: "3deg",
     url: "https://photos.hunterchen.ca/HC_04198.jpg",
     thumbnailUrl: "https://photos.hunterchen.ca/HC_04198-thumb.webp",
@@ -417,14 +418,12 @@ export default function GallerySection({ offset }: GallerySectionProps) {
                 <div className="w-2/3 text-center text-sm text-fuchsia-300/60">
                   a collection of some photos i took that i like :)
                 </div>
-                <a
+                <AnimatedLink
                   href="https://gallery.hunterchen.ca/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 text-xs text-fuchsia-300/80 hover:text-fuchsia-200 transition-colors"
+                  className="mt-3 text-xs"
                 >
                   see more →
-                </a>
+                </AnimatedLink>
               </div>
 
               <div className="flex gap-12">

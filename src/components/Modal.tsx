@@ -39,6 +39,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
           className="fixed inset-0 z-[2000] flex items-center justify-center p-4 font-mono"
           style={{ fontFamily: "'JetBrains Mono', monospace", touchAction: "none" }}
           onClick={onClose}
+          onContextMenu={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           onWheel={(e) => e.stopPropagation()}
@@ -54,6 +55,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="relative aspect-square w-[min(80vw,80vh)] overflow-hidden rounded-2xl bg-fuchsia-950/95 border border-fuchsia-800/40 p-6 shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
+            onContextMenu={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
