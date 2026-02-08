@@ -2,9 +2,10 @@ interface AnimatedLinkProps {
   href: string;
   children: React.ReactNode;
   className?: string;
+  textClassName?: string;
 }
 
-export function AnimatedLink({ href, children, className = "" }: AnimatedLinkProps) {
+export function AnimatedLink({ href, children, className = "", textClassName }: AnimatedLinkProps) {
   return (
     <a
       href={href}
@@ -12,7 +13,7 @@ export function AnimatedLink({ href, children, className = "" }: AnimatedLinkPro
       rel="noopener noreferrer"
       className={`group inline-block ${className}`}
     >
-      <span className="text-fuchsia-300/80 group-hover:text-fuchsia-200 transition-colors">
+      <span className={`${textClassName ?? "text-fuchsia-300/80"} group-hover:text-fuchsia-200 transition-colors`}>
         {children}
       </span>
       <span className="block h-0 max-w-0 border-b border-fuchsia-300/60 transition-all duration-200 group-hover:max-w-full group-hover:border-fuchsia-200" />

@@ -7,6 +7,7 @@ export interface ExifData {
   aperture?: string;
   focalLength?: string;
   lensModel?: string;
+  date?: string;
   width?: number;
   height?: number;
   megapixels?: string | null;
@@ -23,6 +24,11 @@ export const extractExif = (buffer: ArrayBuffer, size?: number): ExifData => {
     const height = tags["Image Height"]?.value as number | undefined;
     const megapixels =
       width && height ? ((width * height) / 1_000_000).toFixed(1) : null;
+    const rawDate =
+      tags.DateTimeOriginal?.description ||
+      tags.DateTime?.description;
+    const date = rawDate?.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1/$2/$3");
+
     return {
       camera,
       iso: tags.ISOSpeedRatings?.description,
@@ -30,6 +36,7 @@ export const extractExif = (buffer: ArrayBuffer, size?: number): ExifData => {
       aperture: tags.FNumber?.description,
       focalLength: tags.FocalLength35efl?.description || tags.FocalLength?.description,
       lensModel: tags.LensModel?.description,
+      date,
       width,
       height,
       megapixels,

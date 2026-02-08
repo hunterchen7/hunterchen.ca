@@ -102,3 +102,130 @@ html {
 .animate-string-sway {
   animation: string-sway 5s ease-in-out infinite;
 }
+
+@keyframes particle-fade {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+
+.animate-particle-fade {
+  animation: particle-fade 500ms ease-out forwards;
+}
+
+/* Film reveal animation: hidden → normal */
+@keyframes film-reveal {
+  0% {
+    filter: brightness(2) saturate(0) contrast(0);
+  }
+  100% {
+    filter: none;
+  }
+}
+
+.film-unrevealed {
+  filter: brightness(2) saturate(0) contrast(0);
+}
+
+.film-revealing {
+  animation: film-reveal 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* ============== Holographic Gallery ============== */
+
+@keyframes scanline-scroll {
+  0% {
+    background-position-y: 0px;
+  }
+  100% {
+    background-position-y: 200px;
+  }
+}
+
+/* Glitch-in reveal state classes */
+.holo-unrevealed {
+  clip-path: inset(50% 0 50% 0);
+  filter: brightness(2) saturate(0) hue-rotate(180deg);
+}
+
+.holo-revealing {
+  animation: glitch-reveal 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* Scanline static pattern for unrevealed placeholder */
+.holo-static {
+  overflow: hidden;
+  background: #0d0a14;
+}
+
+.holo-static::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(192, 132, 252, 0.03) 2px,
+    rgba(192, 132, 252, 0.03) 4px
+  );
+  pointer-events: none;
+  animation: scanline-scroll 8s linear infinite;
+}
+
+/* VHS scanlines — scrolling CRT horizontal lines */
+.holo-ambient-scanlines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+  animation: scanline-scroll 8s linear infinite;
+}
+
+/* VHS noise grain & stars */
+.holo-ambient-scanlines::after {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background-image: repeating-conic-gradient(
+    rgba(255, 255, 255, 0.03) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: 4px 4px;
+  pointer-events: none;
+  z-index: 2;
+  animation: vhs-noise 0.15s steps(4) infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes vhs-noise {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 7px); }
+  50% { transform: translate(5px, -4px); }
+  75% { transform: translate(-7px, 2px); }
+}
+
+/* Accessibility: disable continuous animations for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-holo-bob,
+  .animate-neon-pulse,
+  .animate-holo-ambient,
+  .holo-static::after,
+  .holo-ambient-scanlines::before,
+  .holo-ambient-scanlines::after {
+    animation: none;
+  }
+}

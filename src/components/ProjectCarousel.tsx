@@ -209,6 +209,7 @@ export default function ProjectCarousel({
   const [displayIndex, setDisplayIndex] = useState<number | null>(currentIndex);
   const animatingRef = useRef(false);
 
+
   // Animate through steps when target changes
   useEffect(() => {
     if (currentIndex === null) {
@@ -266,6 +267,73 @@ export default function ProjectCarousel({
   const canGoNext = currentIndex !== null && currentIndex < projects.length - 1;
   const canGoPrev = currentIndex !== null && currentIndex > 0;
 
+  // Track touch/swipe gestures
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastWheelRef = useRef<number>(0);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0]!.clientX,
+        y: e.touches[0]!.clientY,
+      };
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStartRef.current || e.changedTouches.length !== 1) {
+        touchStartRef.current = null;
+        return;
+      }
+
+      const touchEnd = {
+        x: e.changedTouches[0]!.clientX,
+        y: e.changedTouches[0]!.clientY,
+      };
+
+      const deltaX = touchEnd.x - touchStartRef.current.x;
+      const deltaY = touchEnd.y - touchStartRef.current.y;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      // Require minimum swipe distance and horizontal dominance
+      if (absX > 80 && absX > absY * 2) {
+        if (deltaX > 0) {
+          goPrev();
+        } else {
+          goNext();
+        }
+      }
+
+      touchStartRef.current = null;
+    },
+    [goNext, goPrev],
+  );
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+
+      // Throttle wheel events
+      const now = Date.now();
+      if (now - lastWheelRef.current < 300) return;
+
+      // Use deltaX for horizontal scroll, fall back to deltaY
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+      if (Math.abs(delta) > 30) {
+        lastWheelRef.current = now;
+        if (delta > 0) {
+          goNext();
+        } else {
+          goPrev();
+        }
+      }
+    },
+    [goNext, goPrev],
+  );
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -321,13 +389,14 @@ export default function ProjectCarousel({
           className="fixed inset-0 z-[2000] font-mono"
           style={{
             fontFamily: "'JetBrains Mono', monospace",
-            touchAction: "none",
+            touchAction: "pan-y",
             perspective: "1200px",
           }}
           onContextMenu={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
         >
           {/* Backdrop - click to close */}
           <div

@@ -100,7 +100,6 @@ export default function Home() {
           }}
         >
           <HeroSection offset={coordinates.hero} />
-          <AboutSection offset={coordinates.about} />
           <ProjectsSection offset={coordinates.projects} />
           <GallerySection offset={coordinates.gallery} />
           <ContactSection offset={coordinates.contact} />
@@ -116,8 +115,8 @@ export default function Home() {
               y: ["37vh", "37vh", "0vh", "0vh", "0vh"],
             }}
             transition={{
-              duration: 10,
-              times: [0, 0.6, 0.7, 0.8, 1],
+              duration: 8.5,
+              times: [0, 0.7, 0.8, 0.9, 1],
               ease: [0.65, 0, 0.35, 1],
             }}
             onAnimationComplete={() => setShowMosaic(false)}

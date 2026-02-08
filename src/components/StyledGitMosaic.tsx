@@ -5,8 +5,9 @@ import {
   colorSchemes,
 } from "git-mosaic";
 import { animate, useMotionValue } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { ExternalLink } from "lucide-react";
+import { useCanvasContext } from "@hunterchen/canvas";
 
 // Initial parameters (intro state)
 const INITIAL = {
@@ -104,6 +105,18 @@ export default function StyledGitMosaic() {
   const mosaicRef = useRef<GitMosaicHandle>(null);
   const fibonacciColorsRef = useRef<string[]>([]);
   const currentPresetRef = useRef<CyclePreset>("nebula");
+
+  // Get canvas scale to transform mouse coordinates correctly when zoomed
+  const { scale } = useCanvasContext();
+
+  // Transform mouse coordinates to account for canvas zoom
+  const handleMouseTransform = useCallback(
+    (x: number, y: number) => {
+      const s = scale.get();
+      return { x: x / s, y: y / s };
+    },
+    [scale],
+  );
 
   // Motion values for smooth interpolation
   const speed = useMotionValue(INITIAL.speed);
@@ -387,6 +400,7 @@ export default function StyledGitMosaic() {
         spiralClockwise={spiralClockwise}
         fadeInDuration={1.67}
         showAllDays={true}
+        mouseTransform={handleMouseTransform}
       />
       <a
         href="https://github.com/hunterchen7/git-mosaic"

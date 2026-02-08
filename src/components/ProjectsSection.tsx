@@ -27,14 +27,14 @@ const featuredProjects: Project[] = [
   {
     id: "calc",
     title: "calc",
-    overview: "Cross-platform TI-84 Plus CE emulator with custom Rust core",
+    overview:
+      "Cross-platform TI-84 Plus CE emulator with custom Rust implementation of eZ80 CPU & accompanying peripherals",
     description: (
       <>
         A TI-84 Plus CE emulator for Android, iOS, and Web. Features an eZ80 CPU
-        implementation in Rust, implementation of memory, bus, and various
-        peripherals, including a 320x240 LCD rendering at 60 FPS, and full
-        keypad support. Supports dual backend to switch between Rust
-        implementation and the C++ based{" "}
+        implementation in Rust, with accompanying memory, including a 320x240
+        LCD rendering at 60 FPS, and full keypad support. Supports dual backend
+        to switch between Rust implementation and the C++ based{" "}
         <a
           href="https://github.com/CE-Programming/CEmu"
           target="_blank"
@@ -74,6 +74,7 @@ const featuredProjects: Project[] = [
       "A Chrome MV3 extension for viewing PDFs with virtualized rendering, annotations (highlights, notes, ink drawing), zoom controls, and persistent state. AI features include term extraction, page summaries, RAG-based chat with Gemini, and text-to-speech via ElevenLabs. Built for Hack the Valley 2025",
     tech: ["TypeScript", "React", "Chrome Extension"],
     github: "https://github.com/WangNatalie/documind",
+    images: ["/projects/documind/image.png"],
   },
   {
     id: "stabl",
@@ -106,7 +107,7 @@ const featuredProjects: Project[] = [
     tech: ["TypeScript", "React", "Canvas"],
     github: "https://github.com/hunterchen7/git-mosaic",
     demo: "https://git-mosaic.pages.dev/",
-    video: "/projects/mosaic/video.webm",
+    // video: "/projects/mosaic/video.webm",
   },
 ];
 
@@ -575,9 +576,12 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
         {/* See more button - opens carousel at last viewed position */}
         <button
           onClick={() => setCarouselIndex(lastOpenedIndex)}
-          className="mt-6 text-sm text-fuchsia-400 hover:text-fuchsia-300 transition-colors"
+          className="group mt-6 text-sm"
         >
-          see more →
+          <span className="text-fuchsia-300/80 group-hover:text-fuchsia-200 transition-colors">
+            see more →
+          </span>
+          <span className="block h-0 max-w-0 border-b border-fuchsia-300/60 transition-all duration-200 group-hover:max-w-full group-hover:border-fuchsia-200" />
         </button>
 
         {/* Project Carousel */}

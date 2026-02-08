@@ -1,6 +1,7 @@
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { motion } from "framer-motion";
 import StyledGitMosaic from "./StyledGitMosaic";
+import { AnimatedLink } from "./AnimatedLink";
 
 interface HeroSectionProps {
   offset: SectionCoordinates;
@@ -34,54 +35,29 @@ export default function HeroSection({ offset }: HeroSectionProps) {
 
           <p className="mx-auto md:mt-6 text-base md:text-lg text-fuchsia-300/80 w-[90vw] md:w-auto">
             cs @{" "}
-            <a
-              href="https://www.uwo.ca"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fuchsia-300 underline underline-offset-2 hover:text-fuchsia-200"
-            >
+            <AnimatedLink textClassName="text-fuchsia-400" href="https://www.uwo.ca">
               western university
-            </a>{" "}
+            </AnimatedLink>{" "}
             '26, frontend & mobile @{" "}
-            <a
-              href="https://geneial.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fuchsia-300 underline underline-offset-2 hover:text-fuchsia-200"
-            >
+            <AnimatedLink textClassName="text-fuchsia-400" href="https://geneial.com">
               geneial
-            </a>
+            </AnimatedLink>
             .
           </p>
 
           <p className="mx-auto mt-8 text-base md:text-lg text-fuchsia-300/80 w-[90vw] md:w-auto">
             see my{" "}
-            <a
-              href="https://hunterchen.ca/resume.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fuchsia-300 underline underline-offset-2 hover:text-fuchsia-200"
-            >
+            <AnimatedLink textClassName="text-fuchsia-400" href="https://hunterchen.ca/resume.pdf">
               resume
-            </a>
+            </AnimatedLink>
             , or find me on{" "}
-            <a
-              href="https://github.com/hunterchen7"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fuchsia-300 underline underline-offset-2 hover:text-fuchsia-200"
-            >
+            <AnimatedLink textClassName="text-fuchsia-400" href="https://github.com/hunterchen7">
               github
-            </a>
+            </AnimatedLink>
             {" and "}
-            <a
-              href="https://www.linkedin.com/in/hunterchen"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fuchsia-300 underline underline-offset-2 hover:text-fuchsia-200"
-            >
+            <AnimatedLink textClassName="text-fuchsia-400" href="https://www.linkedin.com/in/hunterchen">
               linkedin
-            </a>
+            </AnimatedLink>
             .
           </p>
         </div>
