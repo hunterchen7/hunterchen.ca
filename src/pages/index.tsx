@@ -1,10 +1,11 @@
 import Head from "next/head";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Canvas,
   DefaultCanvasBackground,
   DefaultIntroContent,
   DefaultWrapperBackground,
+  useCanvasContext,
   canvasWidth,
   canvasHeight,
   GROW_TRANSITION,
@@ -32,6 +33,21 @@ const BOX_GRADIENT =
 
 // Dot color (warm purple highlight)
 const DOT_COLOR = "#7a5a99";
+
+function CanvasMoveWatcher({ onMove }: { onMove: () => void }) {
+  const { x, y, scale, animationStage } = useCanvasContext();
+
+  useEffect(() => {
+    if (animationStage < 2) return;
+
+    const unsubs = [x, y, scale].map((v) =>
+      v.on("change", onMove),
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [x, y, scale, animationStage, onMove]);
+
+  return null;
+}
 
 export default function Home() {
   const [showMosaic, setShowMosaic] = useState(true);
@@ -99,6 +115,9 @@ export default function Home() {
             duration: BLUR_TRANSITION.duration + 2,
           }}
         >
+          {showMosaic && (
+            <CanvasMoveWatcher onMove={() => setShowMosaic(false)} />
+          )}
           <HeroSection offset={coordinates.hero} />
           <ProjectsSection offset={coordinates.projects} />
           <GallerySection offset={coordinates.gallery} />

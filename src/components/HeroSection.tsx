@@ -54,9 +54,13 @@ export default function HeroSection({ offset }: HeroSectionProps) {
             <AnimatedLink textClassName="text-fuchsia-400" href="https://github.com/hunterchen7">
               github
             </AnimatedLink>
-            {" and "}
+            {", "}
             <AnimatedLink textClassName="text-fuchsia-400" href="https://www.linkedin.com/in/hunterchen">
               linkedin
+            </AnimatedLink>
+            {", and "}
+            <AnimatedLink textClassName="text-fuchsia-400" href="https://x.com/hunterchen_7">
+              x
             </AnimatedLink>
             .
           </p>

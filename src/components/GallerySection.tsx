@@ -125,11 +125,7 @@ const HoloFrameContent = ({
               filter: "brightness(2) saturate(0)",
             }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-          >
-            <span className="text-purple-500/30 text-xs font-mono tracking-widest uppercase">
-              [ offline ]
-            </span>
-          </motion.div>
+          ></motion.div>
         )}
       </AnimatePresence>
 

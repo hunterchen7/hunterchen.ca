@@ -97,7 +97,7 @@ function ProjectCard3D({
       onClick={onClick}
     >
       <div
-        className={`w-[min(80vw,80vh)] aspect-[9/16] md:aspect-[5/4] bg-fuchsia-950/70 rounded-2xl overflow-hidden shadow-2xl flex flex-col cursor-auto ${
+        className={`w-[min(80vw,80vh)] aspect-[9/16] md:aspect-[7/6] bg-fuchsia-950/70 rounded-2xl overflow-hidden shadow-2xl flex flex-col cursor-auto ${
           isCenter
             ? "ring-2 ring-fuchsia-500/50 border border-fuchsia-800/40"
             : ""
@@ -386,6 +386,7 @@ export default function ProjectCarousel({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
           className="fixed inset-0 z-[2000] font-mono"
           style={{
             fontFamily: "'JetBrains Mono', monospace",

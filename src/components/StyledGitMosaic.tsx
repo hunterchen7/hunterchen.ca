@@ -3,7 +3,7 @@ import {
   type GitMosaicHandle,
   type GitMosaicProps,
   colorSchemes,
-} from "git-mosaic";
+} from "../vendor/git-mosaic";
 import { animate, useMotionValue } from "framer-motion";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { ExternalLink } from "lucide-react";
@@ -403,7 +403,7 @@ export default function StyledGitMosaic() {
         mouseTransform={handleMouseTransform}
       />
       <a
-        href="https://github.com/hunterchen7/git-mosaic"
+        href="https://git-mosaic.pages.dev"
         target="_blank"
         rel="noopener noreferrer"
         className="absolute right-2 top-2 p-2 text-white/60 opacity-0 transition-all hover:text-white group-hover:opacity-100"
