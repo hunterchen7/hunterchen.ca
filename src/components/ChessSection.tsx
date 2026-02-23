@@ -7,6 +7,7 @@ import { getLegalMovesUCI, uciToChessJsMove } from "../chess/utils";
 import type { EngineState } from "../chess/types";
 import ChessBoard from "./chess/ChessBoard";
 import PromotionPicker from "./chess/PromotionPicker";
+import Confetti from "./chess/Confetti";
 import { AnimatedLink } from "./AnimatedLink";
 
 interface ChessSectionProps {
@@ -137,12 +138,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
         setEngineState((prev) => ({ ...prev, isThinking: false }));
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    engineState.isReady,
-    engineState.isThinking,
-    fenHistory,
-    engineColor,
-  ]);
+  }, [engineState.isReady, engineState.isThinking, fenHistory, engineColor]);
 
   const clearSelection = () => {
     setSelectedSquare(null);
@@ -168,8 +164,10 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     const piece = game.get(from as Square);
     if (!piece || piece.type !== "p") return false;
     const targetRank = to[1];
-    return (piece.color === "w" && targetRank === "8") ||
-           (piece.color === "b" && targetRank === "1");
+    return (
+      (piece.color === "w" && targetRank === "8") ||
+      (piece.color === "b" && targetRank === "1")
+    );
   };
 
   const makeMove = (from: string, to: string) => {
@@ -261,6 +259,14 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   };
 
   const gameStatus = getGameStatus();
+  const playerWon = game.isCheckmate() && game.turn() !== playerColor;
+  const [confettiKey, setConfettiKey] = useState(0);
+  const showConfetti = confettiKey > 0;
+
+  // Trigger confetti when player wins
+  useEffect(() => {
+    if (playerWon) setConfettiKey((k) => k + 1);
+  }, [playerWon]);
 
   // Highlight last move, selected square, and legal moves
   const customSquareStyles: Record<string, React.CSSProperties> = {};
@@ -314,7 +320,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             >
               fine-tuned a Maia model
             </AnimatedLink>{" "}
-            on ~2000 of my own games for it to play like me.
+            on ~2000 of my own games for it to play like me. Play against it
+            here!
           </p>
 
           {/* Chessboard */}
@@ -342,6 +349,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 boxShadow: "0 0 20px rgba(192, 132, 252, 0.15)",
               }}
             />
+            {showConfetti && <Confetti key={confettiKey} />}
             {pendingPromotion && (
               <PromotionPicker
                 color={playerColor}
