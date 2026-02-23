@@ -10,7 +10,7 @@ export const cards: Card[] = [
     id: "1",
     front: "Work 🧑‍💻",
     back: (
-      <div className="text-xs md:text-sm lg:text-base ">
+      <div className="text-[11px] md:text-sm lg:text-base ">
         I'm currently building frontend & mobile w/ React & React Native @{" "}
         <AnimatedLink href="https://geneial.com">geneial</AnimatedLink>. I've
         also previously built fullstack web apps for{" "}
@@ -55,16 +55,23 @@ export const cards: Card[] = [
     front: "Hackathons 💻",
     back: (
       <div className="flex flex-col gap-2 -mx-4 md:mx-auto">
-        <div className="text-xs lg:text-sm">
-          I'm an avid hackathon attendee, and I've also organized one! I led the
-          team to build the website & web dashboards for{" "}
+        <div className="text-[11px] md:text-sm">
+          avid hackathon attendee and ex-organized! led the team to build web
+          for{" "}
           <AnimatedLink
             textClassName="text-fuchsia-400"
-            href="https://www.hackwestern.com"
+            href="https://2024.hackwestern.com"
           >
-            Hack Western
+            Hack Western 11
           </AnimatedLink>{" "}
-          11 and 12,{" "}
+          and{" "}
+          <AnimatedLink
+            textClassName="text-fuchsia-400"
+            href="https://hackwestern.com"
+          >
+            Hack Western 12
+          </AnimatedLink>
+          ,{" "}
           <AnimatedLink
             textClassName="text-fuchsia-400"
             href="https://www.uwo.ca"
@@ -77,7 +84,7 @@ export const cards: Card[] = [
           src="hero/team.webp"
           className="w-[320px] mx-auto rounded-md"
         />
-        <p className="text-center text-[10.5px] md:text-xs -mt-1">
+        <p className="text-center text-[10px] md:text-xs -mt-1">
           my team @ hack western 12 💜
         </p>
       </div>

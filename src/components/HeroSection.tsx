@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  CanvasComponent,
-  type SectionCoordinates,
-} from "@hunterchen/canvas";
+import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import FlipCard from "./hero/FlipCard";
 import { cards } from "./hero/cards";
 
@@ -42,8 +39,11 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 />
               </motion.div>
               <div>
-                <p className="text-sm md:text-base">hey, I'm Hunter! <span className="inline-block animate-wave">👋</span></p>
-                <p className="text-sm md:text-base  mt-3">
+                <p className="text-xs md:text-sm lg:text-base">
+                  hey, I'm Hunter!{" "}
+                  <span className="inline-block animate-wave">👋</span>
+                </p>
+                <p className="text-xs md:text-sm lg:text-base mt-3">
                   welcome to my personal website, have a look around!
                 </p>
               </div>
@@ -59,7 +59,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   stiffness: 100,
                   damping: 15,
                 }}
-                className={`${card.gridArea} min-h-28 md:min-h-44`}
+                className={`${card.gridArea} min-h-24 md:min-h-44`}
               >
                 <FlipCard
                   card={card}
