@@ -11,8 +11,8 @@ export default function ProjectsCard() {
           <source src="/projects/ti84ce/video.webm" type="video/webm" />
         </video>
       </div>
-      <div className="text-[11px] md:text-sm lg:text-base -mr-4 -ml-4 md:mr-0 md:ml-3 col-span-3 md:col-span-2">
-        I recently made a cross-platform{" "}
+      <div className="text-[11px] my-auto md:text-sm lg:text-base -mr-4 -ml-4 md:mr-0 md:ml-3 col-span-3 md:col-span-2">
+        built a cross-platform{" "}
         <AnimatedLink href="https://ti84ce.pages.dev">
           TI-84 Plus CE emulator
         </AnimatedLink>
