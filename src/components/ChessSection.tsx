@@ -6,6 +6,7 @@ import { MODEL_URL } from "../chess/config";
 import { getLegalMovesUCI, uciToChessJsMove } from "../chess/utils";
 import type { EngineState } from "../chess/types";
 import ChessBoard from "./chess/ChessBoard";
+import PromotionPicker from "./chess/PromotionPicker";
 import { AnimatedLink } from "./AnimatedLink";
 
 interface ChessSectionProps {
@@ -65,6 +66,10 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [draggedSquare, setDraggedSquare] = useState<Square | null>(null);
   const [legalMoveSquares, setLegalMoveSquares] = useState<Square[]>([]);
+  const [pendingPromotion, setPendingPromotion] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
 
   const engineRef = useRef<Lc0Engine | null>(null);
 
@@ -159,10 +164,22 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     setLegalMoveSquares([]);
   };
 
+  const isPromotionMove = (from: string, to: string) => {
+    const piece = game.get(from as Square);
+    if (!piece || piece.type !== "p") return false;
+    const targetRank = to[1];
+    return (piece.color === "w" && targetRank === "8") ||
+           (piece.color === "b" && targetRank === "1");
+  };
+
   const makeMove = (from: string, to: string) => {
-    // Try with queen promotion first, then without
-    const move =
-      game.move({ from, to, promotion: "q" }) ?? game.move({ from, to });
+    if (isPromotionMove(from, to)) {
+      setPendingPromotion({ from, to });
+      clearSelection();
+      return true;
+    }
+
+    const move = game.move({ from, to });
     if (!move) return false;
 
     clearSelection();
@@ -170,6 +187,21 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     setFenHistory((prev) => [...prev, game.fen()]);
     forceUpdate();
     return true;
+  };
+
+  const completePromotion = (promotion: "q" | "r" | "b" | "n") => {
+    if (!pendingPromotion) return;
+    const { from, to } = pendingPromotion;
+    const move = game.move({ from, to, promotion });
+    setPendingPromotion(null);
+    if (!move) return;
+    setLastMoveSquares({ from: move.from, to: move.to });
+    setFenHistory((prev) => [...prev, game.fen()]);
+    forceUpdate();
+  };
+
+  const cancelPromotion = () => {
+    setPendingPromotion(null);
   };
 
   const onSquareClick = (square: string) => {
@@ -286,7 +318,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
           </p>
 
           {/* Chessboard */}
-          <div className="w-[800px] aspect-square">
+          <div className="w-[800px] aspect-square relative">
             <ChessBoard
               position={game.fen()}
               onSquareClick={onSquareClick}
@@ -310,6 +342,15 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 boxShadow: "0 0 20px rgba(192, 132, 252, 0.15)",
               }}
             />
+            {pendingPromotion && (
+              <PromotionPicker
+                color={playerColor}
+                file={pendingPromotion.to.charCodeAt(0) - 97}
+                orientation={playerColor}
+                onSelect={completePromotion}
+                onCancel={cancelPromotion}
+              />
+            )}
           </div>
 
           {/* WDL bar */}
