@@ -18,7 +18,7 @@ export const cards: Card[] = [
         >
           geneial
         </AnimatedLink>
-        . I've also previously built fullstack web appliactions for{" "}
+        . I've also previously built fullstack web applications for{" "}
         <AnimatedLink textClassName="text-fuchsia-400" href="https://mora.do">
           mora.do
         </AnimatedLink>{" "}
