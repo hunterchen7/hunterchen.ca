@@ -16,4 +16,5 @@ export interface ChessBoardProps {
   boardStyle?: React.CSSProperties;
   isDraggable?: boolean;
   animationDuration?: number;
+  orientation?: "w" | "b";
 }

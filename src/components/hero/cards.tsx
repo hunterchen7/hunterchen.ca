@@ -76,7 +76,9 @@ export const cards: Card[] = [
           src="hero/team.webp"
           className="w-[320px] mx-auto rounded-md"
         />
-        <p className="text-center text-xs -mt-1">my team at Hack Western 12</p>
+        <p className="text-center text-[10.5px] md:text-xs -mt-1">
+          my team at hack western 12 💜
+        </p>
       </div>
     ),
     gridArea: "[grid-area:4/1/7/4] md:[grid-area:4/1/6/3]",

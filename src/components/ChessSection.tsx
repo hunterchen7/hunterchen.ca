@@ -54,6 +54,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   const [engineState, setEngineState] =
     useState<EngineState>(INITIAL_ENGINE_STATE);
   const [gameStarted, setGameStarted] = useState(false);
+  const [playerColor, setPlayerColor] = useState<"w" | "b">("w");
+  const engineColor = playerColor === "w" ? "b" : "w";
   const [lastMoveSquares, setLastMoveSquares] = useState<{
     from: string;
     to: string;
@@ -88,13 +90,13 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     };
   }, [startGame]);
 
-  // Request engine move when it's black's turn
+  // Request engine move when it's the engine's turn
   useEffect(() => {
     if (
       !engineState.isReady ||
       engineState.isThinking ||
       game.isGameOver() ||
-      game.turn() !== "b"
+      game.turn() !== engineColor
     ) {
       return;
     }
@@ -128,7 +130,13 @@ export default function ChessSection({ offset }: ChessSectionProps) {
       .catch(() => {
         setEngineState((prev) => ({ ...prev, isThinking: false }));
       });
-  }, [engineState.isReady, engineState.isThinking, game, fenHistory]);
+  }, [
+    engineState.isReady,
+    engineState.isThinking,
+    game,
+    fenHistory,
+    engineColor,
+  ]);
 
   const clearSelection = () => {
     setSelectedSquare(null);
@@ -139,7 +147,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   const onDragStart = (square: string) => {
     const sq = square as Square;
     const piece = game.get(sq);
-    if (!piece || piece.color !== "w") return;
+    if (!piece || piece.color !== playerColor) return;
     const moves = game.moves({ square: sq, verbose: true });
     setDraggedSquare(sq);
     setLegalMoveSquares(moves.map((m) => m.to));
@@ -165,7 +173,11 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   };
 
   const onSquareClick = (square: string) => {
-    if (game.turn() !== "w" || engineState.isThinking || game.isGameOver()) {
+    if (
+      game.turn() !== playerColor ||
+      engineState.isThinking ||
+      game.isGameOver()
+    ) {
       return;
     }
 
@@ -184,7 +196,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
     // Select a new piece if it's ours
     const piece = game.get(square as Square);
-    if (piece && piece.color === "w") {
+    if (piece && piece.color === playerColor) {
       const moves = game.moves({ square: square as Square, verbose: true });
       setSelectedSquare(square as Square);
       setLegalMoveSquares(moves.map((m) => m.to));
@@ -199,12 +211,13 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     setFenHistory([newGame.fen()]);
     setLastMoveSquares(null);
     clearSelection();
+    setPlayerColor((prev) => (prev === "w" ? "b" : "w"));
   };
 
   const getGameStatus = () => {
     if (game.isCheckmate()) {
-      return game.turn() === "w"
-        ? "Checkmate - Black wins!"
+      return game.turn() === playerColor
+        ? "Checkmate - You lose!"
         : "Checkmate - You win!";
     }
     if (game.isStalemate()) return "Stalemate!";
@@ -254,7 +267,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
           <h2 className="text-xl font-thin text-fuchsia-200">
             play against my chess AI
           </h2>
-          <p className="text-sm max-w-[600px] text-fuchsia-300/60 text-center -mt-2">
+          <p className="text-sm max-w-[600px] text-purple-200/70 text-center -mt-2">
             <AnimatedLink
               href="https://www.maiachess.com/"
               className="text-fuchsia-300/80"
@@ -262,8 +275,14 @@ export default function ChessSection({ offset }: ChessSectionProps) {
               Maia
             </AnimatedLink>{" "}
             is a series of neural network chess models trained on human games to
-            play like humans at various levels; I fine-tuned a Maia model on
-            ~2000 of my own games for it to play like me.
+            play like humans at various levels; I{" "}
+            <AnimatedLink
+              href="https://github.com/hunterchen7/hunter-chessbot/"
+              className="text-fuchsia-300/80"
+            >
+              fine-tuned a Maia model
+            </AnimatedLink>{" "}
+            on ~2000 of my own games for it to play like me.
           </p>
 
           {/* Chessboard */}
@@ -279,10 +298,11 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 engineState.isReady &&
                 !engineState.isThinking &&
                 !game.isGameOver() &&
-                game.turn() === "w"
+                game.turn() === playerColor
               }
               animationDuration={200}
               squareStyles={customSquareStyles}
+              orientation={playerColor}
               darkSquareColor="#4a3562"
               lightSquareColor="#d4c5e2"
               boardStyle={{
@@ -295,13 +315,15 @@ export default function ChessSection({ offset }: ChessSectionProps) {
           {/* WDL bar */}
           <div className="w-[800px] -mt-2">
             <WdlBar wdl={engineState.wdl ?? [0.5, 0, 0.5]} />
-            {engineState.wdl && (
-              <div className="flex justify-between text-[10px] text-fuchsia-300/40 mt-1 font-mono">
-                <span>white {Math.round(engineState.wdl[0] * 100)}%</span>
-                <span>draw {Math.round(engineState.wdl[1] * 100)}%</span>
-                <span>black {Math.round(engineState.wdl[2] * 100)}%</span>
-              </div>
-            )}
+            <div className="flex justify-between text-sm text-fuchsia-300/80 mt-1 font-mono">
+              <span>
+                white {Math.round((engineState.wdl?.[0] ?? 0.5) * 100)}%
+              </span>
+              <span>draw {Math.round((engineState.wdl?.[1] ?? 0) * 100)}%</span>
+              <span>
+                black {Math.round((engineState.wdl?.[2] ?? 0.5) * 100)}%
+              </span>
+            </div>
           </div>
 
           {/* Status area */}
@@ -316,21 +338,21 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                     }}
                   />
                 </div>
-                <span className="text-xs text-fuchsia-300/50 font-mono">
+                <span className=" text-fuchsia-300/50 font-mono">
                   {engineState.loadingMessage}
                 </span>
               </div>
             )}
 
             {engineState.isThinking && (
-              <span className="text-xs text-fuchsia-300/50 font-mono animate-pulse">
+              <span className=" text-fuchsia-300/50 font-mono animate-pulse">
                 thinking...
               </span>
             )}
 
             {gameStatus && (
               <div className="flex flex-col items-center gap-2">
-                <span className="text-sm text-fuchsia-200">{gameStatus}</span>
+                <span className=" text-fuchsia-200">{gameStatus}</span>
                 <button
                   onClick={resetGame}
                   className="px-4 py-1.5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-900/30 text-fuchsia-200 text-xs hover:bg-fuchsia-900/50 transition-colors cursor-pointer"
@@ -344,17 +366,17 @@ export default function ChessSection({ offset }: ChessSectionProps) {
               engineState.isReady &&
               !engineState.isThinking &&
               !gameStatus &&
-              game.turn() === "w" && (
+              game.turn() === playerColor && (
                 <button
                   onClick={resetGame}
-                  className="text-xs text-fuchsia-300/40 hover:text-fuchsia-300/70 transition-colors cursor-pointer"
+                  className="text-fuchsia-300/40 hover:text-fuchsia-300/70 transition-colors cursor-pointer"
                 >
                   reset
                 </button>
               )}
 
             {engineState.error && (
-              <span className="text-xs text-red-400">{engineState.error}</span>
+              <span className="text-red-400">{engineState.error}</span>
             )}
           </div>
         </div>

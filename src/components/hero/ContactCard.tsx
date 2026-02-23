@@ -5,19 +5,19 @@ const socialLinkClass =
 
 export default function ContactCard() {
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full">
+    <div className="text-xs md:text-sm flex flex-col items-center justify-center h-full w-full">
       <a
         href="mailto:hello@hunterchen.ca"
         className="group mb-6 text-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-fuchsia-300/80 group-hover:text-fuchsia-200 transition-colors">
+        <span className="text-fuchsia-300/80 group-hover:text-fuchsia-200 transition-colors text-sm md:text-base">
           hello@hunterchen.ca
         </span>
         <span className="block h-0 max-w-0 border-b border-fuchsia-300/60 transition-all duration-200 group-hover:max-w-full group-hover:border-fuchsia-200" />
       </a>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 scale-90 md:scale-100 -mt-4 md:mt-auto">
         <a
           href="https://www.linkedin.com/in/hunterchen"
           target="_blank"

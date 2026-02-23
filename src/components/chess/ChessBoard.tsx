@@ -39,11 +39,13 @@ function PieceOnSquare({
   square,
   anim,
   animationDuration,
+  flipped,
 }: {
   piece: PieceChar;
   square: string;
   anim: AnimatingPiece | null;
   animationDuration: number;
+  flipped: boolean;
 }) {
   const PieceComponent = PIECE_MAP[piece];
   const grid = squareToGrid(square);
@@ -62,9 +64,10 @@ function PieceOnSquare({
       return;
     }
 
-    // Start at the "from" position offset
-    const dx = (anim.fromCol - anim.toCol) * 100;
-    const dy = (anim.fromRow - anim.toRow) * 100;
+    // Start at the "from" position offset (negate when flipped since visual grid is reversed)
+    const sign = flipped ? -1 : 1;
+    const dx = (anim.fromCol - anim.toCol) * 100 * sign;
+    const dy = (anim.fromRow - anim.toRow) * 100 * sign;
     setOffset({ x: dx, y: dy });
 
     // Next frame: animate to (0, 0)
@@ -81,7 +84,7 @@ function PieceOnSquare({
       cancelAnimationFrame(raf);
       clearTimeout(timer);
     };
-  }, [isTarget, anim, animationDuration]);
+  }, [isTarget, anim, animationDuration, flipped]);
 
   return (
     <div
@@ -117,7 +120,9 @@ export default function ChessBoard({
   boardStyle,
   isDraggable = false,
   animationDuration = 200,
+  orientation = "w",
 }: ChessBoardProps) {
+  const flipped = orientation === "b";
   const { scale } = useCanvasContext();
   const boardRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -233,7 +238,7 @@ export default function ChessBoard({
       }
 
       const boardRect = boardRef.current.getBoundingClientRect();
-      const targetSquare = resolveDropSquare(clientX, clientY, boardRect);
+      const targetSquare = resolveDropSquare(clientX, clientY, boardRect, flipped);
 
       if (targetSquare && targetSquare !== dragState.fromSquare) {
         skipNextAnimRef.current = true;
@@ -269,8 +274,8 @@ export default function ChessBoard({
         }}
       >
         {Array.from({ length: 64 }, (_, i) => {
-          const row = Math.floor(i / 8);
-          const col = i % 8;
+          const row = flipped ? 7 - Math.floor(i / 8) : Math.floor(i / 8);
+          const col = flipped ? 7 - (i % 8) : i % 8;
           const square = gridToSquare(row, col);
           const piece = currentPosition[square];
           const light = isLightSquare(square);
@@ -316,6 +321,7 @@ export default function ChessBoard({
                     square={square}
                     anim={anim}
                     animationDuration={animationDuration}
+                    flipped={flipped}
                   />
                 </div>
               )}

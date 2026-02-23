@@ -49,13 +49,14 @@ export function resolveDropSquare(
   clientX: number,
   clientY: number,
   boardRect: DOMRect,
+  flipped = false,
 ): string | null {
   const relX = (clientX - boardRect.left) / boardRect.width;
   const relY = (clientY - boardRect.top) / boardRect.height;
 
   if (relX < 0 || relX >= 1 || relY < 0 || relY >= 1) return null;
 
-  const col = Math.floor(relX * 8);
-  const row = Math.floor(relY * 8);
+  const col = flipped ? 7 - Math.floor(relX * 8) : Math.floor(relX * 8);
+  const row = flipped ? 7 - Math.floor(relY * 8) : Math.floor(relY * 8);
   return gridToSquare(row, col);
 }

@@ -15,8 +15,11 @@ export default function FunCard() {
       <div>
         <motion.img
           src="hero/rocks.webp"
-          className="rounded-md mt-6 md:my-2 max-h-[200px] md:max-h-full mx-auto"
+          className="rounded-md mt-4 md:my-2 max-h-[200px] md:max-h-[300px] mx-auto"
         />
+        <p className="text-[10.5px] md:text-xs text-center mt-1">
+          Kananskis, Alberta 🇨🇦
+        </p>
       </div>
     </div>
   );
