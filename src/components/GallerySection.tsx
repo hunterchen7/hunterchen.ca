@@ -4,7 +4,7 @@ import {
   type SectionCoordinates,
 } from "@hunterchen/canvas";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Camera, Aperture, ImageIcon, Telescope } from "lucide-react";
 import { fetchExifFromUrl, type ExifData } from "../utils/exif";
@@ -89,6 +89,49 @@ const photos: Photo[] = [
 
 const CARD_WIDTH = 260;
 const CARD_HEIGHT = 300;
+const EASTER_EGG_API = "https://easter-egg-counter.hunterchen.workers.dev";
+
+const EasterEggCard = () => {
+  const [count, setCount] = useState<number | null>(null);
+
+  const handleClick = useCallback(async () => {
+    if (count !== null) return;
+
+    const already = sessionStorage.getItem("easter-egg-found");
+    if (already) {
+      setCount(parseInt(already));
+      return;
+    }
+
+    try {
+      const res = await fetch(EASTER_EGG_API, { method: "POST" });
+      const data = await res.json();
+      setCount(data.count);
+      sessionStorage.setItem("easter-egg-found", data.count.toString());
+    } catch {
+      setCount(0);
+    }
+  }, [count]);
+
+  return (
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer"
+      onClick={handleClick}
+    >
+      <div className="text-fuchsia-200 text-sm font-light">you found me!</div>
+      {count !== null && count > 0 && (
+        <div className="text-fuchsia-400/50 text-xs mt-1">
+          you're visitor #{count}
+        </div>
+      )}
+      {count === null && (
+        <div className="text-fuchsia-400/50 text-xs mt-1 hover:text-fuchsia-300 transition-colors">
+          click me
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Shared polaroid content component
 const PolaroidCardContent = ({
@@ -450,12 +493,15 @@ export default function GallerySection({ offset }: GallerySectionProps) {
                 thumbnailUrl={photos[6]!.thumbnailUrl}
                 onImageClick={handleImageClick(photos[6]!)}
               />
-              <PolaroidCard
-                caption={photos[7]!.caption}
-                rotation={photos[7]!.rotation}
-                thumbnailUrl={photos[7]!.thumbnailUrl}
-                onImageClick={handleImageClick(photos[7]!)}
-              />
+              <div className="relative">
+                <EasterEggCard />
+                <PolaroidCard
+                  caption={photos[7]!.caption}
+                  rotation={photos[7]!.rotation}
+                  thumbnailUrl={photos[7]!.thumbnailUrl}
+                  onImageClick={handleImageClick(photos[7]!)}
+                />
+              </div>
             </div>
           </div>
         </div>

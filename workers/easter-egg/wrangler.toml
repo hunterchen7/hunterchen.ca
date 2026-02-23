@@ -1,0 +1,8 @@
+name = "easter-egg-counter"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+account_id = "e279bdf8038be9bfccc6dda153c9ac71"
+
+[[kv_namespaces]]
+binding = "EASTER_EGG"
+id = "bc7ccaee0ea44ef0be3c81136e9ef84f"
