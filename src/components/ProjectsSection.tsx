@@ -438,15 +438,9 @@ function ProjectCard({
       { threshold: 0.25 },
     );
 
-    // Wait 9 seconds after page load before starting video autoplay
-    const timeout = setTimeout(() => {
-      if (mediaRef.current) {
-        observer.observe(mediaRef.current);
-      }
-    }, 9000);
+    observer.observe(mediaRef.current);
 
     return () => {
-      clearTimeout(timeout);
       observer.disconnect();
     };
   }, []);

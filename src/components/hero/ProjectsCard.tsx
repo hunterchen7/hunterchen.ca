@@ -6,17 +6,17 @@ export default function ProjectsCard() {
 
   return (
     <div className="grid grid-cols-3">
-      <div className="rounded-3xl mb-3 overflow-hidden">
+      <div className="rounded-3xl mb-3 overflow-hidden hidden md:block">
         <video className="scale-[102%]" autoPlay loop muted playsInline>
           <source src="/projects/ti84ce/video.webm" type="video/webm" />
         </video>
       </div>
-      <div className="text-xs md:text-md lg:text-base -mr-4 ml-2 md:mr-0 md:ml-3 col-span-2">
+      <div className="text-xs md:text-md lg:text-base -mr-4 -ml-4 md:mr-0 md:ml-3 col-span-3 md:col-span-2">
         I recently made a cross-platform{" "}
         <AnimatedLink href="https://ti84ce.pages.dev">
           TI-84 Plus CE emulator
         </AnimatedLink>
-        ; along with the strongest{" "}
+        along with the strongest{" "}
         <AnimatedLink href="https://github.com/hunterchen7/CE-games#chess">
           chess engine
         </AnimatedLink>{" "}
