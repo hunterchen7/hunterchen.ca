@@ -1,65 +1,45 @@
 import type { SectionCoordinates, NavItem } from "@hunterchen/canvas";
+import { ChessKnight } from "lucide-react";
 
 /**
  * Canvas Layout (6000 x 4000):
  *
- *      [About]         [Projects]
+ *              [About]
  *
  *              [Hero]
  *
- *      [Gallery]       [Contact]
+ *      [Gallery]       [Projects]
  *
- * Grid layout with Hero centered, 2 sections top, 2 sections bottom
+ * Grid layout with Hero and About centered vertically, Gallery and Projects at bottom
  */
 
 // Layout constants
 const SECTION_WIDTH = 900;
 const SECTION_HEIGHT = 700;
 
-// Canvas dimensions
-const CANVAS_WIDTH = 6000;
-const CANVAS_HEIGHT = 4000;
-
-// Space-around: generous margins and gaps to use the full canvas
-const HORIZONTAL_MARGIN = 1400; // Distance from canvas edge (200px closer to center)
-const VERTICAL_MARGIN = 500; // Distance from canvas edge
-const VERTICAL_GAP = 450; // Gap between rows
-
-// Calculate positions (spread across canvas)
-const LEFT_X = HORIZONTAL_MARGIN;
-const RIGHT_X = CANVAS_WIDTH - HORIZONTAL_MARGIN - SECTION_WIDTH; // 3700
-const TOP_Y = VERTICAL_MARGIN;
-const MIDDLE_Y = TOP_Y + SECTION_HEIGHT + VERTICAL_GAP; // 1650
-const BOTTOM_Y = MIDDLE_Y + SECTION_HEIGHT + VERTICAL_GAP; // 2900
-
 export const coordinates = {
   hero: {
-    x: CANVAS_WIDTH / 2 - SECTION_WIDTH / 2, // Centered horizontally
-    y: MIDDLE_Y,
-    width: SECTION_WIDTH,
-    height: SECTION_HEIGHT,
+    x: 1200, // Centered horizontally
+    y: 800,
+    width: 1000,
+    height: 900,
   },
-  about: {
-    x: LEFT_X,
-    y: TOP_Y,
-    width: SECTION_WIDTH,
-    height: SECTION_HEIGHT,
-  },
+
   projects: {
-    x: RIGHT_X,
-    y: TOP_Y,
+    x: 1100,
+    y: 2340,
     width: 1200,
-    height: SECTION_HEIGHT,
+    height: 800,
+  },
+  chess: {
+    x: 3600,
+    y: 700,
+    width: 1200,
+    height: 1200,
   },
   gallery: {
-    x: LEFT_X,
-    y: BOTTOM_Y,
-    width: SECTION_WIDTH,
-    height: SECTION_HEIGHT,
-  },
-  contact: {
-    x: RIGHT_X,
-    y: BOTTOM_Y,
+    x: 3800,
+    y: 2400,
     width: SECTION_WIDTH,
     height: SECTION_HEIGHT,
   },
@@ -74,27 +54,16 @@ export const navItems: NavItem[] = [
     isHome: true,
   },
   {
-    id: "about",
-    label: "About",
-    icon: "User",
-    ...coordinates.about,
-  },
-  {
     id: "projects",
     label: "Projects",
     icon: "Code",
     ...coordinates.projects,
   },
+  { id: "chess", label: "Chess", icon: ChessKnight, ...coordinates.chess },
   {
     id: "gallery",
     label: "Gallery",
     icon: "Camera",
     ...coordinates.gallery,
-  },
-  {
-    id: "contact",
-    label: "Contact",
-    icon: "Mail",
-    ...coordinates.contact,
   },
 ];

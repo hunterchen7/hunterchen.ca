@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X,
   ChevronLeft,
   ChevronRight,
   Github,
@@ -98,7 +97,7 @@ function ProjectCard3D({
       onClick={onClick}
     >
       <div
-        className={`w-[min(80vw,80vh)] aspect-[9/16] md:aspect-[5/4] bg-fuchsia-950/70 rounded-2xl overflow-hidden shadow-2xl flex flex-col cursor-auto ${
+        className={`w-[min(80vw,80vh)] aspect-[9/16] md:aspect-[7/6] bg-fuchsia-950/70 rounded-2xl overflow-hidden shadow-2xl flex flex-col cursor-auto ${
           isCenter
             ? "ring-2 ring-fuchsia-500/50 border border-fuchsia-800/40"
             : ""
@@ -210,6 +209,7 @@ export default function ProjectCarousel({
   const [displayIndex, setDisplayIndex] = useState<number | null>(currentIndex);
   const animatingRef = useRef(false);
 
+
   // Animate through steps when target changes
   useEffect(() => {
     if (currentIndex === null) {
@@ -267,6 +267,73 @@ export default function ProjectCarousel({
   const canGoNext = currentIndex !== null && currentIndex < projects.length - 1;
   const canGoPrev = currentIndex !== null && currentIndex > 0;
 
+  // Track touch/swipe gestures
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastWheelRef = useRef<number>(0);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0]!.clientX,
+        y: e.touches[0]!.clientY,
+      };
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStartRef.current || e.changedTouches.length !== 1) {
+        touchStartRef.current = null;
+        return;
+      }
+
+      const touchEnd = {
+        x: e.changedTouches[0]!.clientX,
+        y: e.changedTouches[0]!.clientY,
+      };
+
+      const deltaX = touchEnd.x - touchStartRef.current.x;
+      const deltaY = touchEnd.y - touchStartRef.current.y;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      // Require minimum swipe distance and horizontal dominance
+      if (absX > 80 && absX > absY * 2) {
+        if (deltaX > 0) {
+          goPrev();
+        } else {
+          goNext();
+        }
+      }
+
+      touchStartRef.current = null;
+    },
+    [goNext, goPrev],
+  );
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+
+      // Throttle wheel events
+      const now = Date.now();
+      if (now - lastWheelRef.current < 300) return;
+
+      // Use deltaX for horizontal scroll, fall back to deltaY
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+      if (Math.abs(delta) > 30) {
+        lastWheelRef.current = now;
+        if (delta > 0) {
+          goNext();
+        } else {
+          goPrev();
+        }
+      }
+    },
+    [goNext, goPrev],
+  );
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -319,33 +386,24 @@ export default function ProjectCarousel({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
           className="fixed inset-0 z-[2000] font-mono"
           style={{
             fontFamily: "'JetBrains Mono', monospace",
-            touchAction: "none",
+            touchAction: "pan-y",
             perspective: "1200px",
           }}
           onContextMenu={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
         >
           {/* Backdrop - click to close */}
           <div
             className="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
             onClick={onClose}
           />
-
-          {/* Close button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="absolute right-6 top-6 z-50 rounded-full p-2 bg-fuchsia-950/80 border border-fuchsia-800/40 text-fuchsia-400 transition-colors hover:bg-fuchsia-900/80 hover:text-fuchsia-200 pointer-events-auto"
-          >
-            <X className="h-5 w-5" />
-          </button>
 
           {/* Navigation Arrows */}
           <button
@@ -396,7 +454,7 @@ export default function ProjectCarousel({
           </div>
 
           {/* Position indicators */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto">
+          <div className="absolute top-6 md:top-auto md:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto">
             {projects.map((_, idx) => (
               <button
                 key={idx}

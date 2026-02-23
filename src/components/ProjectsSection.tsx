@@ -25,16 +25,16 @@ interface Project {
 // Projects shown as cards on canvas
 const featuredProjects: Project[] = [
   {
-    id: "calc",
-    title: "calc",
-    overview: "Cross-platform TI-84 Plus CE emulator with custom Rust core",
+    id: "ti84ce",
+    title: "ti84ce",
+    overview:
+      "Cross-platform TI-84 Plus CE emulator with custom Rust implementation of eZ80 CPU & accompanying peripherals",
     description: (
       <>
         A TI-84 Plus CE emulator for Android, iOS, and Web. Features an eZ80 CPU
-        implementation in Rust, implementation of memory, bus, and various
-        peripherals, including a 320x240 LCD rendering at 60 FPS, and full
-        keypad support. Supports dual backend to switch between Rust
-        implementation and the C++ based{" "}
+        implementation in Rust, with accompanying memory, including a 320x240
+        LCD rendering at 60 FPS, and full keypad support. Supports dual backend
+        to switch between Rust implementation and the C++ based{" "}
         <a
           href="https://github.com/CE-Programming/CEmu"
           target="_blank"
@@ -50,8 +50,20 @@ const featuredProjects: Project[] = [
     tech: ["Rust", "C/C++", "Swift", "Kotlin", "TypeScript", "WASM"],
     github: "https://github.com/hunterchen7/calc",
     demo: "https://ti84ce.pages.dev/",
-    video: "/projects/calc/video.webm",
-    thumbnailVideo: "/projects/calc/video-thumb.webm",
+    video: "/projects/ti84ce/video.webm",
+    thumbnailVideo: "/projects/ti84ce/video-thumb.webm",
+  },
+  {
+    id: "play-lc0",
+    title: "play lc0",
+    overview:
+      "Play chess against 50+ chess neural networks in client-side, powered by WebGPU & ONNX Runtime. Also run engine-vs-engine tournaments with round-robin and Swiss formats.",
+    description:
+      "A fully client-side chess platform for playing against chess neural networks in the browser. Runs ONNX model inference via WebGPU (with WASM fallback) in a Web Worker. Features 50+ pre-configured networks ranging from ~800 to ~2800 Elo, including a model fine-tuned on my ~2000 of own games to play like me. Also supports custom ONNX model uploads, engine-vs-engine tournaments with round-robin/Swiss formats, and IndexedDB model caching. Demo shows a real-time 27 participant tournament with 8 running simultaneously (16 models loaded into VRAM). ",
+    tech: ["TypeScript", "React", "ONNX Runtime", "WebGPU", "WASM"],
+    github: "https://github.com/hunterchen7/play-lc0",
+    demo: "https://play-lc0.pages.dev",
+    video: "/projects/play-lc0/video.webm",
   },
   {
     id: "hackwestern",
@@ -59,20 +71,11 @@ const featuredProjects: Project[] = [
     overview:
       "Website, application & hacker portal for the 12th Iteration of Hack Western, Western University's flagship hackathon",
     description:
-      "12th iteration of Western University's flagship Hack Western in 2025. Led a team of 7 to build the event website, the application portal and live dashboard for hackers. Next.js web app with a postgres db.",
+      "12th iteration of Western University's flagship Hack Western in 2025. Led a team of 7 to build the promo website, the application portal and live dashboard for hackers. The promo website includes a custom-made canvas made from framer motion. Next.js web app with a postgres db.",
     tech: ["TypeScript", "React", "Next.js", "PostgreSQL"],
-    github: "https://github.com/hackwestern/hackwestern",
+    github: "https://github.com/hackwestern/hackwestern/tree/2025",
     demo: "https://archive.hackwestern.com/2025",
     video: "/projects/hw12/video.webm",
-  },
-  {
-    id: "documind",
-    title: "documind",
-    overview: "AI-native Chrome extension PDF viewer with annotations",
-    description:
-      "A Chrome MV3 extension for viewing PDFs with virtualized rendering, annotations (highlights, notes, ink drawing), zoom controls, and persistent state. AI features include term extraction, page summaries, RAG-based chat with Gemini, and text-to-speech via ElevenLabs. Built for Hack the Valley 2025",
-    tech: ["TypeScript", "React", "Chrome Extension"],
-    github: "https://github.com/WangNatalie/documind",
   },
   {
     id: "stabl",
@@ -80,7 +83,7 @@ const featuredProjects: Project[] = [
     overview:
       "AI-powered video stabilization tool built to stabilize my London Airshow 2025 footage",
     description:
-      "A python program that stabilizes video footage by tracking a subject & cropping to center on it. Uses YOLOv8, OpenCV and FFMPEG. Built to stabilize some footage I shot from London Airshow 2025.",
+      "A python program that stabilizes video footage by tracking a subject & cropping to center on it. Uses YOLOv8, OpenCV and FFMPEG. Built to stabilize some footage I shot from London Airshow 2025 (shows off my poor camera work).",
     tech: ["Python", "YOLOv8", "OpenCV"],
     github: "https://github.com/hunterchen7/stabl",
     video: "/projects/stabl/video.webm",
@@ -97,20 +100,32 @@ const featuredProjects: Project[] = [
     images: ["/projects/waveformer/graph.webp"],
   },
   {
-    id: "dechess",
-    title: "deChess",
-    overview: "Decentralized p2p chess web app with tradeable NFT chess pieces",
+    id: "ce-chess",
+    title: "ce-chess",
+    overview:
+      "Chess engine & GUI for the TI-84 Plus CE graphing calculator, with alpha-beta negamax search, texel-tuned evaluation, opening book, and 5 difficulty levels",
     description:
-      "Decentralized p2p chess web app built for ETHGlobal hackathon(s). Won 6k+ USD in prizes, and got a 5k USD grant from Streamr. Also built to let you mint NFTs of chess pieces. My first time using React!",
-    tech: ["JavaScript", "React", "Solidity"],
-    github: "https://github.com/deChess/deChess",
-    demo: "https://ethglobal.com/showcase/dechess-yzza8",
-    images: ["/projects/dechess/image.webp", "/projects/dechess/image2.webp"],
+      'A chess engine and GUI that runs on the TI-84 Plus CE calculator, ft. 48 mhz eZ80 CPU and ~45 kb of usable RAM. Features alpha-beta negamax with iterative deepening, a texel-tuned evaluation function, null move pruning, LMR, futility pruning, and a transposition table. Includes different tiers of Polyglot opening book stored in Flash AppVars. 5 difficulty levels from ~1350 to ~2100 Elo. Play against it via "pgrm" command on emulator.',
+    tech: ["C", "eZ80 ASM"],
+    github: "https://github.com/hunterchen7/ce-games",
+    demo: "https://ti84ce.pages.dev/chess",
+    video: "/projects/ce-chess/video.webm",
   },
 ];
 
 // Additional projects only shown in the carousel
 const carouselOnlyProjects: Project[] = [
+  {
+    id: "documind",
+    title: "documind",
+    overview:
+      "AI-native Chrome extension PDF viewer with advanced annotation & export features",
+    description:
+      "A Chrome MV3 extension for viewing PDFs with virtualized rendering, annotations (highlights, notes, ink drawing), zoom controls, and persistent state. AI features include term extraction, page summaries, RAG-based chat with Gemini, and text-to-speech via ElevenLabs. Built for Hack the Valley 2025",
+    tech: ["TypeScript", "React", "Chrome Extension"],
+    github: "https://github.com/WangNatalie/documind",
+    images: ["/projects/documind/image.png"],
+  },
   {
     id: "chessbench",
     title: "chessbench LLM",
@@ -141,7 +156,7 @@ const carouselOnlyProjects: Project[] = [
     title: "marvin",
     overview: "AI Discord bot that can chat and generate images",
     description:
-      "AI discord chat bot that can also generate images from user prompts. Uses llama-4-maverick for text gen and gemini flash 2.0 for image gen. A modified version has sent 1,000+ messages!",
+      "AI discord chat bot that can also generate images from user prompts. Uses llama-4-maverick for text gen and gemini flash 2.0 for image gen. I use a modified version on a personal server and it has sent 2,000+ messages.",
     tech: ["TypeScript"],
     github: "https://github.com/hunterchen7/marvin",
     video: "/projects/marvin/video.webm",
@@ -300,6 +315,17 @@ const carouselOnlyProjects: Project[] = [
     video: "/projects/daovoz/video.webm",
   },
   {
+    id: "dechess",
+    title: "deChess",
+    overview: "Decentralized p2p chess web app with tradeable NFT chess pieces",
+    description:
+      "Decentralized p2p chess web app built for ETHGlobal hackathon(s). Won 6k+ USD in prizes, and got a 5k USD grant from Streamr. Also built to let you mint NFTs of chess pieces. My first time using React!",
+    tech: ["JavaScript", "React", "Solidity"],
+    github: "https://github.com/deChess/deChess",
+    demo: "https://ethglobal.com/showcase/dechess-yzza8",
+    images: ["/projects/dechess/image.webp", "/projects/dechess/image2.webp"],
+  },
+  {
     id: "spacestagram",
     title: "spacestagram",
     overview:
@@ -384,6 +410,9 @@ function ProjectCard({
   useEffect(() => {
     if (!mediaRef.current || !videoRef.current) return;
 
+    // Explicitly pause to load first frame
+    // videoRef.current.pause();
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -397,8 +426,17 @@ function ProjectCard({
       { threshold: 0.25 },
     );
 
-    observer.observe(mediaRef.current);
-    return () => observer.disconnect();
+    // Wait 9 seconds after page load before starting video autoplay
+    const timeout = setTimeout(() => {
+      if (mediaRef.current) {
+        observer.observe(mediaRef.current);
+      }
+    }, 9000);
+
+    return () => {
+      clearTimeout(timeout);
+      observer.disconnect();
+    };
   }, []);
 
   const handleClick = useCallback(
@@ -480,7 +518,7 @@ function ProjectCard({
               ref={videoRef}
               src={project.thumbnailVideo || project.video}
               className="w-full h-full object-cover"
-              preload="none"
+              preload="metadata"
               muted
               loop
               playsInline
@@ -533,7 +571,7 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
       <div className="flex h-full w-full flex-col items-center justify-center p-8 md:scale-110">
         <h2 className="mb-2 text-3xl font-thin text-fuchsia-200">projects</h2>
         <p className="mb-6 text-sm text-fuchsia-300/60">
-          a compilation of some things i've worked on..
+          a compilation of some things i've worked on.. click to learn more!
         </p>
 
         {/* Project Cards Grid */}
@@ -551,9 +589,12 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
         {/* See more button - opens carousel at last viewed position */}
         <button
           onClick={() => setCarouselIndex(lastOpenedIndex)}
-          className="mt-6 text-sm text-fuchsia-400 hover:text-fuchsia-300 transition-colors"
+          className="group mt-6 text-sm"
         >
-          see more →
+          <span className="text-fuchsia-300/80 group-hover:text-fuchsia-200 transition-colors">
+            see more →
+          </span>
+          <span className="block h-0 max-w-0 border-b border-fuchsia-300/60 transition-all duration-200 group-hover:max-w-full group-hover:border-fuchsia-200" />
         </button>
 
         {/* Project Carousel */}

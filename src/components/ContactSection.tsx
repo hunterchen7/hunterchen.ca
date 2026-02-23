@@ -1,4 +1,4 @@
-import { Github, Linkedin, Instagram } from "lucide-react";
+import { Github, Linkedin, Instagram, Twitter } from "lucide-react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 
 interface ContactSectionProps {
@@ -46,6 +46,15 @@ export default function ContactSection({ offset }: ContactSectionProps) {
           className="rounded-full bg-fuchsia-900/50 p-3 text-fuchsia-200 transition-all hover:scale-105 hover:bg-fuchsia-800/60 hover:text-fuchsia-100"
         >
           <Instagram className="h-8 w-8" />
+        </a>
+        <a
+          href="https://x.com/hunterchen_7"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="X"
+          className="rounded-full bg-fuchsia-900/50 p-3 text-fuchsia-200 transition-all hover:scale-105 hover:bg-fuchsia-800/60 hover:text-fuchsia-100"
+        >
+          <Twitter className="h-8 w-8" />
         </a>
       </div>
     </div>
