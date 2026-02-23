@@ -59,7 +59,7 @@ const featuredProjects: Project[] = [
     overview:
       "Play chess against 50+ chess neural networks in client-side, powered by WebGPU & ONNX Runtime. Also run engine-vs-engine tournaments with round-robin and Swiss formats.",
     description:
-      "A fully client-side chess platform for playing against chess neural networks in the browser. Runs ONNX model inference via WebGPU (with WASM fallback) in a Web Worker. Features 53+ pre-configured networks ranging from ~800 to ~2800 Elo, including a model fine-tuned on my own games. Also supports custom ONNX model uploads, engine-vs-engine tournaments with round-robin/Swiss formats, and IndexedDB model caching. Demo shows a real-time 27 participant tournament with 8 running simultaneously (16 models loaded into VRAM). ",
+      "A fully client-side chess platform for playing against chess neural networks in the browser. Runs ONNX model inference via WebGPU (with WASM fallback) in a Web Worker. Features 50+ pre-configured networks ranging from ~800 to ~2800 Elo, including a model fine-tuned on my ~2000 of own games to play like me. Also supports custom ONNX model uploads, engine-vs-engine tournaments with round-robin/Swiss formats, and IndexedDB model caching. Demo shows a real-time 27 participant tournament with 8 running simultaneously (16 models loaded into VRAM). ",
     tech: ["TypeScript", "React", "ONNX Runtime", "WebGPU", "WASM"],
     github: "https://github.com/hunterchen7/play-lc0",
     demo: "https://play-lc0.pages.dev",
@@ -571,7 +571,7 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
       <div className="flex h-full w-full flex-col items-center justify-center p-8 md:scale-110">
         <h2 className="mb-2 text-3xl font-thin text-fuchsia-200">projects</h2>
         <p className="mb-6 text-sm text-fuchsia-300/60">
-          a compilation of some things i've worked on..
+          a compilation of some things i've worked on.. click to learn more!
         </p>
 
         {/* Project Cards Grid */}

@@ -1,16 +1,26 @@
 interface AnimatedLinkProps {
-  href: string;
+  href?: string;
+  onClick?: (e: React.MouseEvent) => void;
   children: React.ReactNode;
   className?: string;
   textClassName?: string;
 }
 
-export function AnimatedLink({ href, children, className = "", textClassName }: AnimatedLinkProps) {
+export function AnimatedLink({ href, onClick, children, className = "", textClassName }: AnimatedLinkProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick(e);
+    }
+  };
+
   return (
     <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={href ?? "#"}
+      target={href ? "_blank" : undefined}
+      rel={href ? "noopener noreferrer" : undefined}
+      onClick={handleClick}
       className={`group inline-block ${className}`}
     >
       <span className={`${textClassName ?? "text-fuchsia-300/80"} group-hover:text-fuchsia-200 transition-colors`}>

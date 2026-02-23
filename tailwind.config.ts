@@ -7,6 +7,9 @@ const config = {
     "./components/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
   ],
+  safelist: [
+    { pattern: /^\[grid-area:.+\]$/ },
+  ],
   prefix: "",
   theme: {
     container: {
