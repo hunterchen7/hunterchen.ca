@@ -42,7 +42,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 />
               </motion.div>
               <div>
-                <p className="text-sm md:text-base">hey, I'm Hunter! 👋</p>
+                <p className="text-sm md:text-base">hey, I'm Hunter! <span className="inline-block animate-wave">👋</span></p>
                 <p className="text-sm md:text-base  mt-3">
                   welcome to my personal website, have a look around!
                 </p>

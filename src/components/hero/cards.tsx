@@ -55,29 +55,29 @@ export const cards: Card[] = [
     back: (
       <div className="flex flex-col gap-2 -mx-4 md:mx-auto">
         <div className="text-xs lg:text-sm">
-          in my last 2 years studying CS @{" "}
-          <AnimatedLink
-            textClassName="text-fuchsia-400"
-            href="https://www.uwo.ca"
-          >
-            Western University
-          </AnimatedLink>
-          , I led a team of 6 devs to build the website and application portal
-          for our annual flagship hackathon,{" "}
+          I'm an avid hackathon attendee, and I've also organized one! I led the
+          team to build the website & web dashboards for{" "}
           <AnimatedLink
             textClassName="text-fuchsia-400"
             href="https://www.hackwestern.com"
           >
             Hack Western
-          </AnimatedLink>
-          .
+          </AnimatedLink>{" "}
+          11 and 12,{" "}
+          <AnimatedLink
+            textClassName="text-fuchsia-400"
+            href="https://www.uwo.ca"
+          >
+            Western University
+          </AnimatedLink>{" "}
+          annual flagship hackathon.
         </div>
         <motion.img
           src="hero/team.webp"
           className="w-[320px] mx-auto rounded-md"
         />
         <p className="text-center text-[10.5px] md:text-xs -mt-1">
-          my team at hack western 12 💜
+          my team @ hack western 12 💜
         </p>
       </div>
     ),

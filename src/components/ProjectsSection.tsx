@@ -82,11 +82,17 @@ const featuredProjects: Project[] = [
     title: "ce-chess",
     overview:
       "Chess engine & GUI for the TI-84 Plus CE graphing calculator, with alpha-beta negamax search, texel-tuned evaluation, opening book, and 5 difficulty levels",
-    description:
-      'A chess engine and GUI that runs on the TI-84 Plus CE calculator, ft. 48 mhz eZ80 CPU and ~45 kb of usable RAM. Features alpha-beta negamax with iterative deepening, a texel-tuned evaluation function, null move pruning, LMR, futility pruning, and a transposition table. Includes different tiers of Polyglot opening book stored in Flash AppVars. 5 difficulty levels from ~1350 to ~2100 Elo. Play against it via "pgrm" command on emulator.',
+    description: `A chess engine and GUI that runs on the TI-84 Plus CE calculator, 
+      ft. 48 mhz eZ80 CPU and ~45 kb of usable RAM. Features alpha-beta negamax 
+      with iterative deepening, a texel-tuned evaluation function, null move pruning, LMR,
+       futility pruning, and a transposition table. Includes different tiers of Polyglot 
+       opening book stored in Flash AppVars. 5 difficulty levels from ~1350 to ~2100 Elo. 
+       Play against it via "pgrm" command on emulator. Achieves ~2700 Elo w/ 0.1s/move on an M5 Macbook Pro.`,
     tech: ["C", "eZ80 ASM"],
     github: "https://github.com/hunterchen7/ce-games",
     demo: "https://ti84ce.pages.dev/chess",
+    otherUrl:
+      "https://github.com/hunterchen7/CE-games/blob/main/chess/bench/RESULTS.md",
     video: "/projects/ce-chess/video.webm",
   },
   {
@@ -98,6 +104,7 @@ const featuredProjects: Project[] = [
       "A React library for building pannable, zoomable, interactive canvas experiences. Features touch/trackpad/mouse support, draggable elements, intro animations, viewport culling, and adaptive performance. Originally built for the Hack Western 12 website, now published on npm as @hunterchen/canvas. This website is built with it!",
     tech: ["TypeScript", "React", "Framer Motion"],
     github: "https://github.com/hunterchen7/canvas",
+    otherUrl: "https://www.npmjs.com/package/@hunterchen/canvas",
     video: "/projects/canvas/video.webm",
     thumbnailVideo: "/projects/canvas/video-thumb.webm",
   },
