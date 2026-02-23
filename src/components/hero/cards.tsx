@@ -10,24 +10,25 @@ export const cards: Card[] = [
     id: "1",
     front: "Work 🧑‍💻",
     back: (
-      <div className="text-xs md:text-sm lg:text-base">
+      <div className="text-xs md:text-sm lg:text-base ">
         I'm currently building frontend & mobile w/ React & React Native @{" "}
-        <AnimatedLink
-          textClassName="text-fuchsia-400 "
-          href="https://geneial.com"
-        >
-          geneial
-        </AnimatedLink>
-        . I've also previously built fullstack web applications for{" "}
-        <AnimatedLink textClassName="text-fuchsia-400" href="https://mora.do">
-          mora.do
+        <AnimatedLink href="https://geneial.com">geneial</AnimatedLink>. I've
+        also previously built fullstack web apps for{" "}
+        <AnimatedLink href="https://mora.do">mora.do</AnimatedLink> and{" "}
+        <AnimatedLink href="https://aramid.finance">aramid</AnimatedLink>
+        .
+        <br />
+        <br />
+        See here for my{" "}
+        <AnimatedLink href="https://www.linkedin.com/in/hunterchen">
+          Linkedin<span className="text-white">,</span>
+        </AnimatedLink>{" "}
+        <AnimatedLink href="https://github.com/hunterchen7">
+          GitHub
         </AnimatedLink>{" "}
         and{" "}
-        <AnimatedLink
-          textClassName="text-fuchsia-400"
-          href="https://aramid.finance"
-        >
-          aramid
+        <AnimatedLink href="https://hunterchen.ca/resume.pdf">
+          resume
         </AnimatedLink>
         .
       </div>
