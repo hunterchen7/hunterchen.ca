@@ -78,28 +78,6 @@ const featuredProjects: Project[] = [
     video: "/projects/hw12/video.webm",
   },
   {
-    id: "stabl",
-    title: "stabl",
-    overview:
-      "AI-powered video stabilization tool built to stabilize my London Airshow 2025 footage",
-    description:
-      "A python program that stabilizes video footage by tracking a subject & cropping to center on it. Uses YOLOv8, OpenCV and FFMPEG. Built to stabilize some footage I shot from London Airshow 2025 (shows off my poor camera work).",
-    tech: ["Python", "YOLOv8", "OpenCV"],
-    github: "https://github.com/hunterchen7/stabl",
-    video: "/projects/stabl/video.webm",
-  },
-  {
-    id: "waveformer",
-    title: "waveformer",
-    overview: "Convert images into parametric equations",
-    description:
-      "A Rust program that converts images into a series of parametric equations using a combination of fourier transforms and edge detection algorithms.",
-    tech: ["Rust"],
-    github: "https://github.com/hunterchen7/waveformer",
-    thumbnailImage: "/projects/waveformer/graph-thumb.webp",
-    images: ["/projects/waveformer/graph.webp"],
-  },
-  {
     id: "ce-chess",
     title: "ce-chess",
     overview:
@@ -111,10 +89,44 @@ const featuredProjects: Project[] = [
     demo: "https://ti84ce.pages.dev/chess",
     video: "/projects/ce-chess/video.webm",
   },
+  {
+    id: "canvas",
+    title: "canvas",
+    overview:
+      "React library for creating pannable, zoomable, interactive canvas experiences — the library powering this website and hack western 12",
+    description:
+      "A React library for building pannable, zoomable, interactive canvas experiences. Features touch/trackpad/mouse support, draggable elements, intro animations, viewport culling, and adaptive performance. Originally built for the Hack Western 12 website, now published on npm as @hunterchen/canvas. This website is built with it!",
+    tech: ["TypeScript", "React", "Framer Motion"],
+    github: "https://github.com/hunterchen7/canvas",
+    video: "/projects/canvas/video.webm",
+    thumbnailVideo: "/projects/canvas/video-thumb.webm",
+  },
+  {
+    id: "stabl",
+    title: "stabl",
+    overview:
+      "AI-powered video stabilization tool built to stabilize my London Airshow 2025 footage",
+    description:
+      "A python program that stabilizes video footage by tracking a subject & cropping to center on it. Uses YOLOv8, OpenCV and FFMPEG. Built to stabilize some footage I shot from London Airshow 2025 (shows off my poor camera work).",
+    tech: ["Python", "YOLOv8", "OpenCV"],
+    github: "https://github.com/hunterchen7/stabl",
+    video: "/projects/stabl/video.webm",
+  },
 ];
 
 // Additional projects only shown in the carousel
 const carouselOnlyProjects: Project[] = [
+  {
+    id: "waveformer",
+    title: "waveformer",
+    overview: "Convert images into parametric equations",
+    description:
+      "A Rust program that converts images into a series of parametric equations using a combination of fourier transforms and edge detection algorithms.",
+    tech: ["Rust"],
+    github: "https://github.com/hunterchen7/waveformer",
+    thumbnailImage: "/projects/waveformer/graph-thumb.webp",
+    images: ["/projects/waveformer/graph.webp"],
+  },
   {
     id: "documind",
     title: "documind",
