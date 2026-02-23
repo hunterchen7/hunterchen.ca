@@ -27,7 +27,7 @@ export const coordinates = {
 
   projects: {
     x: 1100,
-    y: 2200,
+    y: 2340,
     width: 1200,
     height: 800,
   },

@@ -128,6 +128,8 @@ export default function ChessBoard({
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [anim, setAnim] = useState<AnimatingPiece | null>(null);
   const skipNextAnimRef = useRef(false);
+  const onDragStartRef = useRef(onDragStart);
+  onDragStartRef.current = onDragStart;
 
   const currentPosition = useMemo(() => fenToPosition(fen), [fen]);
   const prevPositionRef = useRef<BoardPosition>(currentPosition);
@@ -208,7 +210,7 @@ export default function ChessBoard({
       if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
         // Promote to real drag
         pendingDragRef.current = null;
-        onDragStart?.(pending.fromSquare);
+        onDragStartRef.current?.(pending.fromSquare);
         setDragState({
           piece: pending.piece,
           fromSquare: pending.fromSquare,
