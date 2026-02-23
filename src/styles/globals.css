@@ -8,6 +8,10 @@ html {
 
 @layer base {
   :root {
+    /* Fonts (loaded via Google Fonts in index.html) */
+    --font-mono: "JetBrains Mono", monospace;
+    --font-caveat: "Caveat", cursive;
+
     /* ============== Amethyst Glow Theme ============== */
     /* Warmer purple tones with subtle magenta undertones */
 
@@ -59,7 +63,8 @@ html {
   }
 
   html,
-  body {
+  body,
+  #root {
     margin: 0;
     padding: 0;
     height: 100%;
