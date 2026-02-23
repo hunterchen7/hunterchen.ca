@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useReducer } from "react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { Chess, type Square } from "chess.js";
 import { Lc0Engine } from "../chess/engine/workerInterface";
@@ -49,7 +49,9 @@ function WdlBar({ wdl }: { wdl: [number, number, number] }) {
 }
 
 export default function ChessSection({ offset }: ChessSectionProps) {
-  const [game, setGame] = useState(new Chess());
+  const gameRef = useRef(new Chess());
+  const game = gameRef.current;
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
   const [fenHistory, setFenHistory] = useState<string[]>([game.fen()]);
   const [engineState, setEngineState] =
     useState<EngineState>(INITIAL_ENGINE_STATE);
@@ -118,22 +120,21 @@ export default function ChessSection({ offset }: ChessSectionProps) {
       })
       .then((move) => {
         const chessMove = uciToChessJsMove(move);
-        const newGame = new Chess(game.fen());
-        const result = newGame.move(chessMove);
+        const result = game.move(chessMove);
         if (result) {
           setLastMoveSquares({ from: result.from, to: result.to });
-          setGame(newGame);
-          setFenHistory((prev) => [...prev, newGame.fen()]);
+          setFenHistory((prev) => [...prev, game.fen()]);
+          forceUpdate();
         }
         setEngineState((prev) => ({ ...prev, isThinking: false }));
       })
       .catch(() => {
         setEngineState((prev) => ({ ...prev, isThinking: false }));
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     engineState.isReady,
     engineState.isThinking,
-    game,
     fenHistory,
     engineColor,
   ]);
@@ -159,16 +160,15 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   };
 
   const makeMove = (from: string, to: string) => {
-    const newGame = new Chess(game.fen());
     // Try with queen promotion first, then without
     const move =
-      newGame.move({ from, to, promotion: "q" }) ?? newGame.move({ from, to });
+      game.move({ from, to, promotion: "q" }) ?? game.move({ from, to });
     if (!move) return false;
 
     clearSelection();
     setLastMoveSquares({ from: move.from, to: move.to });
-    setGame(newGame);
-    setFenHistory((prev) => [...prev, newGame.fen()]);
+    setFenHistory((prev) => [...prev, game.fen()]);
+    forceUpdate();
     return true;
   };
 
@@ -206,12 +206,12 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   };
 
   const resetGame = () => {
-    const newGame = new Chess();
-    setGame(newGame);
-    setFenHistory([newGame.fen()]);
+    game.reset();
+    setFenHistory([game.fen()]);
     setLastMoveSquares(null);
     clearSelection();
     setPlayerColor((prev) => (prev === "w" ? "b" : "w"));
+    forceUpdate();
   };
 
   const getGameStatus = () => {

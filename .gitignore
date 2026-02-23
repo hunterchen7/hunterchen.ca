@@ -34,3 +34,6 @@ screen-recording-2.gif
 screen-recording-2.webm
 screen-recording.gif
 screen-recording.webm
+
+# ONNX Runtime WASM files (copied from node_modules for dev server)
+public/ort-wasm-*
