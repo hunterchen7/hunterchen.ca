@@ -48,6 +48,8 @@ export default function FlipCard({
 
   const radialGlow = `radial-gradient(600px circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, rgba(255, 255, 255, 0.022), transparent 40%)`;
 
+  const cardGradient = `radial-gradient(ellipse at 50% 50%, color-mix(in srgb, ${card.color}, white 4%) 0%, ${card.color} 100%)`;
+
   const backContent = (
     <div className="relative z-10">
       {typeof card.back === "string" ? (
@@ -105,7 +107,7 @@ export default function FlipCard({
         <div
           className="absolute inset-0 flex items-center justify-center border border-fuchsia-300/30 rounded-2xl shadow-lg overflow-hidden"
           style={{
-            backgroundColor: card.color,
+            background: cardGradient,
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
           }}
@@ -120,7 +122,7 @@ export default function FlipCard({
         <div
           className="absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-8 flex items-center justify-center overflow-hidden"
           style={{
-            backgroundColor: card.color,
+            background: cardGradient,
             transform: "rotateY(180deg) translateZ(1px)",
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
@@ -135,7 +137,7 @@ export default function FlipCard({
       {settled && (
         <div
           className="absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-8 flex items-center justify-center overflow-hidden"
-          style={{ backgroundColor: card.color }}
+          style={{ background: cardGradient }}
         >
           {glowOverlay}
           {backContent}

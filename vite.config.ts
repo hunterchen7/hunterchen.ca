@@ -9,6 +9,14 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
+          src: "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm",
+          dest: ".",
+        },
+        {
+          src: "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs",
+          dest: ".",
+        },
+        {
           src: "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm",
           dest: ".",
         },
@@ -22,11 +30,18 @@ export default defineConfig({
   resolve: {
     alias: {
       "~": path.resolve(__dirname, "./src"),
+      "onnxruntime-web": "onnxruntime-web/wasm",
     },
     conditions: ["onnxruntime-web-use-extern-wasm"],
   },
-  optimizeDeps: {
-    exclude: ["onnxruntime-web"],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "onnx-runtime": ["onnxruntime-web"],
+        },
+      },
+    },
   },
   server: {
     headers: {

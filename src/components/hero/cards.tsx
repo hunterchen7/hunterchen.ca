@@ -33,21 +33,21 @@ export const cards: Card[] = [
       </div>
     ),
     gridArea: "[grid-area:1/1/3/4] md:[grid-area:1/1/3/3]",
-    color: "#351638",
+    color: "#462858",
   },
   {
     id: "2",
     front: "Fun 🤩",
     back: <FunCard />,
     gridArea: "[grid-area:4/4/7/6] md:[grid-area:3/3/5/5]",
-    color: "#3d1744",
+    color: "#532963",
   },
   {
     id: "3",
     front: "Projects 🤓",
     back: <ProjectsCard />,
     gridArea: "[grid-area:1/4/4/6] md:[grid-area:1/3/3/5]",
-    color: "#3a1540",
+    color: "#48205a",
   },
   {
     id: "4",
@@ -82,13 +82,13 @@ export const cards: Card[] = [
       </div>
     ),
     gridArea: "[grid-area:4/1/7/4] md:[grid-area:4/1/6/3]",
-    color: "#2e1432",
+    color: "#471f52",
   },
   {
     id: "5",
     front: "say hello! 👋",
     back: <ContactCard />,
     gridArea: "[grid-area:7/1/8/6] md:[grid-area:5/3/6/5]",
-    color: "#341739",
+    color: "#442662",
   },
 ];
