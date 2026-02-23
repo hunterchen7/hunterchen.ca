@@ -164,7 +164,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               </motion.div>
               <div>
                 <p className="text-sm md:text-base">hey, I'm Hunter! 👋</p>
-                <p className="text-xs lg:text-sm mt-3">
+                <p className="text-sm md:text-base  mt-3">
                   welcome to my personal website, have a look around!
                 </p>
               </div>

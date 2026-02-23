@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Canvas,
   DefaultCanvasBackground,
@@ -8,6 +9,7 @@ import { coordinates, navItems } from "./constants/coordinates";
 import HeroSection from "./components/HeroSection";
 import ProjectsSection from "./components/ProjectsSection";
 import GallerySection from "./components/GallerySection";
+import { motion } from "framer-motion";
 
 // Canvas gradient - warm purple radial emanating from bottom
 const CANVAS_GRADIENT = `radial-gradient(ellipse ${canvasWidth}px ${canvasHeight}px at ${canvasWidth / 2}px ${canvasHeight}px, #150f1d 0%, #2a1f3d 30%, #3e2d55 55%, #150f1d 100%)`;
@@ -16,8 +18,39 @@ const CANVAS_GRADIENT = `radial-gradient(ellipse ${canvasWidth}px ${canvasHeight
 const DOT_COLOR = "#7a5a99";
 
 export default function App() {
+  const [showClickMe, setShowClickMe] = useState(true);
+
+  useEffect(() => {
+    if (!showClickMe) return;
+
+    const handleClick = (e: MouseEvent) => {
+      let el = e.target as HTMLElement | null;
+      while (el) {
+        if (el.style.position === "fixed" && el.style.zIndex === "1000") {
+          setShowClickMe(false);
+          return;
+        }
+        el = el.parentElement;
+      }
+    };
+
+    // Use capture phase so we see clicks even if propagation is stopped
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [showClickMe]);
+
   return (
     <main id="home" className="relative min-h-screen">
+      {showClickMe && (
+        <motion.img
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: 0.5, ease: "easeInOut" }}
+          src="/clickme_nav.svg"
+          alt=""
+          className="pointer-events-none fixed bottom-[49px] left-[55%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
+        />
+      )}
       <Canvas
         homeCoordinates={coordinates.hero}
         navItems={navItems}
