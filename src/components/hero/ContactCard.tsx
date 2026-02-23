@@ -1,23 +1,23 @@
 import { Github, Linkedin, Instagram, Twitter } from "lucide-react";
 
 const socialLinkClass =
-  "rounded-full bg-fuchsia-900/50 p-2.5 text-fuchsia-200 transition-all hover:scale-105 hover:bg-fuchsia-800/60 hover:text-fuchsia-100";
+  "rounded-full bg-fuchsia-900/70 p-2.5 text-fuchsia-200 transition-all hover:scale-105 hover:bg-fuchsia-800/60 hover:text-fuchsia-100";
 
 export default function ContactCard() {
   return (
-    <div className="text-xs md:text-sm flex flex-col items-center justify-center h-full w-full">
+    <div className="text-[11px] md:text-sm flex flex-col items-center justify-center h-full w-full">
       <a
         href="mailto:hello@hunterchen.ca"
         className="group mb-6 text-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-fuchsia-300/80 group-hover:text-fuchsia-200 transition-colors text-sm md:text-base">
+        <span className="text-fuchsia-300/80 group-hover:text-fuchsia-200 transition-colors text-xs md:text-base">
           hello@hunterchen.ca
         </span>
         <span className="block h-0 max-w-0 border-b border-fuchsia-300/60 transition-all duration-200 group-hover:max-w-full group-hover:border-fuchsia-200" />
       </a>
 
-      <div className="flex gap-3 scale-90 md:scale-100 -mt-4 md:mt-auto">
+      <div className="flex gap-3 scale-75 md:scale-100 -mt-4 md:mt-auto">
         <a
           href="https://www.linkedin.com/in/hunterchen"
           target="_blank"
