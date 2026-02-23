@@ -70,7 +70,6 @@ export default function FlipCard({
         style={{
           transformStyle: "preserve-3d",
           WebkitTransformStyle: "preserve-3d",
-          willChange: flipped ? "transform" : "auto",
         }}
       >
         {/* Front */}

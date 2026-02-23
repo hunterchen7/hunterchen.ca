@@ -4,13 +4,14 @@ interface AnimatedLinkProps {
   children: React.ReactNode;
   className?: string;
   textClassName?: string;
+  stopPropagation?: boolean;
 }
 
-export function AnimatedLink({ href, onClick, children, className = "", textClassName }: AnimatedLinkProps) {
+export function AnimatedLink({ href, onClick, children, className = "", textClassName, stopPropagation = true }: AnimatedLinkProps) {
   const handleClick = (e: React.MouseEvent) => {
+    if (stopPropagation) e.stopPropagation();
     if (onClick) {
       e.preventDefault();
-      e.stopPropagation();
       onClick(e);
     }
   };

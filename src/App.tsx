@@ -9,6 +9,7 @@ import { coordinates, navItems } from "./constants/coordinates";
 import HeroSection from "./components/HeroSection";
 import ProjectsSection from "./components/ProjectsSection";
 import GallerySection from "./components/GallerySection";
+import ChessSection from "./components/ChessSection";
 import { motion } from "framer-motion";
 
 // Canvas gradient - warm purple radial emanating from bottom
@@ -90,6 +91,7 @@ export default function App() {
         <HeroSection offset={coordinates.hero} />
         <ProjectsSection offset={coordinates.projects} />
         <GallerySection offset={coordinates.gallery} />
+        <ChessSection offset={coordinates.chess} />
       </Canvas>
     </main>
   );

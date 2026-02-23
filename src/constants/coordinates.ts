@@ -26,20 +26,20 @@ export const coordinates = {
   },
 
   projects: {
-    x: 1200,
+    x: 1100,
     y: 2200,
     width: 1200,
     height: 800,
   },
   chess: {
     x: 3600,
-    y: 800,
-    width: 1000,
-    height: 900,
+    y: 700,
+    width: 1200,
+    height: 1200,
   },
   gallery: {
-    x: 3600,
-    y: 2200,
+    x: 3800,
+    y: 2400,
     width: SECTION_WIDTH,
     height: SECTION_HEIGHT,
   },
