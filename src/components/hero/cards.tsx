@@ -59,7 +59,7 @@ export const cards: Card[] = [
     back: (
       <div className="flex flex-col gap-2 -mx-4 md:mx-auto">
         <div className="text-[10.5px] md:text-sm">
-          avid hackathon attendee and ex-organized! led the team to build web
+          avid hackathon attendee and ex-organizer! led the team to build web
           for{" "}
           <AnimatedLink
             textClassName="text-fuchsia-400"
@@ -80,8 +80,8 @@ export const cards: Card[] = [
             href="https://www.uwo.ca"
           >
             Western University
-          </AnimatedLink>{" "}
-          annual flagship hackathon.
+          </AnimatedLink>
+          's annual flagship hackathon.
         </div>
         <motion.img
           src="hero/team.webp"
