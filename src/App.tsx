@@ -48,7 +48,7 @@ export default function App() {
             key="clickme-nav"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.3, ease: "easeInOut" } }}
             transition={{ delay: 1.4, duration: 0.5, ease: "easeInOut" }}
             src="/clickme_nav.svg"
             alt=""

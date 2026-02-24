@@ -89,9 +89,9 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showContent ? 1 : 0 }}
                   transition={{ duration: 0.4 }}
-                  className="text-sm md:text-base lg:text-lg mt-3 bg-gradient-to-r from-white to-fuchsia-300/80 bg-clip-text text-transparent"
+                  className="text-sm md:text-base mt-3 bg-gradient-to-r from-white to-fuchsia-300/80 bg-clip-text text-transparent"
                 >
-                  welcome to my personal website, have a look around!
+                  welcome to my website, have a look around :)
                 </motion.p>
               </div>
             </motion.div>
