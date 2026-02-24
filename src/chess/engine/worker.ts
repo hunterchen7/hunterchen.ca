@@ -3,6 +3,7 @@ import { encodeFenHistory } from './encoding'
 import { decodePolicyOutput } from './decoding'
 import { initModel, runInference } from './inference'
 import { getCachedModel, cacheModel, decompressGzip } from './modelCache'
+import { mctsSearch } from './mcts'
 
 function post(msg: WorkerResponse) {
   self.postMessage(msg)
@@ -122,6 +123,27 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
           move: result.best.move,
           confidence: result.best.confidence,
           wdl: wdl,
+        })
+      } catch (error) {
+        post({
+          type: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+      break
+    }
+
+    case 'mctsSearch': {
+      try {
+        const { fen, history, nodeLimit, temperature } = msg
+        const result = await mctsSearch(fen, history, nodeLimit, temperature)
+
+        post({
+          type: 'bestMove',
+          move: result.bestMove,
+          confidence: result.visits,
+          wdl: result.wdl,
+          topMoves: result.topMoves,
         })
       } catch (error) {
         post({

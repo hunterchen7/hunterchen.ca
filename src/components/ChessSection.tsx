@@ -3,7 +3,7 @@ import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { Chess, type Square } from "chess.js";
 import { Lc0Engine } from "../chess/engine/workerInterface";
 import { MODEL_URL } from "../chess/config";
-import { getLegalMovesUCI, uciToChessJsMove } from "../chess/utils";
+import { uciToChessJsMove } from "../chess/utils";
 import type { EngineState } from "../chess/types";
 import ChessBoard from "./chess/ChessBoard";
 import PromotionPicker from "./chess/PromotionPicker";
@@ -23,29 +23,54 @@ const INITIAL_ENGINE_STATE: EngineState = {
   lastMove: null,
   lastConfidence: null,
   wdl: null,
+  topMoves: null,
   error: null,
 };
 
-function WdlBar({ wdl }: { wdl: [number, number, number] }) {
-  const [w, d, l] = wdl;
-  const wp = Math.round(w * 100);
-  const dp = Math.round(d * 100);
-  const lp = 100 - wp - dp;
+function uciToSan(fen: string, uci: string): string {
+  try {
+    const tmp = new Chess(fen);
+    const move = tmp.move({
+      from: uci.slice(0, 2),
+      to: uci.slice(2, 4),
+      promotion: uci.length > 4 ? uci[4] : undefined,
+    });
+    return move?.san ?? uci;
+  } catch {
+    return uci;
+  }
+}
+
+function TopMovesBar({
+  topMoves,
+  fen,
+}: {
+  topMoves: { move: string; visits: number; probability: number }[] | null;
+  fen: string;
+}) {
+  if (!topMoves || topMoves.length === 0) {
+    return (
+      <div className="flex gap-3 justify-center font-mono text-sm">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <span className="text-fuchsia-200/20">---</span>
+            <span className="text-fuchsia-300/20">--%</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full h-3 rounded-full overflow-hidden flex bg-neutral-800 border border-fuchsia-300/20">
-      <div
-        className="bg-white transition-all duration-500"
-        style={{ width: `${wp}%` }}
-      />
-      <div
-        className="bg-neutral-500 transition-all duration-500"
-        style={{ width: `${dp}%` }}
-      />
-      <div
-        className="bg-neutral-900 transition-all duration-500"
-        style={{ width: `${lp}%` }}
-      />
+    <div className="flex gap-3 justify-center font-mono text-sm">
+      {topMoves.map((m) => (
+        <div key={m.move} className="flex items-center gap-1.5">
+          <span className="text-fuchsia-200">{uciToSan(fen, m.move)}</span>
+          <span className="text-fuchsia-300/50">
+            {Math.round(m.probability * 100)}%
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -67,6 +92,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [draggedSquare, setDraggedSquare] = useState<Square | null>(null);
   const [legalMoveSquares, setLegalMoveSquares] = useState<Square[]>([]);
+  const [topMovesFen, setTopMovesFen] = useState<string | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<{
     from: string;
     to: string;
@@ -112,13 +138,11 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     const engine = engineRef.current;
     if (!engine) return;
 
-    const legalMoves = getLegalMovesUCI(game.fen());
-    if (legalMoves.length === 0) return;
-
+    const searchFen = game.fen();
     engine
-      .getBestMove(game.fen(), fenHistory, legalMoves, 0)
+      .mctsSearch(searchFen, fenHistory, 50, 0.5)
       .then(({ move }) => {
-        // Keep thinking state active during the delay
+        setTopMovesFen(searchFen);
         setEngineState((prev) => ({ ...prev, isThinking: true }));
         return new Promise<string>((resolve) =>
           setTimeout(() => resolve(move), 1000),
@@ -361,18 +385,12 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             )}
           </div>
 
-          {/* WDL bar */}
+          {/* Top moves */}
           <div className="w-[800px] -mt-2">
-            <WdlBar wdl={engineState.wdl ?? [0.5, 0, 0.5]} />
-            <div className="flex justify-between text-sm text-fuchsia-300/80 mt-1 font-mono">
-              <span>
-                white {Math.round((engineState.wdl?.[0] ?? 0.5) * 100)}%
-              </span>
-              <span>draw {Math.round((engineState.wdl?.[1] ?? 0) * 100)}%</span>
-              <span>
-                black {Math.round((engineState.wdl?.[2] ?? 0.5) * 100)}%
-              </span>
-            </div>
+            <TopMovesBar
+              topMoves={engineState.topMoves}
+              fen={topMovesFen ?? game.fen()}
+            />
           </div>
 
           {/* Status area */}
