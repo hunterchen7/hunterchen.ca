@@ -9,6 +9,12 @@ interface HeroSectionProps {
   offset: SectionCoordinates;
 }
 
+// Session storage — skip typewriter on revisit
+const INTRO_SEEN_KEY = "hero-intro-seen";
+const IS_REVISIT =
+  typeof window !== "undefined" &&
+  sessionStorage.getItem(INTRO_SEEN_KEY) === "true";
+
 // Typewriter timing (ms)
 const INTRO_TEXT = "hey, I'm Hunter!";
 const CHAR_DELAY = 60;
@@ -22,23 +28,27 @@ const POST_TYPING_DELAY_MS = 700;
 // Content timing (seconds, relative to showContent becoming true)
 const TEXT_CONTAINER_DELAY = 0.2;
 const SUBTITLE_FADE_DURATION = 0.4;
-const CARD_STAGGER = 0.267;
-const CARD_SPRING_SETTLE = 0.6; // approximate spring settle time
+const CARD_STAGGER = 0.2;
+const CARD_SPRING_SETTLE = 0.3;
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
-const HERO_CLICKME_DELAY = CARDS_FINISH + 0.15;
+const HERO_CLICKME_DELAY = CARDS_FINISH + 0.05;
 
 /** Seconds from page load until the hero clickme animation finishes */
-export const HERO_SEQUENCE_END =
-  (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000 +
-  HERO_CLICKME_DELAY +
-  CLICKME_TOTAL_DURATION;
+export const HERO_SEQUENCE_END = IS_REVISIT
+  ? HERO_CLICKME_DELAY + CLICKME_TOTAL_DURATION
+  : (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000 +
+    HERO_CLICKME_DELAY +
+    CLICKME_TOTAL_DURATION;
 
 export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
-  const [charCount, setCharCount] = useState(0);
-  const [showContent, setShowContent] = useState(false);
+  const [charCount, setCharCount] = useState(
+    IS_REVISIT ? INTRO_TEXT.length : 0,
+  );
+  const [showContent, setShowContent] = useState(IS_REVISIT);
   const typingDone = charCount >= INTRO_TEXT.length;
 
+  // Typewriter effect (skipped on revisit since typingDone is already true)
   useEffect(() => {
     if (typingDone) return;
     let cancelled = false;
@@ -59,11 +69,19 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     };
   }, [typingDone]);
 
+  // Show content after typing (skipped on revisit since both are already true)
   useEffect(() => {
     if (!typingDone) return;
     const timer = setTimeout(() => setShowContent(true), POST_TYPING_DELAY_MS);
     return () => clearTimeout(timer);
   }, [typingDone]);
+
+  // Mark intro as seen for future visits
+  useEffect(() => {
+    if (showContent) {
+      sessionStorage.setItem(INTRO_SEEN_KEY, "true");
+    }
+  }, [showContent]);
 
   return (
     <CanvasComponent offset={offset}>
@@ -73,7 +91,10 @@ export default function HeroSection({ offset }: HeroSectionProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: TEXT_CONTAINER_DELAY, duration: 0.5 }}
+              transition={{
+                delay: IS_REVISIT ? 0 : TEXT_CONTAINER_DELAY,
+                duration: IS_REVISIT ? 0.3 : 0.5,
+              }}
               className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-fuchsia-100/80"
             >
               <div className="pointer-events-none absolute top-1 left-0 z-10 scale-[200%] md:scale-[300%]">
@@ -93,8 +114,8 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: typingDone ? 1 : 0 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="inline-block animate-wave ml-1 text-white"
-                    style={{ WebkitTextFillColor: "initial" }}
+                    className={`inline-block ml-1 text-white ${typingDone ? "animate-wave" : ""}`}
+                    style={{ WebkitTextFillColor: "initial", animationDelay: "-200ms" }}
                   >
                     👋
                   </motion.span>
@@ -121,8 +142,8 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 transition={{
                   delay: showContent ? idx * CARD_STAGGER : 0,
                   type: "spring",
-                  stiffness: 100,
-                  damping: 15,
+                  stiffness: 130,
+                  damping: 17,
                 }}
                 className={`${card.gridArea} min-h-[92px] md:min-h-44`}
               >
