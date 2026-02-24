@@ -3,14 +3,35 @@ import { motion } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import FlipCard from "./hero/FlipCard";
 import { cards } from "./hero/cards";
+import ClickMeSvg, { CLICKME_TOTAL_DURATION } from "./ClickMeSvg";
 
 interface HeroSectionProps {
   offset: SectionCoordinates;
 }
 
+// Typewriter timing (ms)
 const INTRO_TEXT = "hey, I'm Hunter!";
-const CHAR_DELAY = 75;
-const PUNCT_DELAY = 150;
+const CHAR_DELAY = 60;
+const PUNCT_DELAY = 120;
+const PUNCTUATION = ",;:.!?";
+const TYPING_DURATION_MS = Array.from({ length: INTRO_TEXT.length }, (_, i) =>
+  PUNCTUATION.includes(INTRO_TEXT[i - 1] ?? "") ? PUNCT_DELAY : CHAR_DELAY,
+).reduce((a, b) => a + b, 0);
+const POST_TYPING_DELAY_MS = 700;
+
+// Content timing (seconds, relative to showContent becoming true)
+const TEXT_CONTAINER_DELAY = 0.2;
+const SUBTITLE_FADE_DURATION = 0.4;
+const CARD_STAGGER = 0.267;
+const CARD_SPRING_SETTLE = 0.6; // approximate spring settle time
+const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
+const HERO_CLICKME_DELAY = CARDS_FINISH + 0.15;
+
+/** Seconds from page load until the hero clickme animation finishes */
+export const HERO_SEQUENCE_END =
+  (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000 +
+  HERO_CLICKME_DELAY +
+  CLICKME_TOTAL_DURATION;
 
 export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
@@ -23,7 +44,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     let cancelled = false;
     const tick = (count: number) => {
       if (cancelled || count >= INTRO_TEXT.length) return;
-      const delay = ",;:.!?".includes(INTRO_TEXT[count - 1] ?? "")
+      const delay = PUNCTUATION.includes(INTRO_TEXT[count - 1] ?? "")
         ? PUNCT_DELAY
         : CHAR_DELAY;
       setTimeout(() => {
@@ -40,7 +61,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
 
   useEffect(() => {
     if (!typingDone) return;
-    const timer = setTimeout(() => setShowContent(true), 700);
+    const timer = setTimeout(() => setShowContent(true), POST_TYPING_DELAY_MS);
     return () => clearTimeout(timer);
   }, [typingDone]);
 
@@ -52,25 +73,18 @@ export default function HeroSection({ offset }: HeroSectionProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+              transition={{ delay: TEXT_CONTAINER_DELAY, duration: 0.5 }}
               className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-fuchsia-100/80"
             >
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: showContent && !hasBeenClicked ? 1 : 0 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="pointer-events-none absolute top-1 left-0 z-10 scale-[180%] md:scale-[230%]"
-              >
-                <motion.img
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: showContent ? 1 : 0 }}
-                  transition={{ delay: 0.5, duration: 0.5, ease: "easeInOut" }}
-                  src="/clickme.svg"
-                  alt="Click me!"
+              <div className="pointer-events-none absolute top-1 left-0 z-10 scale-[200%] md:scale-[300%]">
+                <ClickMeSvg
+                  variant="hero"
+                  show={showContent && !hasBeenClicked}
+                  enterDelay={HERO_CLICKME_DELAY}
                   width={60}
                   height={38}
                 />
-              </motion.div>
+              </div>
               <div>
                 <p className="text-sm md:text-base lg:text-lg bg-gradient-to-r from-white to-fuchsia-300/80 bg-clip-text text-transparent">
                   {INTRO_TEXT.slice(0, charCount)}
@@ -88,7 +102,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showContent ? 1 : 0 }}
-                  transition={{ duration: 0.4 }}
+                  transition={{ duration: SUBTITLE_FADE_DURATION }}
                   className="text-sm md:text-base mt-3 bg-gradient-to-r from-white to-fuchsia-300/80 bg-clip-text text-transparent"
                 >
                   welcome to my website, have a look around :)
@@ -105,7 +119,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                     : { opacity: 0, scale: 0.9 }
                 }
                 transition={{
-                  delay: showContent ? idx * 0.267 : 0,
+                  delay: showContent ? idx * CARD_STAGGER : 0,
                   type: "spring",
                   stiffness: 100,
                   damping: 15,

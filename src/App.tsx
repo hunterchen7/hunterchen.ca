@@ -10,7 +10,8 @@ import HeroSection from "./components/HeroSection";
 import ProjectsSection from "./components/ProjectsSection";
 import GallerySection from "./components/GallerySection";
 import ChessSection from "./components/ChessSection";
-import { motion, AnimatePresence } from "framer-motion";
+import ClickMeSvg from "./components/ClickMeSvg";
+import { HERO_SEQUENCE_END } from "./components/HeroSection";
 
 // Canvas gradient - warm purple radial emanating from bottom
 const CANVAS_GRADIENT = `radial-gradient(ellipse ${canvasWidth}px ${canvasHeight}px at ${canvasWidth / 2}px ${canvasHeight}px, #150f1d 0%, #2a1f3d 30%, #3e2d55 55%, #150f1d 100%)`;
@@ -42,20 +43,12 @@ export default function App() {
 
   return (
     <main id="home" className="relative min-h-screen">
-      <AnimatePresence>
-        {showClickMe && (
-          <motion.img
-            key="clickme-nav"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.3, ease: "easeInOut" } }}
-            transition={{ delay: 1.4, duration: 0.5, ease: "easeInOut" }}
-            src="/clickme_nav.svg"
-            alt=""
-            className="pointer-events-none fixed bottom-[49px] left-[55%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
-          />
-        )}
-      </AnimatePresence>
+      <ClickMeSvg
+        variant="nav"
+        show={showClickMe}
+        enterDelay={HERO_SEQUENCE_END}
+        className="pointer-events-none fixed bottom-[49px] left-[55%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
+      />
       <Canvas
         homeCoordinates={coordinates.hero}
         navItems={navItems}

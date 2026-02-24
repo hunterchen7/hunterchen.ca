@@ -8,7 +8,7 @@ import type { Card } from "./FlipCard";
 export const cards: Card[] = [
   {
     id: "1",
-    front: "Work 🧑‍💻",
+    front: "work 🧑‍💻",
     back: (
       <div className="text-[10.5px] md:text-sm lg:text-base ">
         I'm currently building frontend & mobile w/ React & React Native @{" "}
@@ -38,21 +38,21 @@ export const cards: Card[] = [
   },
   {
     id: "2",
-    front: "Fun 🤩",
+    front: "not work (hobbies) 🤩",
     back: <FunCard />,
     gridArea: "[grid-area:4/4/7/6] md:[grid-area:3/3/5/5]",
     color: "#532963",
   },
   {
     id: "3",
-    front: "Projects 🤓",
+    front: "projects 🤓",
     back: <ProjectsCard />,
     gridArea: "[grid-area:1/4/4/6] md:[grid-area:1/3/3/5]",
     color: "#48205a",
   },
   {
     id: "4",
-    front: "Hackathons 💻",
+    front: "hackathons 💻",
     back: (
       <div className="flex flex-col gap-2 -mx-4 md:mx-auto">
         <div className="text-[10.5px] md:text-sm">
