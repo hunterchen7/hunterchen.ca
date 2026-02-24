@@ -27,53 +27,8 @@ const INITIAL_ENGINE_STATE: EngineState = {
   error: null,
 };
 
-function uciToSan(fen: string, uci: string): string {
-  try {
-    const tmp = new Chess(fen);
-    const move = tmp.move({
-      from: uci.slice(0, 2),
-      to: uci.slice(2, 4),
-      promotion: uci.length > 4 ? uci[4] : undefined,
-    });
-    return move?.san ?? uci;
-  } catch {
-    return uci;
-  }
-}
 
-function TopMovesBar({
-  topMoves,
-  fen,
-}: {
-  topMoves: { move: string; visits: number; probability: number }[] | null;
-  fen: string;
-}) {
-  if (!topMoves || topMoves.length === 0) {
-    return (
-      <div className="flex gap-3 justify-center font-mono text-sm">
-        {Array.from({ length: 5 }, (_, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <span className="text-fuchsia-200/20">---</span>
-            <span className="text-fuchsia-300/20">--%</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
 
-  return (
-    <div className="flex gap-3 justify-center font-mono text-sm">
-      {topMoves.map((m) => (
-        <div key={m.move} className="flex items-center gap-1.5">
-          <span className="text-fuchsia-200">{uciToSan(fen, m.move)}</span>
-          <span className="text-fuchsia-300/50">
-            {Math.round(m.probability * 100)}%
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function ChessSection({ offset }: ChessSectionProps) {
   const gameRef = useRef(new Chess());
@@ -92,7 +47,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [draggedSquare, setDraggedSquare] = useState<Square | null>(null);
   const [legalMoveSquares, setLegalMoveSquares] = useState<Square[]>([]);
-  const [topMovesFen, setTopMovesFen] = useState<string | null>(null);
+
   const [pendingPromotion, setPendingPromotion] = useState<{
     from: string;
     to: string;
@@ -142,7 +97,6 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     engine
       .mctsSearch(searchFen, fenHistory, 50, 0.5)
       .then(({ move }) => {
-        setTopMovesFen(searchFen);
         setEngineState((prev) => ({ ...prev, isThinking: true }));
         return new Promise<string>((resolve) =>
           setTimeout(() => resolve(move), 1000),
@@ -321,6 +275,23 @@ export default function ChessSection({ offset }: ChessSectionProps) {
       cursor: "pointer",
     };
   }
+  if (game.inCheck()) {
+    const turn = game.turn();
+    const board = game.board();
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r]![c];
+        if (piece && piece.type === "k" && piece.color === turn) {
+          const file = String.fromCharCode(97 + c);
+          const rank = String(8 - r);
+          customSquareStyles[file + rank] = {
+            background:
+              "radial-gradient(circle, rgba(239, 68, 68, 0.7) 0%, rgba(239, 68, 68, 0.3) 50%, transparent 70%)",
+          };
+        }
+      }
+    }
+  }
 
   return (
     <CanvasComponent offset={offset}>
@@ -373,6 +344,21 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 boxShadow: "0 0 20px rgba(192, 132, 252, 0.15)",
               }}
             />
+            {engineState.isLoading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg backdrop-blur-sm bg-black/30">
+                <div className="w-48 h-1.5 rounded-full bg-fuchsia-950/50 overflow-hidden">
+                  <div
+                    className="h-full bg-fuchsia-400/60 transition-all duration-300 rounded-full"
+                    style={{
+                      width: `${engineState.loadingProgress * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-fuchsia-300/50 font-mono">
+                  {engineState.loadingMessage}
+                </span>
+              </div>
+            )}
             {showConfetti && <Confetti key={confettiKey} />}
             {pendingPromotion && (
               <PromotionPicker
@@ -385,32 +371,9 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             )}
           </div>
 
-          {/* Top moves */}
-          <div className="w-[800px] -mt-2">
-            <TopMovesBar
-              topMoves={engineState.topMoves}
-              fen={topMovesFen ?? game.fen()}
-            />
-          </div>
 
           {/* Status area */}
           <div className="flex flex-col items-center gap-2 min-h-[60px]">
-            {engineState.isLoading && (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-48 h-1.5 rounded-full bg-fuchsia-950/50 overflow-hidden">
-                  <div
-                    className="h-full bg-fuchsia-400/60 transition-all duration-300 rounded-full"
-                    style={{
-                      width: `${engineState.loadingProgress * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className=" text-fuchsia-300/50 font-mono">
-                  {engineState.loadingMessage}
-                </span>
-              </div>
-            )}
-
             {engineState.isThinking && (
               <span className=" text-fuchsia-300/50 font-mono animate-pulse">
                 thinking...

@@ -263,7 +263,7 @@ export async function mctsSearch(
       probability: sumWeights > 0 ? weights[i]! / sumWeights : 0,
     }))
     .sort((a, b) => b.probability - a.probability)
-    .slice(0, 5);
+    .filter((m) => m.probability > 0);
 
   // Aggregate WDL from root's children weighted by visits
   const totalVisits = root.visits - 1; // exclude root's own expansion visit
