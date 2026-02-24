@@ -56,9 +56,12 @@ export default function HeroSection({ offset }: HeroSectionProps) {
       const grid = gridRef.current;
       if (!grid) return;
       const rect = grid.getBoundingClientRect();
+      // Convert screen-space to layout-space (accounts for canvas zoom)
+      const scaleX = grid.offsetWidth / rect.width;
+      const scaleY = grid.offsetHeight / rect.height;
       setGridMouse({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
       });
     },
     [],

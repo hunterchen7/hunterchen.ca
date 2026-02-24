@@ -213,7 +213,7 @@ const PolaroidCard = ({
       <motion.div
         ref={cardRef}
         className={`relative h-[300px] w-[260px] cursor-grab transition-all ${className} active:cursor-grabbing`}
-        style={{ perspective: 1200, rotate: rotation }}
+        style={{ perspective: 900, rotate: rotation }}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
