@@ -5,7 +5,7 @@ const socialLinkClass =
 
 export default function ContactCard() {
   return (
-    <div className="text-[11px] md:text-sm flex flex-col items-center justify-center h-full w-full">
+    <div className="text-[10.5px] md:text-sm flex flex-col items-center justify-center h-full w-full">
       <a
         href="mailto:hello@hunterchen.ca"
         className="group mb-6 text-lg"
