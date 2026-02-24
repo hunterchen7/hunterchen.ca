@@ -5,6 +5,9 @@ import FunCard from "./FunCard";
 import ProjectsCard from "./ProjectsCard";
 import type { Card } from "./FlipCard";
 
+export const SHARED_GRADIENT =
+  "radial-gradient(ellipse at 50% 50%, #5a2d6e 0%, #3d1a50 40%, #2a1035 70%, #1e0a28 100%)";
+
 export const cards: Card[] = [
   {
     id: "1",

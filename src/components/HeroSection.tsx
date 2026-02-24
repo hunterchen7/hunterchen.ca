@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import FlipCard from "./hero/FlipCard";
@@ -46,6 +46,27 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     IS_REVISIT ? INTRO_TEXT.length : 0,
   );
   const [showContent, setShowContent] = useState(IS_REVISIT);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [gridMouse, setGridMouse] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+
+  const handleGridMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const grid = gridRef.current;
+      if (!grid) return;
+      const rect = grid.getBoundingClientRect();
+      setGridMouse({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    },
+    [],
+  );
+
+  const handleGridMouseLeave = useCallback(() => {
+    setGridMouse(null);
+  }, []);
   const typingDone = charCount >= INTRO_TEXT.length;
 
   // Typewriter effect (skipped on revisit since typingDone is already true)
@@ -87,7 +108,12 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     <CanvasComponent offset={offset}>
       <div className="relative h-full w-full flex items-center justify-center p-8">
         <div className="w-[95vw] md:w-[700px] lg:w-[1000px] -mt-32 md:-mt-24 md:h-[1000px] flex flex-col">
-          <div className="relative grid gap-2 md:gap-3 lg:gap-4 grid-cols-5 grid-rows-7 md:grid-cols-4 md:grid-rows-5 mt-20">
+          <div
+            ref={gridRef}
+            onMouseMove={handleGridMouseMove}
+            onMouseLeave={handleGridMouseLeave}
+            className="relative grid gap-2 md:gap-3 lg:gap-4 grid-cols-5 grid-rows-7 md:grid-cols-4 md:grid-rows-5 mt-20"
+          >
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -115,7 +141,10 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                     animate={{ opacity: typingDone ? 1 : 0 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className={`inline-block ml-1 text-white ${typingDone ? "animate-wave" : ""}`}
-                    style={{ WebkitTextFillColor: "initial", animationDelay: "-200ms" }}
+                    style={{
+                      WebkitTextFillColor: "initial",
+                      animationDelay: "-200ms",
+                    }}
                   >
                     👋
                   </motion.span>
@@ -124,7 +153,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showContent ? 1 : 0 }}
                   transition={{ duration: SUBTITLE_FADE_DURATION }}
-                  className="text-sm md:text-base mt-3 bg-gradient-to-r from-white to-fuchsia-300/80 bg-clip-text text-transparent"
+                  className="text-sm md:text-base mt-3 bg-gradient-to-r from-fuchsia-200 to-fuchsia-300/80 bg-clip-text text-transparent"
                 >
                   welcome to my website, have a look around :)
                 </motion.p>
@@ -149,6 +178,8 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               >
                 <FlipCard
                   card={card}
+                  gridMouse={gridMouse}
+                  gridRef={gridRef}
                   onCardClick={() => setHasBeenClicked(true)}
                 />
               </motion.div>

@@ -3,9 +3,9 @@ import { motion, type Variants } from "framer-motion";
 
 // Animation timing (seconds, relative to enterDelay)
 const TEXT_FADE_DURATION = 0.3;
-const ARROW_MAIN_OFFSET = 0.4;
-const ARROW_MAIN_DURATION = 0.5;
-const ARROW_TIP_OFFSET = ARROW_MAIN_OFFSET + ARROW_MAIN_DURATION;
+const ARROW_MAIN_OFFSET = 0.35;
+const ARROW_MAIN_DURATION = 0.4;
+const ARROW_TIP_OFFSET = ARROW_MAIN_OFFSET + ARROW_MAIN_DURATION + 0.067;
 const ARROW_TIP_DURATION = 0.3;
 
 // Exit (undraw) timing — reverse of enter order
@@ -24,8 +24,8 @@ const DRAW_DURATION = Math.max(
   ARROW_MAIN_OFFSET + ARROW_MAIN_DURATION,
   ARROW_TIP_OFFSET + ARROW_TIP_DURATION,
 );
-const COLOR_OFFSET = DRAW_DURATION;
-const COLOR_DURATION = 0.5;
+const COLOR_OFFSET = DRAW_DURATION / 3;
+const COLOR_DURATION = 0.8;
 
 /** Total time from enterDelay until the last animation completes */
 export const CLICKME_TOTAL_DURATION = COLOR_OFFSET + COLOR_DURATION;
