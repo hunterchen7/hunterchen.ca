@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCanvasContext } from "@hunterchen/canvas";
 import { PIECE_MAP } from "./PieceSVGs";
 import DragOverlay from "./DragOverlay";
@@ -33,6 +34,30 @@ interface PendingDrag {
 }
 
 const DRAG_THRESHOLD = 5;
+const HIGHLIGHT_TRANSITION = { duration: 0.1, ease: "easeOut" as const };
+
+function SquareHighlight({ style }: { style?: React.CSSProperties }) {
+  return (
+    <AnimatePresence>
+      {style && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={HIGHLIGHT_TRANSITION}
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            ...style,
+            cursor: undefined,
+          }}
+        />
+      )}
+    </AnimatePresence>
+  );
+}
 
 function PieceOnSquare({
   piece,
@@ -304,18 +329,7 @@ export default function ChessBoard({
                 cursor: customStyle?.cursor ?? (piece && isDraggable ? "grab" : "default"),
               }}
             >
-              {customStyle && (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    pointerEvents: "none",
-                    zIndex: 0,
-                    ...customStyle,
-                    cursor: undefined,
-                  }}
-                />
-              )}
+              <SquareHighlight style={customStyle} />
               {piece && !isDragSource && (
                 <div style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
                   <PieceOnSquare

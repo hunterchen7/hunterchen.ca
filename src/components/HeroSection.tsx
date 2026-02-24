@@ -59,7 +59,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   stiffness: 100,
                   damping: 15,
                 }}
-                className={`${card.gridArea} min-h-24 md:min-h-44`}
+                className={`${card.gridArea} min-h-[92px] md:min-h-44`}
               >
                 <FlipCard
                   card={card}

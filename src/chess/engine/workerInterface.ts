@@ -64,6 +64,7 @@ export class Lc0Engine {
           lastMove: msg.move,
           lastConfidence: msg.confidence,
           wdl: msg.wdl,
+          topMoves: msg.topMoves ?? null,
         })
         this.pendingMove?.resolve({
           move: msg.move,
@@ -100,6 +101,23 @@ export class Lc0Engine {
       }
       this.pendingMove = { resolve, reject }
       this.post({ type: 'getBestMove', fen, history, legalMoves, temperature })
+    })
+  }
+
+  async mctsSearch(
+    fen: string,
+    history: string[],
+    nodeLimit: number,
+    temperature: number = 1,
+  ): Promise<{ move: string; confidence: number; wdl: [number, number, number] }> {
+    this.notify({ isThinking: true })
+    return new Promise((resolve, reject) => {
+      if (this.pendingMove) {
+        reject(new Error('Engine already has a pending move request'))
+        return
+      }
+      this.pendingMove = { resolve, reject }
+      this.post({ type: 'mctsSearch', fen, history, nodeLimit, temperature })
     })
   }
 
