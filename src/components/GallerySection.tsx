@@ -243,7 +243,7 @@ const ExifCard = ({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       transition={{ delay: 0.2, duration: 0.3 }}
-      className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-4 min-w-[200px] max-w-[240px] cursor-auto"
+      className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-4 min-w-[200px] sm:max-w-[240px] cursor-auto"
       onClick={(e) => e.stopPropagation()}
     >
       <h3 className="text-sm font-medium text-gray-800 mb-3 border-b border-gray-200 pb-2">
@@ -325,19 +325,45 @@ const ExpandedPolaroid = ({
     }
   }, [photo.url]);
 
-  // Calculate the scale to fill most of the screen while maintaining aspect ratio
-  // Account for the EXIF card width (260px + gap)
-  const exifCardSpace = 280;
-  const availableWidth = window.innerWidth - exifCardSpace;
-  const maxWidthScale = (availableWidth * 0.75) / CARD_WIDTH;
-  const maxHeightScale = (window.innerHeight * 0.85) / CARD_HEIGHT;
-  const targetScale = Math.min(maxWidthScale, maxHeightScale);
+  const isMobile = window.innerWidth < 640;
 
-  // Calculate positions - polaroid slightly left of center, exif card to the right
-  const totalWidth = CARD_WIDTH * targetScale + exifCardSpace;
-  const startX = (window.innerWidth - totalWidth) / 2;
-  const centerX = startX;
-  const centerY = window.innerHeight / 2 - (CARD_HEIGHT * targetScale) / 2;
+  let targetScale: number;
+  let centerX: number;
+  let centerY: number;
+  let exifLeft: number;
+  let exifTop: number;
+
+  if (isMobile) {
+    // Mobile: polaroid centered, EXIF card stacked below
+    const exifCardHeight = 160;
+    const gap = 16;
+    const totalHeight = CARD_HEIGHT + exifCardHeight + gap;
+    const maxWidthScale = (window.innerWidth * 0.85) / CARD_WIDTH;
+    const maxHeightScale = (window.innerHeight * 0.75) / totalHeight;
+    targetScale = Math.min(maxWidthScale, maxHeightScale);
+
+    centerX = (window.innerWidth - CARD_WIDTH * targetScale) / 2;
+    centerY =
+      (window.innerHeight - CARD_HEIGHT * targetScale - exifCardHeight - gap) /
+      2;
+
+    exifLeft = centerX;
+    exifTop = centerY + CARD_HEIGHT * targetScale + gap;
+  } else {
+    // Desktop: side-by-side layout
+    const exifCardSpace = 280;
+    const availableWidth = window.innerWidth - exifCardSpace;
+    const maxWidthScale = (availableWidth * 0.75) / CARD_WIDTH;
+    const maxHeightScale = (window.innerHeight * 0.85) / CARD_HEIGHT;
+    targetScale = Math.min(maxWidthScale, maxHeightScale);
+
+    const totalWidth = CARD_WIDTH * targetScale + exifCardSpace;
+    centerX = (window.innerWidth - totalWidth) / 2;
+    centerY = window.innerHeight / 2 - (CARD_HEIGHT * targetScale) / 2;
+
+    exifLeft = centerX + CARD_WIDTH * targetScale + 24;
+    exifTop = centerY;
+  }
 
   return createPortal(
     <motion.div
@@ -396,11 +422,14 @@ const ExpandedPolaroid = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ delay: 0.15, duration: 0.25 }}
         style={{
           position: "fixed",
-          left: centerX + CARD_WIDTH * targetScale + 24,
-          top: centerY,
+          left: exifLeft,
+          top: exifTop,
+          ...(isMobile && { width: CARD_WIDTH * targetScale }),
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <ExifCard exif={exif} isLoading={exifLoading} />
       </motion.div>
