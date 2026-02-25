@@ -47,7 +47,7 @@ export default function App() {
         variant="nav"
         show={showClickMe}
         enterDelay={HERO_SEQUENCE_END}
-        className="pointer-events-none fixed bottom-[49px] left-[55%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
+        className="pointer-events-none fixed bottom-[49px] left-[53%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
       />
       <Canvas
         homeCoordinates={coordinates.hero}

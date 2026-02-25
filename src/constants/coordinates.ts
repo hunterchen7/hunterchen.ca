@@ -29,7 +29,7 @@ export const coordinates = {
     x: 1100,
     y: 2340,
     width: 1200,
-    height: 800,
+    height: 1000,
   },
   chess: {
     x: 3600,

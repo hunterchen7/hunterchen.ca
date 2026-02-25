@@ -48,6 +48,11 @@ const TRANSFORMS = {
       "rotate(-50, 18, 28) translate(-16, 12) scale(1,-1) translate(-30, -19)",
     text: "translate(-16, 4) scale(1.3) rotate(-8, 24, 30)",
   },
+  projects: {
+    arrow:
+      "translate(-2, -10) scale(-1, 1) rotate(-57, 18, 28) translate(-16, 12) scale(1,-1) translate(-30, -19)",
+    text: "translate(-50, -1) scale(1.3) rotate(-4, 24, 50)",
+  },
 };
 
 // -- Variants (use labels so exit propagates from AnimatePresence) --
@@ -159,7 +164,7 @@ const arrowTipVariants: Variants = {
 };
 
 interface ClickMeSvgProps {
-  variant: "hero" | "nav";
+  variant: "hero" | "nav" | "projects";
   show?: boolean;
   enterDelay?: number;
   width?: number;
