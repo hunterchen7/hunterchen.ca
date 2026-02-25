@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@hunterchen/canvas": "^0.11.0",
+    "@hunterchen/canvas": "^0.12.0",
     "@vitejs/plugin-react": "^5.1.4",
     "autoprefixer": "^10.4.24",
     "chess.js": "^1.4.0",

@@ -4,6 +4,7 @@ import {
   DefaultCanvasBackground,
   canvasWidth,
   canvasHeight,
+  ScreenSizeEnum,
 } from "@hunterchen/canvas";
 import { coordinates, navItems } from "./constants/coordinates";
 import HeroSection from "./components/HeroSection";
@@ -67,6 +68,11 @@ export default function App() {
             backgroundColor: "#1a1520",
             borderColor: "#3e2d55",
             color: "#ede8f2",
+          },
+        }}
+        zoomConfig={{
+          responsiveZoomMap: {
+            [ScreenSizeEnum.MOBILE]: 0.5,
           },
         }}
         navbarConfig={{
