@@ -1,7 +1,10 @@
-import { useRef, useEffect, type ReactNode } from "react";
+import { useRef, useState, useEffect, useCallback, type ReactNode } from "react";
 import { motion, useDragControls } from "framer-motion";
 import { X } from "lucide-react";
 import { Draggable } from "@hunterchen/canvas";
+
+const MIN_WIDTH = 320;
+const MIN_HEIGHT = 200;
 
 interface DraggableWindowProps {
   title: string;
@@ -15,7 +18,7 @@ interface DraggableWindowProps {
 
 export default function DraggableWindow({
   title,
-  width = 880,
+  width: initialWidth = 880,
   maxHeight = 600,
   onClose,
   initialPos,
@@ -24,16 +27,41 @@ export default function DraggableWindow({
 }: DraggableWindowProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
+  const windowRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<{ w: number; h: number | null }>({ w: initialWidth, h: null });
+  const resizing = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
 
   // Native wheel listener to prevent canvas zoom from intercepting content scrolling.
-  // React's onWheel stopPropagation doesn't work here because the canvas uses a
-  // native wheel listener that fires before React processes the synthetic event.
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
     const stopWheel = (e: WheelEvent) => e.stopPropagation();
     el.addEventListener("wheel", stopWheel);
     return () => el.removeEventListener("wheel", stopWheel);
+  }, []);
+
+  const onResizePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const actualH = windowRef.current?.offsetHeight ?? size.h ?? maxHeight;
+      resizing.current = { startX: e.clientX, startY: e.clientY, startW: size.w, startH: actualH };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [size, maxHeight],
+  );
+
+  const onResizePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!resizing.current) return;
+    const { startX, startY, startW, startH } = resizing.current;
+    setSize({
+      w: Math.max(MIN_WIDTH, startW + (e.clientX - startX)),
+      h: Math.max(MIN_HEIGHT, startH + (e.clientY - startY)),
+    });
+  }, []);
+
+  const onResizePointerUp = useCallback(() => {
+    resizing.current = null;
   }, []);
 
   return (
@@ -48,8 +76,9 @@ export default function DraggableWindow({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.85 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="bg-[#1a1528]/90 border-[1.5px] border-fuchsia-400/30 rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_80px_rgba(168,85,247,0.06)] backdrop-blur-xl flex flex-col overflow-hidden"
-        style={{ width, maxHeight }}
+        className="relative bg-[#1a1528]/90 border-[1.5px] border-fuchsia-400/30 rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_80px_rgba(168,85,247,0.06)] backdrop-blur-xl flex flex-col overflow-hidden"
+        ref={windowRef}
+        style={{ width: size.w, ...(size.h != null ? { height: size.h } : { maxHeight }) }}
       >
         {/* Title bar — drag handle */}
         <div
@@ -72,6 +101,23 @@ export default function DraggableWindow({
           className={`flex-1 min-h-0 overflow-y-auto ${contentClassName ?? ""}`}
         >
           {children}
+        </div>
+
+        {/* Resize handle — bottom-right corner */}
+        <div
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={onResizePointerUp}
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-10 group"
+        >
+          {/* Diagonal lines indicator */}
+          <svg
+            viewBox="0 0 16 16"
+            className="w-full h-full text-fuchsia-400/30 group-hover:text-fuchsia-400/60 transition-colors"
+          >
+            <line x1="14" y1="6" x2="6" y2="14" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="14" y1="10" x2="10" y2="14" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
         </div>
       </motion.div>
     </Draggable>

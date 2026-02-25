@@ -92,9 +92,9 @@ export default function App() {
         }}
       >
         <HeroSection offset={coordinates.hero} />
-        <ProjectsSection offset={coordinates.projects} />
         <GallerySection offset={coordinates.gallery} />
         <ChessSection offset={coordinates.chess} />
+        <ProjectsSection offset={coordinates.projects} />
       </Canvas>
     </main>
   );

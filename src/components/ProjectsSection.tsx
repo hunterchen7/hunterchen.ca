@@ -568,8 +568,8 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
                 {entry.type === "project" ? (
                   <DraggableWindow
                     title={entry.project.title}
-                    width={880}
-                    maxHeight={1000}
+                    width={920}
+                    maxHeight={777}
                     initialPos={entry.pos}
                     onClose={() => closeWindow(id)}
                   >
