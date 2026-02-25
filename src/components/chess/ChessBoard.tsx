@@ -133,6 +133,9 @@ function PieceOnSquare({
   );
 }
 
+const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
+const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
 export default function ChessBoard({
   position: fen,
   onSquareClick,
@@ -140,17 +143,19 @@ export default function ChessBoard({
   onDragStart,
   onDragEnd: onDragEndCallback,
   squareStyles,
-  darkSquareColor = "#4a3562",
-  lightSquareColor = "#d4c5e2",
+  darkSquareColor = "#453260",
+  lightSquareColor = "#c9bdd8",
   boardStyle,
   isDraggable = false,
   animationDuration = 200,
   orientation = "w",
+  playerColor,
 }: ChessBoardProps) {
   const flipped = orientation === "b";
   const { scale } = useCanvasContext();
   const boardRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
   const [anim, setAnim] = useState<AnimatingPiece | null>(null);
   const skipNextAnimRef = useRef(false);
   const onDragStartRef = useRef(onDragStart);
@@ -285,65 +290,140 @@ export default function ChessBoard({
 
   const squareSize = boardRef.current ? boardRef.current.offsetWidth / 8 : 50;
 
+  // Clear hover when dragging starts
+  const activeHover = dragState ? null : hoveredSquare;
+
+  const ranks = flipped ? RANKS.slice().reverse() : RANKS;
+  const files = flipped ? FILES.slice().reverse() : FILES;
+
   return (
     <>
-      <div
-        ref={boardRef}
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(8, 1fr)",
-          gridTemplateRows: "repeat(8, 1fr)",
-          aspectRatio: "1 / 1",
-          width: "100%",
-          overflow: "hidden",
-          touchAction: "manipulation",
-          ...boardStyle,
-        }}
-      >
-        {Array.from({ length: 64 }, (_, i) => {
-          const row = flipped ? 7 - Math.floor(i / 8) : Math.floor(i / 8);
-          const col = flipped ? 7 - (i % 8) : i % 8;
-          const square = gridToSquare(row, col);
-          const piece = currentPosition[square];
-          const light = isLightSquare(square);
-          const customStyle = squareStyles?.[square];
-          const isDragSource = dragState?.fromSquare === square;
+      {/* Outer wrapper: rank labels + board + file labels */}
+      <div style={{ display: "flex", width: "100%" }}>
+        {/* Rank labels */}
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-around",
+          paddingRight: 6,
+          width: 18,
+        }}>
+          {ranks.map((r) => (
+            <span key={r} style={{
+              fontSize: "0.6rem",
+              color: "rgba(201, 189, 216, 0.45)",
+              fontFamily: "var(--font-mono)",
+              textAlign: "center",
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              userSelect: "none",
+            }}>{r}</span>
+          ))}
+        </div>
 
-          return (
-            <button
-              key={square}
-              data-square={square}
-              type="button"
-              onClick={() => onSquareClick?.(square)}
-              onPointerDown={(e) => handlePointerDown(e, square, piece)}
-              style={{
-                backgroundColor: light ? lightSquareColor : darkSquareColor,
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                padding: 0,
-                margin: 0,
-                outline: "none",
-                cursor: customStyle?.cursor ?? (piece && isDraggable ? "grab" : "default"),
-              }}
-            >
-              <SquareHighlight style={customStyle} />
-              {piece && !isDragSource && (
-                <div style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
-                  <PieceOnSquare
-                    piece={piece}
-                    square={square}
-                    anim={anim}
-                    animationDuration={animationDuration}
-                    flipped={flipped}
-                  />
-                </div>
-              )}
-            </button>
-          );
-        })}
+        <div style={{ flex: 1 }}>
+          {/* Board */}
+          <div
+            ref={boardRef}
+            style={{
+              position: "relative",
+              display: "grid",
+              gridTemplateColumns: "repeat(8, 1fr)",
+              gridTemplateRows: "repeat(8, 1fr)",
+              aspectRatio: "1 / 1",
+              width: "100%",
+              overflow: "hidden",
+              touchAction: "manipulation",
+              ...boardStyle,
+            }}
+          >
+            {Array.from({ length: 64 }, (_, i) => {
+              const row = flipped ? 7 - Math.floor(i / 8) : Math.floor(i / 8);
+              const col = flipped ? 7 - (i % 8) : i % 8;
+              const square = gridToSquare(row, col);
+              const piece = currentPosition[square];
+              const light = isLightSquare(square);
+              const customStyle = squareStyles?.[square];
+              const isDragSource = dragState?.fromSquare === square;
+
+              const isPlayerPiece = piece && isDraggable && playerColor && (
+                (playerColor === "w" && piece >= "A" && piece <= "Z") ||
+                (playerColor === "b" && piece >= "a" && piece <= "z")
+              );
+              const isHovered = isPlayerPiece && activeHover === square;
+
+              return (
+                <button
+                  key={square}
+                  data-square={square}
+                  type="button"
+                  onClick={() => onSquareClick?.(square)}
+                  onPointerDown={(e) => handlePointerDown(e, square, piece)}
+                  onPointerEnter={() => {
+                    if (isPlayerPiece) setHoveredSquare(square);
+                  }}
+                  onPointerLeave={() => {
+                    setHoveredSquare((prev) => prev === square ? null : prev);
+                  }}
+                  style={{
+                    backgroundColor: light ? lightSquareColor : darkSquareColor,
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    padding: 0,
+                    margin: 0,
+                    outline: "none",
+                    cursor: customStyle?.cursor ?? (piece && isDraggable ? "grab" : "default"),
+                  }}
+                >
+                  <SquareHighlight style={customStyle} />
+                  {piece && !isDragSource && (
+                    <div style={{
+                      position: "relative",
+                      zIndex: 1,
+                      width: "100%",
+                      height: "100%",
+                      transform: isHovered ? "scale(1.08)" : undefined,
+                      filter: isHovered ? "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35))" : undefined,
+                      transition: "transform 0.15s ease, filter 0.15s ease",
+                    }}>
+                      <PieceOnSquare
+                        piece={piece}
+                        square={square}
+                        anim={anim}
+                        animationDuration={animationDuration}
+                        flipped={flipped}
+                      />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+
+          </div>
+
+          {/* File labels */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-around",
+            paddingTop: 4,
+          }}>
+            {files.map((f) => (
+              <span key={f} style={{
+                fontSize: "0.6rem",
+                color: "rgba(201, 189, 216, 0.45)",
+                fontFamily: "var(--font-mono)",
+                flex: 1,
+                textAlign: "center",
+                userSelect: "none",
+              }}>{f}</span>
+            ))}
+          </div>
+        </div>
       </div>
 
       {dragState && (

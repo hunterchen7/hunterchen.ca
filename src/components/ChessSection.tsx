@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef, useCallback, useReducer } from "react";
+import { AnimatePresence } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { Chess, type Square } from "chess.js";
 import { Lc0Engine } from "../chess/engine/workerInterface";
 import { MODEL_URL } from "../chess/config";
 import { uciToChessJsMove } from "../chess/utils";
 import type { EngineState } from "../chess/types";
+import type { CapturedPiece, PieceChar } from "./chess/types";
 import ChessBoard from "./chess/ChessBoard";
 import PromotionPicker from "./chess/PromotionPicker";
 import Confetti from "./chess/Confetti";
+import CapturedPieceSticker from "./chess/CapturedPieceSticker";
 import { AnimatedLink } from "./AnimatedLink";
+import { playSoundForMove } from "./chess/sounds";
 
 interface ChessSectionProps {
   offset: SectionCoordinates;
@@ -52,6 +56,77 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     from: string;
     to: string;
   } | null>(null);
+
+  const [capturedPieces, setCapturedPieces] = useState<CapturedPiece[]>([]);
+  const captureIdRef = useRef(0);
+
+  const recordCapture = useCallback(
+    (move: { captured?: string; color: string; to: string }) => {
+      if (!move.captured) return;
+      const capturedColor = move.color === "w" ? "b" : "w";
+      const pieceChar = (
+        capturedColor === "w"
+          ? move.captured.toUpperCase()
+          : move.captured.toLowerCase()
+      ) as PieceChar;
+
+      const id = `cap-${captureIdRef.current++}`;
+      const isWhitePiece = capturedColor === "w";
+
+      setCapturedPieces((prev) => {
+        const sameSideCount = prev.filter((p) =>
+          isWhitePiece
+            ? p.piece === p.piece.toUpperCase()
+            : p.piece === p.piece.toLowerCase(),
+        ).length;
+
+        // Fill columns sequentially: 4, 5, 3, 4
+        // Within each column, pick a random open row
+        const colSizes = [4, 5, 3, 4];
+        const colSpacing = 120;
+        const rowSpacing = 120;
+
+        // Figure out which column we're filling
+        let colIdx = 0;
+        let filled = sameSideCount;
+        while (colIdx < colSizes.length && filled >= colSizes[colIdx]!) {
+          filled -= colSizes[colIdx]!;
+          colIdx++;
+        }
+        if (colIdx >= colSizes.length) colIdx = colSizes.length - 1;
+        const colSize = colSizes[colIdx]!;
+
+        // Find which rows in this column are already taken
+        const sameSide = prev.filter((p) =>
+          isWhitePiece
+            ? p.piece === p.piece.toUpperCase()
+            : p.piece === p.piece.toLowerCase(),
+        );
+        const takenRows = new Set(
+          sameSide.filter((p) => p.gridCol === colIdx).map((p) => p.gridRow),
+        );
+        const openRows = Array.from({ length: colSize }, (_, i) => i).filter(
+          (r) => !takenRows.has(r),
+        );
+        const row = openRows.length > 0
+          ? openRows[Math.floor(Math.random() * openRows.length)]!
+          : Math.floor(Math.random() * colSize);
+
+        const colTop = 500 - (rowSpacing * (colSize - 1)) / 2;
+        const baseX = isWhitePiece
+          ? 1070 + colIdx * colSpacing
+          : 80 - colIdx * colSpacing;
+        const tx = baseX + (Math.random() - 0.5) * 40;
+        const ty = colTop + row * rowSpacing + (Math.random() - 0.5) * 30;
+
+        return [
+          ...prev,
+          { id, piece: pieceChar, targetPos: { x: tx, y: ty }, gridCol: colIdx, gridRow: row },
+        ];
+      });
+    },
+    [],
+  );
 
   const engineRef = useRef<Lc0Engine | null>(null);
 
@@ -106,6 +181,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
         const chessMove = uciToChessJsMove(move);
         const result = game.move(chessMove);
         if (result) {
+          playSoundForMove(!!result.captured, game.inCheck());
+          recordCapture(result);
           setLastMoveSquares({ from: result.from, to: result.to });
           setFenHistory((prev) => [...prev, game.fen()]);
           forceUpdate();
@@ -158,6 +235,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     const move = game.move({ from, to });
     if (!move) return false;
 
+    playSoundForMove(!!move.captured, game.inCheck());
+    recordCapture(move);
     clearSelection();
     setLastMoveSquares({ from: move.from, to: move.to });
     setFenHistory((prev) => [...prev, game.fen()]);
@@ -171,6 +250,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     const move = game.move({ from, to, promotion });
     setPendingPromotion(null);
     if (!move) return;
+    playSoundForMove(!!move.captured, game.inCheck());
+    recordCapture(move);
     setLastMoveSquares({ from: move.from, to: move.to });
     setFenHistory((prev) => [...prev, game.fen()]);
     forceUpdate();
@@ -218,6 +299,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     setFenHistory([game.fen()]);
     setLastMoveSquares(null);
     clearSelection();
+    setCapturedPieces([]);
     setPlayerColor((prev) => (prev === "w" ? "b" : "w"));
     forceUpdate();
   };
@@ -337,11 +419,13 @@ export default function ChessSection({ offset }: ChessSectionProps) {
               animationDuration={200}
               squareStyles={customSquareStyles}
               orientation={playerColor}
-              darkSquareColor="#4a3562"
-              lightSquareColor="#d4c5e2"
+              playerColor={playerColor}
+              darkSquareColor="#453260"
+              lightSquareColor="#c9bdd8"
               boardStyle={{
                 borderRadius: "8px",
-                boxShadow: "0 0 20px rgba(192, 132, 252, 0.15)",
+                border: "2px solid rgba(69, 50, 96, 0.6)",
+                boxShadow: "0 0 20px rgba(192, 132, 252, 0.12)",
               }}
             />
             {engineState.isLoading && (
@@ -410,6 +494,18 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             )}
           </div>
         </div>
+
+        {/* Captured pieces */}
+        <AnimatePresence>
+          {capturedPieces.map((cp) => (
+            <CapturedPieceSticker
+              key={cp.id}
+              piece={cp.piece}
+              targetPos={cp.targetPos}
+              size={85}
+            />
+          ))}
+        </AnimatePresence>
       </div>
     </CanvasComponent>
   );

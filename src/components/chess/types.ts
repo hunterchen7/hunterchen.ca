@@ -17,4 +17,13 @@ export interface ChessBoardProps {
   isDraggable?: boolean;
   animationDuration?: number;
   orientation?: "w" | "b";
+  playerColor?: "w" | "b";
+}
+
+export interface CapturedPiece {
+  id: string;
+  piece: PieceChar;
+  targetPos: { x: number; y: number };
+  gridCol: number;
+  gridRow: number;
 }
