@@ -9,6 +9,7 @@ interface DraggableWindowProps {
   maxHeight?: number;
   onClose: () => void;
   initialPos?: { x: number; y: number };
+  contentClassName?: string;
   children: ReactNode;
 }
 
@@ -18,6 +19,7 @@ export default function DraggableWindow({
   maxHeight = 600,
   onClose,
   initialPos,
+  contentClassName,
   children,
 }: DraggableWindowProps) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -67,7 +69,7 @@ export default function DraggableWindow({
         {/* Content — scrollable */}
         <div
           ref={contentRef}
-          className="flex-1 min-h-0 overflow-y-auto"
+          className={`flex-1 min-h-0 overflow-y-auto ${contentClassName ?? ""}`}
         >
           {children}
         </div>

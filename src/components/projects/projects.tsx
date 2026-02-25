@@ -165,7 +165,16 @@ export const otherProjects: Project[] = [
     overview: "Compilation of the past 10 years of hack western websites",
     description:
       "Compilation of the past 10 years of hack western websites; features a mix of Next.js, CRA, Vue, Pug, Express, PHP, Bootstrap & JQuery sites, all compiled & combined into a single static site.",
-    tech: ["TypeScript", "JavaScript", "React", "Next.js"],
+    tech: [
+      "Next.js",
+      "CRA",
+      "Vue",
+      "Pug",
+      "Express",
+      "PHP",
+      "Bootstrap",
+      "jQuery",
+    ],
     demo: "https://archive.hackwestern.com/",
     images: ["/projects/hw-archive/image.webp"],
   },
@@ -410,7 +419,7 @@ export const otherProjects: Project[] = [
     overview: "Birds-eye view tank game built with gamemaker",
     description:
       "A birds-eye view tank game I made in high school with gamemaker. Has a tutorial, 3 normal levels, a boss level, different enemy types, ammo types and a menu screen. I've included the originl .gmz (gamemaker project) and the compiled .exe, run at your own risk!",
-    tech: [],
+    tech: ["GameMaker"],
     demo: "https://hunterchen.ca/tank/tankgame.exe",
     otherUrl: "https://hunterchen.ca/tank/tankgame.gmz",
     video: "/projects/tank/video.webm",

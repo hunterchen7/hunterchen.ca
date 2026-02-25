@@ -42,7 +42,7 @@ function ProjectContent({ project }: { project: Project }) {
     "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-transform hover:scale-105";
 
   return (
-    <div className="p-4 space-y-3">
+    <div className="p-4 space-y-3 cursor-auto">
       {/* Video/Image */}
       {project.video ? (
         <video
@@ -64,7 +64,7 @@ function ProjectContent({ project }: { project: Project }) {
       ) : null}
 
       {/* Description */}
-      <div className="text-sm text-neutral-300/90 leading-relaxed">
+      <div className="text-sm text-neutral-300/90 leading-relaxed select-text cursor-text">
         {project.description}
       </div>
 
@@ -167,21 +167,26 @@ function MoreProjectsContent({
             className={`flex items-center gap-3 px-4 py-3 border-b border-fuchsia-300/10 cursor-pointer hover:bg-fuchsia-500/[0.06] transition-colors ${rowBg}`}
           >
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium text-neutral-200 truncate">
+              <h4 className="text-base font-medium text-neutral-200 truncate">
                 {project.title}
               </h4>
-              <p className="text-xs text-neutral-500 line-clamp-2 mt-0.5">
+              <p className="text-sm text-neutral-500 line-clamp-2 mt-0.5">
                 {project.overview}
               </p>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {project.tech.slice(0, 3).map((t) => (
                   <span
                     key={t}
-                    className="rounded-full bg-fuchsia-950/40 px-2 py-0.5 text-[10px] text-fuchsia-300/50"
+                    className="rounded-full bg-fuchsia-950/40 px-2 py-0.5 text-xs text-fuchsia-300/50"
                   >
                     {t}
                   </span>
                 ))}
+                {project.tech.length > 3 && (
+                  <span className="rounded-full bg-fuchsia-950/40 px-2 py-0.5 text-xs text-fuchsia-300/50">
+                    +{project.tech.length - 3}
+                  </span>
+                )}
               </div>
             </div>
             {thumbnailEl}
@@ -337,7 +342,7 @@ function randomWindowPos(
     let tooMuchOverlap = false;
     for (const entry of existing.values()) {
       const ew = entry.type === "more" ? 900 : 880;
-      const eh = 600;
+      const eh = entry.type === "more" ? 800 : 600;
       const overlap = getOverlapFraction(candidate, {
         x: entry.pos.x,
         y: entry.pos.y,
@@ -407,6 +412,7 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
       const sW = el?.offsetWidth ?? 1200;
       const sH = el?.offsetHeight ?? 1000;
       const pos = randomWindowPos(sW, sH, 880, 600, prev);
+      pos.y = Math.max(20, pos.y - 100);
 
       orderRef.current++;
       next.set(project.id, {
@@ -434,7 +440,9 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
       const el = sectionRef.current;
       const sW = el?.offsetWidth ?? 1200;
       const sH = el?.offsetHeight ?? 1000;
-      const pos = randomWindowPos(sW, sH, 900, 600, prev);
+      const pos = randomWindowPos(sW, sH, 900, 800, prev);
+      // Push the taller window higher so it doesn't hang off the bottom
+      pos.y = Math.min(pos.y, -40);
 
       orderRef.current++;
       next.set(MORE_WINDOW_ID, {
@@ -569,11 +577,12 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
                   </DraggableWindow>
                 ) : (
                   <DraggableWindow
-                    title={`more projects (${otherProjects.length})`}
+                    title="more projects"
                     width={900}
                     maxHeight={800}
                     initialPos={entry.pos}
                     onClose={() => closeWindow(id)}
+                    contentClassName="overflow-y-scroll"
                   >
                     <MoreProjectsContent
                       projects={otherProjects}
