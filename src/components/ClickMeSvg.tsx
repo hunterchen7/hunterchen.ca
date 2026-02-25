@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { motion, type Variants } from "framer-motion";
 
 // Animation timing (seconds, relative to enterDelay)
@@ -12,23 +12,24 @@ const ARROW_TIP_DURATION = 0.3;
 const EXIT_TIP_DURATION = 0.25;
 const EXIT_MAIN_OFFSET = EXIT_TIP_DURATION;
 const EXIT_MAIN_DURATION = 0.4;
-const EXIT_TEXT_OFFSET = EXIT_MAIN_OFFSET + EXIT_MAIN_DURATION;
+const EXIT_TEXT_OFFSET = EXIT_MAIN_OFFSET + EXIT_MAIN_DURATION + 0.1;
 const EXIT_TEXT_DURATION = 0.3;
 const EXIT_TOTAL = EXIT_TEXT_OFFSET + EXIT_TEXT_DURATION;
 
-// Color transition: white → final color after drawing completes
-const INITIAL_COLOR = "#ffffff";
-const FINAL_COLOR = "#ebcefdff";
 const DRAW_DURATION = Math.max(
   TEXT_FADE_DURATION,
   ARROW_MAIN_OFFSET + ARROW_MAIN_DURATION,
   ARROW_TIP_OFFSET + ARROW_TIP_DURATION,
 );
-const COLOR_OFFSET = DRAW_DURATION / 3;
-const COLOR_DURATION = 0.8;
 
 /** Total time from enterDelay until the last animation completes */
-export const CLICKME_TOTAL_DURATION = COLOR_OFFSET + COLOR_DURATION;
+export const CLICKME_TOTAL_DURATION = DRAW_DURATION;
+
+// Animated gradient colors
+const GRADIENT_WHITE = "#e48dffff";
+const GRADIENT_FUCHSIA = "#f09efdff";
+const GRADIENT_LAVENDER = "#c4b5fd";
+const GRADIENT_CYCLE_DURATION = "3s";
 
 const ARROW_MAIN =
   "M32 18C32 22 33 30.5 22.5 29C13.616 27.7309 20.5 21 22.9065 26.1616C26.5287 33.9305 12.7456 32.9414 4 31.4184";
@@ -67,19 +68,13 @@ const svgVariants: Variants = {
 };
 
 const textVariants: Variants = {
-  hidden: { opacity: 0, fill: INITIAL_COLOR },
+  hidden: { opacity: 0 },
   visible: (enterDelay: number) => ({
     opacity: 1,
-    fill: FINAL_COLOR,
     transition: {
       opacity: {
         delay: enterDelay,
         duration: TEXT_FADE_DURATION,
-        ease: "easeInOut",
-      },
-      fill: {
-        delay: enterDelay + COLOR_OFFSET,
-        duration: COLOR_DURATION,
         ease: "easeInOut",
       },
     },
@@ -97,11 +92,10 @@ const textVariants: Variants = {
 };
 
 const arrowMainVariants: Variants = {
-  hidden: { pathLength: 0, opacity: 0, stroke: INITIAL_COLOR },
+  hidden: { pathLength: 0, opacity: 0 },
   visible: (enterDelay: number) => ({
     pathLength: 1,
     opacity: 1,
-    stroke: FINAL_COLOR,
     transition: {
       pathLength: {
         delay: enterDelay + ARROW_MAIN_OFFSET,
@@ -109,11 +103,6 @@ const arrowMainVariants: Variants = {
         ease: "easeOut",
       },
       opacity: { delay: enterDelay + ARROW_MAIN_OFFSET, duration: 0.1 },
-      stroke: {
-        delay: enterDelay + COLOR_OFFSET,
-        duration: COLOR_DURATION,
-        ease: "easeInOut",
-      },
     },
   }),
   exit: {
@@ -134,11 +123,10 @@ const arrowMainVariants: Variants = {
 };
 
 const arrowTipVariants: Variants = {
-  hidden: { pathLength: 0, opacity: 0, stroke: INITIAL_COLOR },
+  hidden: { pathLength: 0, opacity: 0 },
   visible: (enterDelay: number) => ({
     pathLength: 1,
     opacity: 1,
-    stroke: FINAL_COLOR,
     transition: {
       pathLength: {
         delay: enterDelay + ARROW_TIP_OFFSET,
@@ -146,11 +134,6 @@ const arrowTipVariants: Variants = {
         ease: "easeOut",
       },
       opacity: { delay: enterDelay + ARROW_TIP_OFFSET, duration: 0.1 },
-      stroke: {
-        delay: enterDelay + COLOR_OFFSET,
-        duration: COLOR_DURATION,
-        ease: "easeInOut",
-      },
     },
   }),
   exit: {
@@ -181,6 +164,8 @@ export default function ClickMeSvg({
   className,
 }: ClickMeSvgProps) {
   const transforms = TRANSFORMS[variant];
+  const rawId = useId();
+  const gradientId = `clickme-grad${rawId.replace(/:/g, "")}`;
 
   // Track when the draw-in animation has been triggered and when it completes,
   // so we can delay the undraw until the full enter animation finishes.
@@ -223,9 +208,45 @@ export default function ClickMeSvg({
       initial="hidden"
       animate={state}
     >
+      <defs>
+        <linearGradient
+          id={gradientId}
+          gradientUnits="userSpaceOnUse"
+          x1="-50"
+          y1="20"
+          x2="35"
+          y2="50"
+        >
+          <stop offset="0%">
+            <animate
+              attributeName="stop-color"
+              values={`${GRADIENT_WHITE};${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER};${GRADIENT_WHITE}`}
+              dur={GRADIENT_CYCLE_DURATION}
+              repeatCount="indefinite"
+            />
+          </stop>
+          <stop offset="50%">
+            <animate
+              attributeName="stop-color"
+              values={`${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER};${GRADIENT_WHITE};${GRADIENT_FUCHSIA}`}
+              dur={GRADIENT_CYCLE_DURATION}
+              repeatCount="indefinite"
+            />
+          </stop>
+          <stop offset="100%">
+            <animate
+              attributeName="stop-color"
+              values={`${GRADIENT_LAVENDER};${GRADIENT_WHITE};${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER}`}
+              dur={GRADIENT_CYCLE_DURATION}
+              repeatCount="indefinite"
+            />
+          </stop>
+        </linearGradient>
+      </defs>
       <motion.g transform={transforms.text}>
         <motion.path
           d={TEXT_PATH}
+          fill={`url(#${gradientId})`}
           variants={textVariants}
           custom={enterDelay}
         />
@@ -233,12 +254,14 @@ export default function ClickMeSvg({
       <motion.g transform={transforms.arrow}>
         <motion.path
           d={ARROW_MAIN}
+          stroke={`url(#${gradientId})`}
           strokeLinecap="round"
           variants={arrowMainVariants}
           custom={enterDelay}
         />
         <motion.path
           d={ARROW_TIP}
+          stroke={`url(#${gradientId})`}
           strokeLinecap="round"
           variants={arrowTipVariants}
           custom={enterDelay}

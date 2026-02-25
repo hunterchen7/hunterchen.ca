@@ -42,9 +42,7 @@ export const HERO_SEQUENCE_END = IS_REVISIT
 
 export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
-  const [charCount, setCharCount] = useState(
-    IS_REVISIT ? INTRO_TEXT.length : 0,
-  );
+  const [charCount, setCharCount] = useState(0);
   const [showContent, setShowContent] = useState(IS_REVISIT);
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridMouse, setGridMouse] = useState<{ x: number; y: number } | null>(
