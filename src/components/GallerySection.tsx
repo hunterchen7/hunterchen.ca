@@ -483,12 +483,12 @@ export default function GallerySection({ offset }: GallerySectionProps) {
                 />
               </div>
 
-              <div className="flex w-96 flex-col items-center justify-center">
+              <div className="flex w-full flex-col items-center justify-center">
                 <h2 className="mb-4 text-center text-2xl font-thin text-fuchsia-200">
                   gallery
                 </h2>
                 <div className="w-2/3 text-center text-sm text-fuchsia-300/60">
-                  a collection of some photos i took that i like :)
+                  some photos i took that i like :)
                 </div>
                 <AnimatedLink
                   href="https://gallery.hunterchen.ca/"

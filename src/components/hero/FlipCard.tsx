@@ -5,6 +5,15 @@ import { SHARED_GRADIENT } from "./cards";
 export interface Card {
   id: string;
   front: string;
+  frontAnchor?:
+    | "top-left"
+    | "top-left-lower"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right"
+    | "top-center"
+    | "center";
+  backVariant?: "modern" | "classic";
   back: string | React.ReactNode;
   gridArea: string;
   color: string;
@@ -37,6 +46,8 @@ export default function FlipCard({
   const cardRef = useRef<HTMLButtonElement>(null);
   const [bounds, setBounds] = useState<CardBounds | null>(null);
   const lastGlowPos = useRef({ localX: 0, localY: 0 });
+  const frontAnchor = card.frontAnchor ?? "center";
+  const backVariant = card.backVariant ?? "modern";
 
   // After flip animation completes, overlay a plain div on top so the browser
   // renders content at native resolution instead of caching a composite layer.
@@ -94,6 +105,7 @@ export default function FlipCard({
   // 2D parallax for front title text (simulates depth without 3D compositing blur)
   const textShiftX = (tiltPosition.x - 0.5) * 8;
   const textShiftY = (tiltPosition.y - 0.5) * 8;
+  const frontParallaxMultiplier = frontAnchor === "center" ? 1 : 0.7;
 
   // Shared gradient: each card shows its slice of the full grid gradient
   const sharedBg = bounds
@@ -111,8 +123,32 @@ export default function FlipCard({
   const glowPos = lastGlowPos.current;
   const radialGlow = `radial-gradient(600px circle at ${glowPos.localX}px ${glowPos.localY}px, rgba(255, 255, 255, 0.022), transparent 40%)`;
 
+  const frontAnchorClass = {
+    center:
+      "absolute inset-0 flex items-center justify-center text-center px-8",
+    "top-left":
+      "absolute top-5 left-5 md:top-6 md:left-6 text-left max-w-[70%]",
+    "top-left-lower":
+      "absolute top-5 left-5 md:top-16 md:left-6 text-left max-w-[70%]",
+    "top-right":
+      "absolute top-5 right-5 md:top-6 md:right-6 text-right max-w-[70%]",
+    "bottom-left":
+      "absolute bottom-5 left-5 md:bottom-6 md:left-6 text-left max-w-[70%]",
+    "bottom-right":
+      "absolute bottom-5 right-5 md:bottom-6 md:right-6 text-right max-w-[70%]",
+    "top-center":
+      "absolute top-5 left-1/2 -translate-x-1/2 md:top-6 text-center max-w-[80%]",
+  }[frontAnchor];
+
+  const backContentClass =
+    backVariant === "classic" ? "relative z-10" : "relative z-10 h-full w-full";
+  const backFaceClass =
+    backVariant === "classic"
+      ? "absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-8 flex items-center justify-center overflow-hidden"
+      : "absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden";
+
   const backContent = (
-    <div className="relative z-10">
+    <div className={backContentClass}>
       {typeof card.back === "string" ? (
         <p className="text-fuchsia-100/90 text-base leading-relaxed text-center">
           {card.back}
@@ -181,8 +217,10 @@ export default function FlipCard({
         >
           {glowOverlay}
           <h3
-            className="text-sm md:text-base text-fuchsia-100 px-8 text-center relative z-10 transition-transform duration-200 ease-out drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]"
-            style={{ transform: `translate(${textShiftX}px, ${textShiftY}px)` }}
+            className={`${frontAnchorClass} text-sm md:text-base text-fuchsia-100 leading-tight z-10 transition-transform duration-200 ease-out drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
+            style={{
+              transform: `translate(${textShiftX * frontParallaxMultiplier}px, ${textShiftY * frontParallaxMultiplier}px)`,
+            }}
           >
             {card.front}
           </h3>
@@ -190,7 +228,7 @@ export default function FlipCard({
 
         {/* Back */}
         <div
-          className="absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-8 flex items-center justify-center overflow-hidden"
+          className={backFaceClass}
           style={{
             ...sharedBg,
             transform: "rotateY(180deg) translateZ(1px)",
@@ -205,10 +243,7 @@ export default function FlipCard({
 
       {/* Settled overlay: plain div on top, no 3D — renders at native zoom resolution */}
       {settled && (
-        <div
-          className="absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-8 flex items-center justify-center overflow-hidden"
-          style={sharedBg}
-        >
+        <div className={backFaceClass} style={sharedBg}>
           {glowOverlay}
           {backContent}
         </div>

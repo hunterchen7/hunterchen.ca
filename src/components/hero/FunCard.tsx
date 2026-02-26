@@ -6,20 +6,25 @@ export default function FunCard() {
   const navigateTo = useNavigateToSection();
 
   return (
-    <div className="md:grid grid-cols-2 md:gap-2">
-      <div className="-mx-6 md:-ml-2 md:mr-0 text-[10.5px] md:text-sm lg:text-base text-center justify-center my-auto">
-        I like climbing rocks 🧗‍♂️, playing chess ♟️ and taking pictures 📸, see
-        some photos I've taken{" "}
-        <AnimatedLink onClick={() => navigateTo("gallery")}>here</AnimatedLink>!
+    <div className="h-full w-full grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_54%] gap-3 md:gap-4 items-start md:items-stretch">
+      <div className="order-2 md:order-1 md:self-start text-[10px] md:text-sm lg:text-base leading-relaxed text-left">
+        If I'm not on my computer, you'll probably find me climbing rocks,
+        playing chess, or{" "}
+        <AnimatedLink onClick={() => navigateTo("gallery")}>
+          taking pictures
+        </AnimatedLink>
+        .
       </div>
-      <div>
+      <div className="md:order-2 relative overflow-hidden rounded-lg border border-fuchsia-200/15 shadow-[0_10px_24px_rgba(0,0,0,0.24)] md:h-full">
         <motion.img
           src="hero/rocks.webp"
-          className="rounded-md mt-2 md:my-2 max-h-[200px] md:max-h-[300px] mx-auto"
+          className="h-[130px] md:h-full w-full object-cover"
         />
-        <p className="text-[10px] md:text-xs text-center mt-1">
-          Kananskis, Alberta 🇨🇦
-        </p>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#160b20]/95 via-[#160b20]/55 to-transparent pr-1 py-1">
+          <p className="text-[8px] md:text-xs text-fuchsia-100/90 text-right">
+            Kananaskis, Alberta 🇨🇦
+          </p>
+        </div>
       </div>
     </div>
   );

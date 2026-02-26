@@ -28,7 +28,7 @@ const POST_TYPING_DELAY_MS = 700;
 // Content timing (seconds, relative to showContent becoming true)
 const TEXT_CONTAINER_DELAY = 0.2;
 const SUBTITLE_FADE_DURATION = 0.4;
-const CARD_STAGGER = 0.2;
+const CARD_STAGGER = 0.267;
 const CARD_SPRING_SETTLE = 0.3;
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
 const HERO_CLICKME_DELAY = CARDS_FINISH + 0.05;
@@ -156,7 +156,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   transition={{ duration: SUBTITLE_FADE_DURATION }}
                   className="text-sm md:text-base mt-3 bg-gradient-to-r from-fuchsia-200 to-fuchsia-300/80 bg-clip-text text-transparent"
                 >
-                  welcome to my website, have a look around :)
+                  welcome to my playground, have a look around
                 </motion.p>
               </div>
             </motion.div>
@@ -175,7 +175,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   stiffness: 130,
                   damping: 17,
                 }}
-                className={`${card.gridArea} min-h-[92px] md:min-h-44`}
+                className={`${card.gridArea} min-h-[92px] md:min-h-40`}
               >
                 <FlipCard
                   card={card}
