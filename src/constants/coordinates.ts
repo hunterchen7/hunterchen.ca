@@ -56,7 +56,7 @@ export const navItems: NavItem[] = [
   {
     id: "projects",
     label: "Projects",
-    icon: "Code",
+    icon: "Folders",
     ...coordinates.projects,
   },
   { id: "chess", label: "Chess", icon: ChessKnight, ...coordinates.chess },
