@@ -17,17 +17,17 @@ const IS_REVISIT =
 
 // Typewriter timing (ms)
 const INTRO_TEXT = "hey, I'm Hunter!";
-const CHAR_DELAY = 60;
+const CHAR_DELAY = 50;
 const PUNCT_DELAY = 120;
 const PUNCTUATION = ",;:.!?";
 const TYPING_DURATION_MS = Array.from({ length: INTRO_TEXT.length }, (_, i) =>
   PUNCTUATION.includes(INTRO_TEXT[i - 1] ?? "") ? PUNCT_DELAY : CHAR_DELAY,
 ).reduce((a, b) => a + b, 0);
-const POST_TYPING_DELAY_MS = 700;
+const POST_TYPING_DELAY_MS = 200;
 
 // Content timing (seconds, relative to showContent becoming true)
 const TEXT_CONTAINER_DELAY = 0.2;
-const SUBTITLE_FADE_DURATION = 0.4;
+const SUBTITLE_FADE_DURATION = 0.2;
 const CARD_STAGGER = 0.267;
 const CARD_SPRING_SETTLE = 0.3;
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
