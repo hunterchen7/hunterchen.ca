@@ -8,6 +8,7 @@ import {
 import { motion, useDragControls } from "framer-motion";
 import { X } from "lucide-react";
 import { Draggable } from "@hunterchen/canvas";
+import HintSvg from "../HintSvg";
 
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 200;
@@ -19,6 +20,8 @@ interface DraggableWindowProps {
   onClose: () => void;
   initialPos?: { x: number; y: number };
   contentClassName?: string;
+  showDragHint?: boolean;
+  onFirstDrag?: () => void;
   children: ReactNode;
 }
 
@@ -29,11 +32,14 @@ export default function DraggableWindow({
   onClose,
   initialPos,
   contentClassName,
+  showDragHint,
+  onFirstDrag,
   children,
 }: DraggableWindowProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
   const windowRef = useRef<HTMLDivElement>(null);
+  const [hasDragged, setHasDragged] = useState(false);
   const [size, setSize] = useState<{ w: number; h: number | null }>({
     w: initialWidth,
     h: null,
@@ -58,6 +64,10 @@ export default function DraggableWindow({
     (e: React.PointerEvent) => {
       e.stopPropagation();
       e.preventDefault();
+      if (!hasDragged) {
+        setHasDragged(true);
+        onFirstDrag?.();
+      }
       const actualH = windowRef.current?.offsetHeight ?? size.h ?? maxHeight;
       resizing.current = {
         startX: e.clientX,
@@ -67,7 +77,7 @@ export default function DraggableWindow({
       };
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [size, maxHeight],
+    [size, maxHeight, hasDragged, onFirstDrag],
   );
 
   const onResizePointerMove = useCallback((e: React.PointerEvent) => {
@@ -90,6 +100,17 @@ export default function DraggableWindow({
       dragControls={dragControls}
       className="pointer-events-auto"
     >
+      {/* Drag hint — positioned above the window, outside overflow-hidden */}
+      {showDragHint && (
+        <motion.div
+          className="absolute -top-8 -right-8 pointer-events-none z-20"
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          <HintSvg variant="drag" show={!hasDragged} enterDelay={0.5} />
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -104,7 +125,13 @@ export default function DraggableWindow({
       >
         {/* Title bar — drag handle */}
         <div
-          onPointerDown={(e) => dragControls.start(e)}
+          onPointerDown={(e) => {
+            if (!hasDragged) {
+              setHasDragged(true);
+              onFirstDrag?.();
+            }
+            dragControls.start(e);
+          }}
           className="flex items-center justify-between px-4 py-2.5 bg-neutral-100/20 border-b border-fuchsia-300/20 cursor-grab active:cursor-grabbing flex-shrink-0 select-none"
         >
           <h3 className="text-sm font-medium text-fuchsia-100/90">{title}</h3>

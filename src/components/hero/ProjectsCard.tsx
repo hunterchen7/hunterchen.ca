@@ -16,19 +16,19 @@ export default function ProjectsCard() {
     <div className="h-full w-full flex items-center">
       <div className="w-full text-left">
         <p className="text-[9px] md:text-sm lg:text-base">
-          I build a bunch of random things:
+          I've made a bunch of random things:
         </p>
         <ul className="md:mt-3 md:space-y-2 text-[9px] md:text-sm">
           <ListItem>
-            cross-platform{" "}
+            a cross-platform{" "}
             <AnimatedLink href="https://ti84ce.pages.dev">
               TI-84 Plus CE emulator
             </AnimatedLink>
           </ListItem>
           <ListItem>
-            the TI-84 Plus CE's strongest{" "}
+            the TI-84 Plus CE's{" "}
             <AnimatedLink href="https://github.com/hunterchen7/CE-games#chess">
-              chess engine
+              strongest chess engine
             </AnimatedLink>{" "}
           </ListItem>
           <ListItem>
@@ -39,8 +39,11 @@ export default function ProjectsCard() {
             for building interactive zoomable & pannable "canvas" web UIs
           </ListItem>
           <ListItem>
-            a chess neural network trained on my games to play like me, play
-            against it{" "}
+            a{" "}
+            <AnimatedLink href="https://github.com/hunterchen7/hunter-chessbot">
+              chess neural network
+            </AnimatedLink>{" "}
+            trained on my games to play like me, play against it{" "}
             <AnimatedLink onClick={() => navigateTo("chess")}>
               here
             </AnimatedLink>

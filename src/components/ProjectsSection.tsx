@@ -4,7 +4,7 @@ import { Github, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import ProjectBentoCard from "./projects/ProjectBentoCard";
 import DraggableWindow from "./projects/DraggableWindow";
-import ClickMeSvg from "./ClickMeSvg";
+import HintSvg from "./HintSvg";
 import {
   type Project,
   featuredProjects,
@@ -27,8 +27,14 @@ type WindowEntry =
       project: Project;
       pos: { x: number; y: number };
       order: number;
+      showDragHint?: boolean;
     }
-  | { type: "more"; pos: { x: number; y: number }; order: number };
+  | {
+      type: "more";
+      pos: { x: number; y: number };
+      order: number;
+      showDragHint?: boolean;
+    };
 
 // --- Project detail content (rendered inside DraggableWindow) ---
 function ProjectContent({ project }: { project: Project }) {
@@ -370,6 +376,8 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
   const [hasClicked, setHasClicked] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const orderRef = useRef(0);
+  const hasShownDragHint = useRef(false);
+  const hasEverDragged = useRef(false);
 
   // Grid mouse tracking
   const gridRef = useRef<HTMLDivElement>(null);
@@ -397,6 +405,11 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
 
   const openProjectWindow = useCallback((project: Project) => {
     setHasClicked(true);
+    // Read ref outside updater — strict mode double-invokes updaters,
+    // so mutating refs inside would cause the second run to see stale values.
+    const isFirst = !hasShownDragHint.current;
+    hasShownDragHint.current = true;
+
     setWindows((prev) => {
       if (prev.has(project.id)) {
         // Already open — bring to front via DOM
@@ -420,6 +433,7 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
         project,
         pos,
         order: orderRef.current,
+        showDragHint: isFirst,
       });
       return next;
     });
@@ -427,6 +441,9 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
 
   const openMoreWindow = useCallback(() => {
     setHasClicked(true);
+    const isFirst = !hasShownDragHint.current;
+    hasShownDragHint.current = true;
+
     setWindows((prev) => {
       if (prev.has(MORE_WINDOW_ID)) {
         const el = windowElsRef.current.get(MORE_WINDOW_ID);
@@ -449,6 +466,7 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
         type: "more",
         pos,
         order: orderRef.current,
+        showDragHint: isFirst,
       });
       return next;
     });
@@ -458,6 +476,12 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
     // Remove from ref map immediately so Escape doesn't target the exiting window
     windowElsRef.current.delete(id);
     setWindows((prev) => {
+      const entry = prev.get(id);
+      // If the hinted window closes before the user ever dragged, allow the
+      // next window to show the hint again.
+      if (entry?.showDragHint && !hasEverDragged.current) {
+        hasShownDragHint.current = false;
+      }
       const next = new Map(prev);
       next.delete(id);
       return next;
@@ -518,7 +542,7 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
         {/* Click me hint */}
         <div className="relative w-full max-w-[850px]">
           <div className="pointer-events-none absolute -top-14 left-0 z-10 scale-[150%]">
-            <ClickMeSvg
+            <HintSvg
               variant="projects"
               show={!hasClicked}
               enterDelay={featuredProjects.length * CARD_STAGGER + 0.5}
@@ -572,6 +596,10 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
                     maxHeight={777}
                     initialPos={entry.pos}
                     onClose={() => closeWindow(id)}
+                    showDragHint={entry.showDragHint}
+                    onFirstDrag={() => {
+                      hasEverDragged.current = true;
+                    }}
                   >
                     <ProjectContent project={entry.project} />
                   </DraggableWindow>
@@ -583,6 +611,10 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
                     initialPos={entry.pos}
                     onClose={() => closeWindow(id)}
                     contentClassName="overflow-y-scroll"
+                    showDragHint={entry.showDragHint}
+                    onFirstDrag={() => {
+                      hasEverDragged.current = true;
+                    }}
                   >
                     <MoreProjectsContent
                       projects={otherProjects}

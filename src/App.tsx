@@ -11,7 +11,8 @@ import HeroSection from "./components/HeroSection";
 import ProjectsSection from "./components/ProjectsSection";
 import GallerySection from "./components/GallerySection";
 import ChessSection from "./components/ChessSection";
-import ClickMeSvg from "./components/ClickMeSvg";
+import HintSvg from "./components/HintSvg";
+import ReaderContent from "./components/ReaderContent";
 import { HERO_SEQUENCE_END } from "./components/HeroSection";
 
 // Canvas gradient - warm purple radial emanating from bottom
@@ -44,7 +45,8 @@ export default function App() {
 
   return (
     <main id="home" className="relative min-h-screen">
-      <ClickMeSvg
+      <ReaderContent />
+      <HintSvg
         variant="nav"
         show={showClickMe}
         enterDelay={HERO_SEQUENCE_END}

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import FlipCard from "./hero/FlipCard";
 import { cards } from "./hero/cards";
-import ClickMeSvg, { CLICKME_TOTAL_DURATION } from "./ClickMeSvg";
+import HintSvg, { HINT_TOTAL_DURATION } from "./HintSvg";
 
 interface HeroSectionProps {
   offset: SectionCoordinates;
@@ -35,10 +35,10 @@ const HERO_CLICKME_DELAY = CARDS_FINISH + 0.05;
 
 /** Seconds from page load until the hero clickme animation finishes */
 export const HERO_SEQUENCE_END = IS_REVISIT
-  ? HERO_CLICKME_DELAY + CLICKME_TOTAL_DURATION
+  ? HERO_CLICKME_DELAY + HINT_TOTAL_DURATION
   : (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000 +
     HERO_CLICKME_DELAY +
-    CLICKME_TOTAL_DURATION;
+    HINT_TOTAL_DURATION;
 
 export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
@@ -125,7 +125,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-fuchsia-100/80"
             >
               <div className="pointer-events-none absolute top-1 left-0 z-10 scale-[200%] md:scale-[300%]">
-                <ClickMeSvg
+                <HintSvg
                   variant="hero"
                   show={showContent && !hasBeenClicked}
                   enterDelay={HERO_CLICKME_DELAY}
