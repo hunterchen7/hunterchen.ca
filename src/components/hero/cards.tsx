@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { AnimatedLink } from "../AnimatedLink";
 import ContactCard from "./ContactCard";
@@ -9,18 +10,60 @@ export const SHARED_GRADIENT =
   "radial-gradient(ellipse at 50% 50%, #5a2d6e 0%, #3d1a50 40%, #2a1035 70%, #1e0a28 100%)";
 
 const pillLinkClass =
-  "inline-flex items-center rounded-full border border-fuchsia-200/15 bg-fuchsia-950/35 px-2.5 py-1 text-[10px] md:text-xs text-fuchsia-100/85 transition-colors hover:bg-fuchsia-900/55 hover:text-white";
+  "relative inline-flex items-center rounded-full border border-fuchsia-200/15 bg-fuchsia-950/35 px-1.5 py-0.5 text-[8px] md:text-xs md:px-2.5 md:py-1 text-fuchsia-100/85 overflow-hidden";
 
 function PillLink({ href, children }: { href: string; children: string }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [mouse, setMouse] = useState<{ x: number; y: number } | null>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    // Convert screen-space to layout-space (accounts for canvas zoom)
+    const scaleX = el.offsetWidth / rect.width;
+    const scaleY = el.offsetHeight / rect.height;
+    setMouse({
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    });
+  };
+
   return (
     <a
+      ref={ref}
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setMouse(null)}
       className={pillLinkClass}
     >
-      {children}
+      {/* cursor-tracking glow */}
+      <span
+        className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+        style={{
+          opacity: mouse ? 1 : 0,
+          background: mouse
+            ? `radial-gradient(37px circle at ${mouse.x}px ${mouse.y}px, rgba(217, 70, 239, 0.2), transparent 60%)`
+            : undefined,
+        }}
+      />
+      {/* cursor-tracking border highlight */}
+      <span
+        className="pointer-events-none absolute inset-0 rounded-full transition-opacity duration-300"
+        style={{
+          opacity: mouse ? 1 : 0,
+          mask: mouse
+            ? `radial-gradient(100px circle at ${mouse.x}px ${mouse.y}px, black 30%, transparent 70%)`
+            : undefined,
+          WebkitMask: mouse
+            ? `radial-gradient(100px circle at ${mouse.x}px ${mouse.y}px, black 30%, transparent 70%)`
+            : undefined,
+          boxShadow: "inset 0 0 0 1px rgba(217, 70, 239, 0.5)",
+        }}
+      />
+      <span className="relative z-10">{children}</span>
     </a>
   );
 }
