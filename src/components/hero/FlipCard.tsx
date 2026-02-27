@@ -43,9 +43,11 @@ export default function FlipCard({
   const flipped = Math.round(Math.abs(rotation) / 180) % 2 !== 0;
   const [isAnimating, setIsAnimating] = useState(false);
   const [tiltPosition, setTiltPosition] = useState({ x: 0.5, y: 0.5 });
-  const cardRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState<CardBounds | null>(null);
   const lastGlowPos = useRef({ localX: 0, localY: 0 });
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const wasDragged = useRef(false);
   const frontAnchor = card.frontAnchor ?? "center";
   const backVariant = card.backVariant ?? "modern";
 
@@ -81,8 +83,10 @@ export default function FlipCard({
     return () => ro.disconnect();
   }, [gridRef]);
 
+  const TAP_THRESHOLD = 8;
+
   // Per-card mouse tracking for tilt only (avoids re-rendering all cards)
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setTiltPosition({
       x: (e.clientX - rect.left) / rect.width,
@@ -170,7 +174,7 @@ export default function FlipCard({
   );
 
   return (
-    <button
+    <div
       ref={cardRef}
       className="relative w-full h-full cursor-pointer transition-transform duration-200 ease-out"
       style={{
@@ -180,15 +184,32 @@ export default function FlipCard({
           ? `perspective(1000px) rotateX(${tiltX / 3}deg) rotateY(${tiltY / 3}deg)`
           : `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.01)`,
       }}
-      onClick={() => {
+      onPointerDown={(e) => {
+        pointerStart.current = { x: e.clientX, y: e.clientY };
+        wasDragged.current = false;
+      }}
+      onPointerMove={(e) => {
+        if (!pointerStart.current || wasDragged.current) return;
+        const dx = e.clientX - pointerStart.current.x;
+        const dy = e.clientY - pointerStart.current.y;
+        if (dx * dx + dy * dy > TAP_THRESHOLD * TAP_THRESHOLD) {
+          wasDragged.current = true;
+        }
+      }}
+      onPointerUp={(e) => {
+        if (wasDragged.current || !pointerStart.current) return;
+        // Don't flip when tapping interactive children (links, buttons)
+        if ((e.target as HTMLElement).closest("a, button, input")) return;
         setIsAnimating(true);
         const delta = tiltPosition.x >= 0.5 ? 180 : -180;
         setRotation((r) => r + delta);
         onCardClick?.();
       }}
       onKeyDown={(e) => {
-        if (e.key === " ") {
+        if (e.key === " " || e.key === "Enter") {
+          setIsAnimating(true);
           setRotation((r) => r + 180);
+          onCardClick?.();
         }
       }}
       onMouseMove={handleMouseMove}
@@ -248,6 +269,6 @@ export default function FlipCard({
           {backContent}
         </div>
       )}
-    </button>
+    </div>
   );
 }

@@ -32,6 +32,9 @@ export default function ProjectBentoCard({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [bounds, setBounds] = useState<CardBounds | null>(null);
   const lastGlowPos = useRef({ localX: 0, localY: 0 });
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const wasDragged = useRef(false);
+  const TAP_THRESHOLD = 8;
 
   // Cache card position relative to grid via ResizeObserver
   useEffect(() => {
@@ -121,7 +124,22 @@ export default function ProjectBentoCard({
     >
       <div
         ref={cardRef}
-        onClick={onClick}
+        onPointerDown={(e) => {
+          pointerStart.current = { x: e.clientX, y: e.clientY };
+          wasDragged.current = false;
+        }}
+        onPointerMove={(e) => {
+          if (!pointerStart.current || wasDragged.current) return;
+          const dx = e.clientX - pointerStart.current.x;
+          const dy = e.clientY - pointerStart.current.y;
+          if (dx * dx + dy * dy > TAP_THRESHOLD * TAP_THRESHOLD) {
+            wasDragged.current = true;
+          }
+        }}
+        onClick={() => {
+          if (wasDragged.current) return;
+          onClick();
+        }}
         className="group relative w-full h-full border border-fuchsia-300/30 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:brightness-105 hover:scale-[1.01]"
         style={sharedBg}
       >
