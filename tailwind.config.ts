@@ -6,9 +6,6 @@ const config = {
     "./index.html",
     "./src/**/*.{ts,tsx}",
   ],
-  safelist: [
-    { pattern: /^\[grid-area:.+\]$/ },
-  ],
   prefix: "",
   theme: {
     container: {

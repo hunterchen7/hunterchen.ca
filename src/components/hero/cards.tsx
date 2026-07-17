@@ -4,6 +4,7 @@ import { AnimatedLink } from "../AnimatedLink";
 import ContactCard from "./ContactCard";
 import FunCard from "./FunCard";
 import ProjectsCard from "./ProjectsCard";
+import { CARD_WATERMARKS } from "./CardWatermarks";
 import type { Card } from "./FlipCard";
 
 export const SHARED_GRADIENT =
@@ -73,6 +74,7 @@ export const cards: Card[] = [
     id: "1",
     front: "work",
     frontAnchor: "bottom-right",
+    frontIcon: CARD_WATERMARKS["1"],
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
         <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
@@ -103,6 +105,7 @@ export const cards: Card[] = [
     id: "3",
     front: "projects",
     frontAnchor: "bottom-left",
+    frontIcon: CARD_WATERMARKS["3"],
     back: <ProjectsCard />,
     gridArea: "[grid-area:1/4/4/6] md:[grid-area:1/3/3/5]",
     color: "#48205a",
@@ -111,6 +114,7 @@ export const cards: Card[] = [
     id: "2",
     front: "hobbies",
     frontAnchor: "top-left-lower",
+    frontIcon: CARD_WATERMARKS["2"],
     back: <FunCard />,
     gridArea: "[grid-area:4/4/7/6] md:[grid-area:3/3/5/5]",
     color: "#532963",
@@ -119,6 +123,7 @@ export const cards: Card[] = [
     id: "4",
     front: "hackathons",
     frontAnchor: "top-right",
+    frontIcon: CARD_WATERMARKS["4"],
     back: (
       <div className="h-full w-full flex flex-col gap-3 md:gap-4">
         <div className="text-[10.5px] md:text-sm leading-relaxed text-left text-balance">
@@ -156,6 +161,7 @@ export const cards: Card[] = [
     id: "5",
     front: "say hello!",
     frontAnchor: "top-left",
+    frontIcon: CARD_WATERMARKS["5"],
     backVariant: "classic",
     back: <ContactCard />,
     gridArea: "[grid-area:7/1/8/6] md:[grid-area:5/3/6/5]",

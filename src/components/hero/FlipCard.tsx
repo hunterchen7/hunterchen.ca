@@ -13,6 +13,7 @@ export interface Card {
     | "bottom-right"
     | "top-center"
     | "center";
+  frontIcon?: React.ReactNode;
   backVariant?: "modern" | "classic";
   back: string | React.ReactNode;
   gridArea: string;
@@ -110,6 +111,27 @@ export default function FlipCard({
   const textShiftX = (tiltPosition.x - 0.5) * 8;
   const textShiftY = (tiltPosition.y - 0.5) * 8;
   const frontParallaxMultiplier = frontAnchor === "center" ? 1 : 0.7;
+
+  // Icon watermark parallax — slower rate creates depth illusion
+  const iconParallaxMultiplier = 0.3;
+
+  // Place icon opposite to text anchor for visual balance
+  const iconPositionClass = {
+    center:
+      "absolute inset-0 flex items-center justify-center p-8",
+    "top-left":
+      "absolute bottom-3 right-3 md:bottom-5 md:right-5 w-[55%] h-[55%]",
+    "top-left-lower":
+      "absolute bottom-3 right-3 md:bottom-5 md:right-5 w-[55%] h-[55%]",
+    "top-right":
+      "absolute bottom-3 left-3 md:bottom-5 md:left-5 w-[55%] h-[55%]",
+    "bottom-left":
+      "absolute top-3 right-3 md:top-5 md:right-5 w-[55%] h-[55%]",
+    "bottom-right":
+      "absolute top-3 left-3 md:top-5 md:left-5 w-[55%] h-[55%]",
+    "top-center":
+      "absolute bottom-3 left-1/2 -translate-x-1/2 md:bottom-5 w-[45%] h-[45%]",
+  }[frontAnchor];
 
   // Shared gradient: each card shows its slice of the full grid gradient
   const sharedBg = bounds
@@ -236,6 +258,21 @@ export default function FlipCard({
             WebkitBackfaceVisibility: "hidden",
           }}
         >
+          {/* Watermark icon */}
+          {card.frontIcon && (
+            <div className={`${iconPositionClass} pointer-events-none`}>
+              <div className="w-full h-full animate-watermark-drift">
+                <div
+                  className="w-full h-full text-fuchsia-200/[0.07] transition-transform duration-200 ease-out"
+                  style={{
+                    transform: `translate(${textShiftX * iconParallaxMultiplier}px, ${textShiftY * iconParallaxMultiplier}px)`,
+                  }}
+                >
+                  {card.frontIcon}
+                </div>
+              </div>
+            </div>
+          )}
           {glowOverlay}
           <h3
             className={`${frontAnchorClass} text-sm md:text-base text-fuchsia-100 leading-tight z-10 transition-transform duration-200 ease-out drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
