@@ -296,6 +296,65 @@ html {
   75% { transform: translate(-7px, 2px); }
 }
 
+/* ============== Hero card object models ============== */
+
+.model-rocket-hover,
+.model-rocket-flame,
+.model-rocket-ember-one,
+.model-rocket-ember-two {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes model-rocket-hover {
+  0%, 100% { transform: translateY(2px) rotate(-1.5deg); }
+  48% { transform: translateY(-4.5px) rotate(1.4deg); }
+  58% { transform: translateY(-4px) rotate(1deg); }
+}
+
+@keyframes model-rocket-flame-pulse {
+  0%, 100% { opacity: 0.72; transform: scaleY(0.84); }
+  52% { opacity: 1; transform: scaleY(1.16); }
+}
+
+@keyframes model-rocket-ember-one {
+  0% { opacity: 0; transform: translate(0, -2px) scale(0.6); }
+  28% { opacity: 0.72; }
+  100% { opacity: 0; transform: translate(-4px, 10px) scale(0.2); }
+}
+
+@keyframes model-rocket-ember-two {
+  0% { opacity: 0; transform: translate(0, -2px) scale(0.55); }
+  34% { opacity: 0.64; }
+  100% { opacity: 0; transform: translate(4px, 9px) scale(0.15); }
+}
+
+.model-rocket-hover {
+  animation: model-rocket-hover 4.4s ease-in-out infinite;
+}
+
+.model-rocket-flame {
+  animation: model-rocket-flame-pulse 0.85s ease-in-out infinite;
+  transform-origin: 50% 0%;
+}
+
+.model-rocket-ember-one {
+  animation: model-rocket-ember-one 2.2s ease-out infinite;
+}
+
+.model-rocket-ember-two {
+  animation: model-rocket-ember-two 2.7s ease-out infinite;
+}
+
+.model-laptop-cursor {
+  animation: model-laptop-cursor-blink 0.78s steps(2, end) infinite;
+}
+
+@keyframes model-laptop-cursor-blink {
+  0%, 46% { opacity: 0.95; }
+  47%, 100% { opacity: 0.12; }
+}
+
 /* Accessibility: disable continuous animations for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .animate-holo-bob,
@@ -303,7 +362,16 @@ html {
   .animate-holo-ambient,
   .holo-static::after,
   .holo-ambient-scanlines::before,
-  .holo-ambient-scanlines::after {
-    animation: none;
+  .holo-ambient-scanlines::after,
+  .model-rocket-hover,
+  .model-rocket-flame,
+  .model-rocket-ember-one,
+  .model-rocket-ember-two,
+  .model-laptop-cursor {
+    animation: none !important;
+  }
+
+  .model-laptop-cursor {
+    opacity: 0.72;
   }
 }

@@ -1,10 +1,20 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { SHARED_GRADIENT } from "./cards";
+
+const ARTWORK_HIDDEN = { opacity: 0, scale: 0.78, y: 7 };
+const ARTWORK_RESTING = { opacity: 1, scale: 1, y: 0 };
+const ARTWORK_POP_IN = {
+  opacity: [0, 1, 1, 1],
+  scale: [0.78, 1.025, 0.992, 1],
+  y: [7, -1, 0, 0],
+};
 
 export interface Card {
   id: string;
   front: string;
+  frontArtwork?: React.ReactNode;
+  frontArtworkClassName?: string;
   frontAnchor?:
     | "top-left"
     | "top-left-lower"
@@ -30,22 +40,25 @@ interface CardBounds {
 
 export default function FlipCard({
   card,
-  gridMouse,
   gridRef,
   onCardClick,
+  artworkDelay = 0,
+  artworkDuration = 1.05,
+  showArtwork = true,
 }: {
   card: Card;
-  gridMouse: { x: number; y: number } | null;
   gridRef: React.RefObject<HTMLDivElement | null>;
   onCardClick?: () => void;
+  artworkDelay?: number;
+  artworkDuration?: number;
+  showArtwork?: boolean;
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const [rotation, setRotation] = useState(0);
   const flipped = Math.round(Math.abs(rotation) / 180) % 2 !== 0;
   const [isAnimating, setIsAnimating] = useState(false);
-  const [tiltPosition, setTiltPosition] = useState({ x: 0.5, y: 0.5 });
   const cardRef = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState<CardBounds | null>(null);
-  const lastGlowPos = useRef({ localX: 0, localY: 0 });
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const wasDragged = useRef(false);
   const frontAnchor = card.frontAnchor ?? "center";
@@ -85,31 +98,23 @@ export default function FlipCard({
 
   const TAP_THRESHOLD = 8;
 
-  // Per-card mouse tracking for tilt only (avoids re-rendering all cards)
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTiltPosition({
-      x: (e.clientX - rect.left) / rect.width,
-      y: (e.clientY - rect.top) / rect.height,
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setTiltPosition({ x: 0.5, y: 0.5 });
-  };
-
-  // Compute local mouse position relative to this card (for shared glow)
-  const localX = bounds && gridMouse ? gridMouse.x - bounds.offsetLeft : 0;
-  const localY = bounds && gridMouse ? gridMouse.y - bounds.offsetTop : 0;
-
-  // Tilt: "press down" — surface tilts away under the cursor
-  const tiltX = (0.5 - tiltPosition.y) * 10;
-  const tiltY = (tiltPosition.x - 0.5) * 10;
-
-  // 2D parallax for front title text (simulates depth without 3D compositing blur)
-  const textShiftX = (tiltPosition.x - 0.5) * 8;
-  const textShiftY = (tiltPosition.y - 0.5) * 8;
-  const frontParallaxMultiplier = frontAnchor === "center" ? 1 : 0.7;
+  const frontArtworkClass =
+    card.frontArtworkClassName ??
+    {
+      center: "absolute inset-[18%]",
+      "top-left":
+        "absolute bottom-3 right-3 h-[58%] w-[58%] md:bottom-5 md:right-5",
+      "top-left-lower":
+        "absolute bottom-3 right-3 h-[58%] w-[58%] md:bottom-5 md:right-5",
+      "top-right":
+        "absolute bottom-3 left-3 h-[58%] w-[58%] md:bottom-5 md:left-5",
+      "bottom-left":
+        "absolute top-3 right-3 h-[58%] w-[58%] md:top-5 md:right-5",
+      "bottom-right":
+        "absolute left-3 top-3 h-[62%] w-[62%] md:left-5 md:top-16 md:h-[60%] md:w-[58%]",
+      "top-center":
+        "absolute bottom-3 left-1/2 h-[52%] w-[52%] -translate-x-1/2 md:bottom-5",
+    }[frontAnchor];
 
   // Shared gradient: each card shows its slice of the full grid gradient
   const sharedBg = bounds
@@ -120,12 +125,9 @@ export default function FlipCard({
       }
     : { background: card.color };
 
-  // Remember last glow position so gradient stays rendered during fade-out
-  if (bounds && gridMouse) {
-    lastGlowPos.current = { localX, localY };
-  }
-  const glowPos = lastGlowPos.current;
-  const radialGlow = `radial-gradient(600px circle at ${glowPos.localX}px ${glowPos.localY}px, rgba(255, 255, 255, 0.022), transparent 40%)`;
+  const radialGlow = bounds
+    ? `radial-gradient(600px circle at calc(var(--hero-glow-x, 0px) - ${bounds.offsetLeft}px) calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px), rgba(255, 255, 255, 0.022), transparent 40%)`
+    : "radial-gradient(600px circle at 50% 50%, rgba(255, 255, 255, 0.022), transparent 40%)";
 
   const frontAnchorClass = {
     center:
@@ -165,9 +167,9 @@ export default function FlipCard({
 
   const glowOverlay = (
     <div
-      className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
+      className="pointer-events-none absolute inset-0 z-[60] overflow-hidden rounded-2xl transition-opacity duration-500"
       style={{
-        opacity: gridMouse ? 1 : 0,
+        opacity: "var(--hero-glow-opacity, 0)",
         background: radialGlow,
       }}
     />
@@ -176,13 +178,11 @@ export default function FlipCard({
   return (
     <div
       ref={cardRef}
-      className="relative w-full h-full cursor-pointer transition-transform duration-200 ease-out"
+      className="relative w-full h-full cursor-pointer"
+      data-flip-card={card.id}
       style={{
         perspective: 1200,
         zIndex: flipped ? 50 : 1,
-        transform: flipped
-          ? `perspective(1000px) rotateX(${tiltX / 3}deg) rotateY(${tiltY / 3}deg)`
-          : `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.01)`,
       }}
       onPointerDown={(e) => {
         pointerStart.current = { x: e.clientX, y: e.clientY };
@@ -201,19 +201,16 @@ export default function FlipCard({
         // Don't flip when tapping interactive children (links, buttons)
         if ((e.target as HTMLElement).closest("a, button, input")) return;
         setIsAnimating(true);
-        const delta = tiltPosition.x >= 0.5 ? 180 : -180;
-        setRotation((r) => r + delta);
+        setRotation(flipped ? 0 : 180);
         onCardClick?.();
       }}
       onKeyDown={(e) => {
         if (e.key === " " || e.key === "Enter") {
           setIsAnimating(true);
-          setRotation((r) => r + 180);
+          setRotation(flipped ? 0 : 180);
           onCardClick?.();
         }
       }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       tabIndex={0}
     >
       {/* 3D flip container — always mounted so rotateY state is preserved */}
@@ -236,12 +233,42 @@ export default function FlipCard({
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {glowOverlay}
+          {card.frontArtwork && (
+            <div
+              className={`${frontArtworkClass} pointer-events-none z-[1]`}
+            >
+              <motion.div
+                className="h-full w-full"
+                data-front-artwork={card.id}
+                data-front-artwork-delay={artworkDelay.toFixed(3)}
+                initial={prefersReducedMotion ? false : ARTWORK_HIDDEN}
+                animate={
+                  prefersReducedMotion
+                    ? showArtwork
+                      ? ARTWORK_RESTING
+                      : ARTWORK_HIDDEN
+                    : showArtwork
+                      ? ARTWORK_POP_IN
+                      : ARTWORK_HIDDEN
+                }
+                transition={
+                  prefersReducedMotion
+                    ? { duration: 0 }
+                    : {
+                        delay: showArtwork ? artworkDelay : 0,
+                        duration: artworkDuration,
+                        ease: [0.16, 1, 0.3, 1],
+                        times: [0, 0.68, 0.86, 1],
+                      }
+                }
+                style={{ transformOrigin: "50% 58%" }}
+              >
+                {card.frontArtwork}
+              </motion.div>
+            </div>
+          )}
           <h3
-            className={`${frontAnchorClass} text-sm md:text-base text-fuchsia-100 leading-tight z-10 transition-transform duration-200 ease-out drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
-            style={{
-              transform: `translate(${textShiftX * frontParallaxMultiplier}px, ${textShiftY * frontParallaxMultiplier}px)`,
-            }}
+            className={`${frontAnchorClass} text-sm md:text-base text-fuchsia-100 leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
           >
             {card.front}
           </h3>
@@ -257,7 +284,6 @@ export default function FlipCard({
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {glowOverlay}
           {backContent}
         </div>
       </motion.div>
@@ -265,10 +291,10 @@ export default function FlipCard({
       {/* Settled overlay: plain div on top, no 3D — renders at native zoom resolution */}
       {settled && (
         <div className={backFaceClass} style={sharedBg}>
-          {glowOverlay}
           {backContent}
         </div>
       )}
+      {glowOverlay}
     </div>
   );
 }

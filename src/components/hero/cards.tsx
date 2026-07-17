@@ -3,6 +3,11 @@ import { motion } from "framer-motion";
 import { AnimatedLink } from "../AnimatedLink";
 import ContactCard from "./ContactCard";
 import FunCard from "./FunCard";
+import CameraWatermark from "./models/CameraWatermark";
+import ChessboardWatermark from "./models/ChessboardWatermark";
+import LaptopWatermark from "./models/LaptopWatermark";
+import RocketWatermark from "./models/RocketWatermark";
+import SpeechBubbleWatermark from "./models/SpeechBubbleWatermark";
 import ProjectsCard from "./ProjectsCard";
 import type { Card } from "./FlipCard";
 
@@ -73,6 +78,7 @@ export const cards: Card[] = [
     id: "1",
     front: "work",
     frontAnchor: "bottom-right",
+    frontArtwork: <LaptopWatermark />,
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
         <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
@@ -103,6 +109,9 @@ export const cards: Card[] = [
     id: "3",
     front: "projects",
     frontAnchor: "bottom-left",
+    frontArtwork: <ChessboardWatermark />,
+    frontArtworkClassName:
+      "absolute right-1 top-1 h-[74%] w-[82%] md:right-2 md:top-2 md:h-[76%] md:w-[78%]",
     back: <ProjectsCard />,
     gridArea: "[grid-area:1/4/4/6] md:[grid-area:1/3/3/5]",
     color: "#48205a",
@@ -111,6 +120,9 @@ export const cards: Card[] = [
     id: "2",
     front: "hobbies",
     frontAnchor: "top-left-lower",
+    frontArtwork: <CameraWatermark />,
+    frontArtworkClassName:
+      "absolute bottom-2 right-2 h-[64%] w-[74%] md:bottom-4 md:right-4 md:h-[64%] md:w-[66%]",
     back: <FunCard />,
     gridArea: "[grid-area:4/4/7/6] md:[grid-area:3/3/5/5]",
     color: "#532963",
@@ -119,6 +131,7 @@ export const cards: Card[] = [
     id: "4",
     front: "hackathons",
     frontAnchor: "top-right",
+    frontArtwork: <RocketWatermark />,
     back: (
       <div className="h-full w-full flex flex-col gap-3 md:gap-4">
         <div className="text-[10.5px] md:text-sm leading-relaxed text-left text-balance">
@@ -156,6 +169,9 @@ export const cards: Card[] = [
     id: "5",
     front: "say hello!",
     frontAnchor: "top-left",
+    frontArtwork: <SpeechBubbleWatermark />,
+    frontArtworkClassName:
+      "absolute bottom-1 right-3 h-[84%] w-[70%] md:bottom-2 md:right-5 md:h-[84%] md:w-[58%]",
     backVariant: "classic",
     back: <ContactCard />,
     gridArea: "[grid-area:7/1/8/6] md:[grid-area:5/3/6/5]",

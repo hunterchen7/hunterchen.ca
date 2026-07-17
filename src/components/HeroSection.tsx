@@ -30,8 +30,15 @@ const TEXT_CONTAINER_DELAY = 0.2;
 const SUBTITLE_FADE_DURATION = 0.2;
 const CARD_STAGGER = 0.267;
 const CARD_SPRING_SETTLE = 0.3;
+const ARTWORK_REVEAL_GAP = 0.12;
+const ARTWORK_REVEAL_DURATION = 1.05;
+const ARTWORK_REVEAL_OFFSET = CARD_SPRING_SETTLE + ARTWORK_REVEAL_GAP;
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
-const HERO_CLICKME_DELAY = CARDS_FINISH + 0.05;
+const ARTWORKS_FINISH =
+  (cards.length - 1) * CARD_STAGGER +
+  ARTWORK_REVEAL_OFFSET +
+  ARTWORK_REVEAL_DURATION;
+const HERO_CLICKME_DELAY = Math.max(CARDS_FINISH, ARTWORKS_FINISH) + 0.05;
 
 /** Seconds from page load until the hero clickme animation finishes */
 export const HERO_SEQUENCE_END = IS_REVISIT
@@ -45,28 +52,66 @@ export default function HeroSection({ offset }: HeroSectionProps) {
   const [charCount, setCharCount] = useState(0);
   const [showContent, setShowContent] = useState(IS_REVISIT);
   const gridRef = useRef<HTMLDivElement>(null);
-  const [gridMouse, setGridMouse] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const gridMetricsRef = useRef<{
+    left: number;
+    scaleX: number;
+    scaleY: number;
+    top: number;
+  } | null>(null);
+  const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const glowFrameRef = useRef<number | null>(null);
+
+  const updateGridMetrics = useCallback(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    gridMetricsRef.current = {
+      left: rect.left,
+      scaleX: grid.offsetWidth / rect.width,
+      scaleY: grid.offsetHeight / rect.height,
+      top: rect.top,
+    };
+  }, []);
 
   const handleGridMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      const grid = gridRef.current;
-      if (!grid) return;
-      const rect = grid.getBoundingClientRect();
-      // Convert screen-space to layout-space (accounts for canvas zoom)
-      const scaleX = grid.offsetWidth / rect.width;
-      const scaleY = grid.offsetHeight / rect.height;
-      setGridMouse({
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
+      pendingPointerRef.current = { x: e.clientX, y: e.clientY };
+      if (glowFrameRef.current !== null) return;
+
+      glowFrameRef.current = window.requestAnimationFrame(() => {
+        const grid = gridRef.current;
+        const pointer = pendingPointerRef.current;
+        if (!grid || !pointer) {
+          glowFrameRef.current = null;
+          return;
+        }
+
+        if (!gridMetricsRef.current) updateGridMetrics();
+        const metrics = gridMetricsRef.current;
+        if (metrics) {
+          grid.style.setProperty(
+            "--hero-glow-x",
+            `${(pointer.x - metrics.left) * metrics.scaleX}px`,
+          );
+          grid.style.setProperty(
+            "--hero-glow-y",
+            `${(pointer.y - metrics.top) * metrics.scaleY}px`,
+          );
+          grid.style.setProperty("--hero-glow-opacity", "1");
+        }
+        glowFrameRef.current = null;
       });
     },
-    [],
+    [updateGridMetrics],
   );
 
   const handleGridMouseLeave = useCallback(() => {
-    setGridMouse(null);
+    pendingPointerRef.current = null;
+    if (glowFrameRef.current !== null) {
+      window.cancelAnimationFrame(glowFrameRef.current);
+      glowFrameRef.current = null;
+    }
+    gridRef.current?.style.setProperty("--hero-glow-opacity", "0");
   }, []);
   const typingDone = charCount >= INTRO_TEXT.length;
 
@@ -105,15 +150,39 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     }
   }, [showContent]);
 
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    updateGridMetrics();
+    const observer = new ResizeObserver(updateGridMetrics);
+    observer.observe(grid);
+    window.addEventListener("resize", updateGridMetrics);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateGridMetrics);
+      if (glowFrameRef.current !== null) {
+        window.cancelAnimationFrame(glowFrameRef.current);
+      }
+    };
+  }, [updateGridMetrics]);
+
   return (
     <CanvasComponent offset={offset}>
       <div className="relative h-full w-full flex items-center justify-center p-8">
         <div className="hero-composition w-[95vw] md:w-[700px] lg:w-[1000px] -mt-32 md:-mt-24 md:h-[1000px] flex flex-col">
           <div
             ref={gridRef}
+            onMouseEnter={updateGridMetrics}
             onMouseMove={handleGridMouseMove}
             onMouseLeave={handleGridMouseLeave}
             className="relative grid gap-2 md:gap-3 lg:gap-4 grid-cols-5 grid-rows-7 md:grid-cols-4 md:grid-rows-5 mt-20"
+            style={
+              {
+                "--hero-glow-opacity": "0",
+                "--hero-glow-x": "0px",
+                "--hero-glow-y": "0px",
+              } as React.CSSProperties
+            }
           >
             <motion.div
               initial={{ opacity: 0 }}
@@ -179,9 +248,13 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               >
                 <FlipCard
                   card={card}
-                  gridMouse={gridMouse}
                   gridRef={gridRef}
                   onCardClick={() => setHasBeenClicked(true)}
+                  showArtwork={showContent}
+                  artworkDelay={
+                    idx * CARD_STAGGER + ARTWORK_REVEAL_OFFSET
+                  }
+                  artworkDuration={ARTWORK_REVEAL_DURATION}
                 />
               </motion.div>
             ))}
