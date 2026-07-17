@@ -12,6 +12,16 @@ html {
     --font-mono: "JetBrains Mono", monospace;
     --font-caveat: "Caveat", cursive;
 
+    /* Shared canvas palette */
+    --canvas-bg-deep: #110b18;
+    --canvas-bg-mid: #291a38;
+    --canvas-bg-bloom: #452958;
+    --canvas-dot: #9270ad;
+    --surface-bloom: #512a63;
+    --surface-mid: #351943;
+    --surface-low: #211029;
+    --surface-deep: #16091d;
+
     /* ============== Amethyst Glow Theme ============== */
     /* Warmer purple tones with subtle magenta undertones */
 
@@ -42,13 +52,13 @@ html {
 /* ============== Canvas Library Overrides ============== */
 /* These must be outside @layer to override the library's defaults */
 :root {
-  --canvas-offwhite: #1a1520;
-  --canvas-highlight: #271f30;
-  --canvas-pushed: #3d2a50;
-  --canvas-emphasis: #c084fc;
-  --canvas-medium: #9580a8;
-  --canvas-light: #5c4d6b;
-  --canvas-heavy: #ede8f2;
+  --canvas-offwhite: #19131f;
+  --canvas-highlight: #261c30;
+  --canvas-pushed: #392448;
+  --canvas-emphasis: #d092ff;
+  --canvas-medium: #a58eaf;
+  --canvas-light: #665271;
+  --canvas-heavy: #f3edf6;
   --canvas-border-light: 270 22% 20%;
 }
 
@@ -69,6 +79,46 @@ html {
     padding: 0;
     height: 100%;
     overflow: hidden;
+  }
+
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+@supports (height: 100dvh) {
+  html,
+  body,
+  #root {
+    height: 100dvh;
+  }
+}
+
+/* The canvas navbar is fixed by the library. Keep it above iOS home bars. */
+@media (max-width: 767px) {
+  .bottom-12 {
+    bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .top-6.sm\:top-4 {
+    top: max(1.5rem, calc(env(safe-area-inset-top) + 0.5rem)) !important;
+  }
+}
+
+/* Home always resets to 1x in the canvas library, so very short phones need
+   one local camera-like adjustment to keep the fixed composition in frame. */
+@media (max-width: 399px) and (max-height: 700px) {
+  .hero-composition {
+    transform: scale(0.84);
+    transform-origin: center;
+  }
+}
+
+/* Touch devices should not retain desktop hover transforms after a tap. */
+@media (hover: none), (pointer: coarse) {
+  .touch-stable:hover {
+    filter: none !important;
+    transform: none !important;
   }
 }
 

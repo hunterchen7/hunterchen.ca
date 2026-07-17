@@ -140,7 +140,7 @@ export default function ProjectBentoCard({
           if (wasDragged.current) return;
           onClick();
         }}
-        className="group relative w-full h-full border border-fuchsia-300/30 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:brightness-105 hover:scale-[1.01]"
+        className="touch-stable group relative h-full w-full cursor-pointer overflow-hidden rounded-2xl border border-fuchsia-200/25 shadow-[0_16px_34px_rgba(7,2,12,0.32),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-200 ease-out hover:scale-[1.01] hover:brightness-105"
         style={sharedBg}
       >
         {/* Glow overlay */}

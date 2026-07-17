@@ -17,7 +17,7 @@ export interface Project {
 }
 
 export const PROJECTS_GRADIENT =
-  "radial-gradient(ellipse at 50% 50%, #5a2d6e 0%, #3d1a50 40%, #2a1035 70%, #1e0a28 100%)";
+  "radial-gradient(ellipse at 50% 45%, var(--surface-bloom) 0%, var(--surface-mid) 42%, var(--surface-low) 72%, var(--surface-deep) 100%)";
 
 // Grid area assignments for the 3x4 bento layout
 // ┌──────────┬─────────────────────┐

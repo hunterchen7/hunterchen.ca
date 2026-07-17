@@ -27,7 +27,7 @@ export default function ReaderContent() {
             helped build the web experience for{" "}
             <a href="https://2024.hackwestern.com">Hack Western 2024</a> and led
             the dev team for{" "}
-            <a href="https://hackwestern.com">Hack Western 2025</a> —{" "}
+            <a href="https://2025.hackwestern.com">Hack Western 2025</a> —{" "}
             <a href="https://www.uwo.ca">Western University</a>&apos;s largest
             hackathon, bringing together hundreds of students for a weekend of
             building and learning.

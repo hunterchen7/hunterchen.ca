@@ -15,11 +15,11 @@ import HintSvg from "./components/HintSvg";
 import ReaderContent from "./components/ReaderContent";
 import { HERO_SEQUENCE_END } from "./components/HeroSection";
 
-// Canvas gradient - warm purple radial emanating from bottom
-const CANVAS_GRADIENT = `radial-gradient(ellipse ${canvasWidth}px ${canvasHeight}px at ${canvasWidth / 2}px ${canvasHeight}px, #150f1d 0%, #2a1f3d 30%, #3e2d55 55%, #150f1d 100%)`;
+// Deep amethyst canvas with a softer, warmer center bloom.
+const CANVAS_GRADIENT = `radial-gradient(ellipse ${canvasWidth}px ${canvasHeight}px at ${canvasWidth / 2}px ${canvasHeight}px, var(--canvas-bg-deep) 0%, var(--canvas-bg-mid) 30%, var(--canvas-bg-bloom) 55%, var(--canvas-bg-deep) 100%)`;
 
 // Dot color (warm purple highlight)
-const DOT_COLOR = "#7a5a99";
+const DOT_COLOR = "var(--canvas-dot)";
 
 export default function App() {
   const [showClickMe, setShowClickMe] = useState(true);
@@ -67,29 +67,30 @@ export default function App() {
           position: "top-right",
           separatorGap: 8,
           style: {
-            backgroundColor: "#1a1520",
-            borderColor: "#3e2d55",
-            color: "#ede8f2",
+            backgroundColor: "#19131f",
+            borderColor: "#4b315e",
+            color: "#f3edf6",
           },
         }}
         zoomConfig={{
           responsiveZoomMap: {
+            [ScreenSizeEnum.SMALL_MOBILE]: 0.45,
             [ScreenSizeEnum.MOBILE]: 0.5,
           },
         }}
         navbarConfig={{
           style: {
-            backgroundColor: "#1a1520",
-            borderColor: "#3e2d55",
+            backgroundColor: "#19131f",
+            borderColor: "#4b315e",
           },
           buttonConfig: {
-            style: { color: "#9580a8" },
-            hoverStyle: { backgroundColor: "#271f30" },
-            activeStyle: { backgroundColor: "#3d2a50" },
-            labelStyle: { color: "#c084fc" },
+            style: { color: "#a58eaf" },
+            hoverStyle: { backgroundColor: "#261c30" },
+            activeStyle: { backgroundColor: "#392448" },
+            labelStyle: { color: "#d092ff" },
           },
           tooltipConfig: {
-            style: { backgroundColor: "#1a1520", color: "#ede8f2" },
+            style: { backgroundColor: "#19131f", color: "#f3edf6" },
           },
         }}
       >

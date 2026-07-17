@@ -7,7 +7,7 @@ import ProjectsCard from "./ProjectsCard";
 import type { Card } from "./FlipCard";
 
 export const SHARED_GRADIENT =
-  "radial-gradient(ellipse at 50% 50%, #5a2d6e 0%, #3d1a50 40%, #2a1035 70%, #1e0a28 100%)";
+  "radial-gradient(ellipse at 50% 45%, var(--surface-bloom) 0%, var(--surface-mid) 42%, var(--surface-low) 72%, var(--surface-deep) 100%)";
 
 const pillLinkClass =
   "relative inline-flex items-center rounded-full border border-fuchsia-200/15 bg-fuchsia-950/35 px-1.5 py-0.5 text-[8px] md:text-xs md:px-2.5 md:py-1 text-fuchsia-100/85 overflow-hidden";
@@ -127,7 +127,7 @@ export const cards: Card[] = [
             Hack Western 2024
           </AnimatedLink>{" "}
           and led the dev team for{" "}
-          <AnimatedLink href="https://hackwestern.com">
+          <AnimatedLink href="https://2025.hackwestern.com">
             Hack Western 2025
           </AnimatedLink>
           ,{" "}

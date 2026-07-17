@@ -148,8 +148,8 @@ export default function FlipCard({
     backVariant === "classic" ? "relative z-10" : "relative z-10 h-full w-full";
   const backFaceClass =
     backVariant === "classic"
-      ? "absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-8 flex items-center justify-center overflow-hidden"
-      : "absolute inset-0 border border-fuchsia-300/30 rounded-2xl shadow-lg p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden";
+      ? "absolute inset-0 border border-fuchsia-200/25 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-8 flex items-center justify-center overflow-hidden"
+      : "absolute inset-0 border border-fuchsia-200/25 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden";
 
   const backContent = (
     <div className={backContentClass}>
@@ -229,7 +229,7 @@ export default function FlipCard({
       >
         {/* Front */}
         <div
-          className="absolute inset-0 flex items-center justify-center border border-fuchsia-300/30 rounded-2xl shadow-lg overflow-hidden"
+          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl border border-fuchsia-200/25 shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)]"
           style={{
             ...sharedBg,
             backfaceVisibility: "hidden",
