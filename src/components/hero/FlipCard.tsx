@@ -150,8 +150,8 @@ export default function FlipCard({
     backVariant === "classic" ? "relative z-10" : "relative z-10 h-full w-full";
   const backFaceClass =
     backVariant === "classic"
-      ? "absolute inset-0 border border-fuchsia-200/25 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-8 flex items-center justify-center overflow-hidden"
-      : "absolute inset-0 border border-fuchsia-200/25 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden";
+      ? "absolute inset-0 border-[1.5px] border-violet-400/55 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-8 flex items-center justify-center overflow-hidden"
+      : "absolute inset-0 border-[1.5px] border-violet-400/55 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden";
 
   const backContent = (
     <div className={backContentClass}>
@@ -226,7 +226,7 @@ export default function FlipCard({
       >
         {/* Front */}
         <div
-          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl border border-fuchsia-200/25 shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)]"
+          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl border-[1.5px] border-violet-400/55 shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)]"
           style={{
             ...sharedBg,
             backfaceVisibility: "hidden",
@@ -268,7 +268,7 @@ export default function FlipCard({
             </div>
           )}
           <h3
-            className={`${frontAnchorClass} text-sm md:text-base text-fuchsia-100 leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
+            className={`${frontAnchorClass} text-sm md:text-base text-violet-300 leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
           >
             {card.front}
           </h3>

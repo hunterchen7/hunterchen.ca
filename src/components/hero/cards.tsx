@@ -15,7 +15,7 @@ export const SHARED_GRADIENT =
   "radial-gradient(ellipse at 50% 45%, var(--surface-bloom) 0%, var(--surface-mid) 42%, var(--surface-low) 72%, var(--surface-deep) 100%)";
 
 const pillLinkClass =
-  "relative inline-flex items-center rounded-full border border-fuchsia-200/15 bg-fuchsia-950/35 px-1.5 py-0.5 text-[8px] md:text-xs md:px-2.5 md:py-1 text-fuchsia-100/85 overflow-hidden";
+  "relative inline-flex items-center rounded-full border border-violet-400/30 bg-[#221836]/45 px-1.5 py-0.5 text-[8px] md:text-xs md:px-2.5 md:py-1 text-violet-200/90 overflow-hidden";
 
 function PillLink({ href, children }: { href: string; children: string }) {
   const ref = useRef<HTMLAnchorElement>(null);
@@ -50,7 +50,7 @@ function PillLink({ href, children }: { href: string; children: string }) {
         style={{
           opacity: mouse ? 1 : 0,
           background: mouse
-            ? `radial-gradient(37px circle at ${mouse.x}px ${mouse.y}px, rgba(217, 70, 239, 0.2), transparent 60%)`
+            ? `radial-gradient(37px circle at ${mouse.x}px ${mouse.y}px, rgba(167, 139, 250, 0.25), transparent 60%)`
             : undefined,
         }}
       />
@@ -65,7 +65,7 @@ function PillLink({ href, children }: { href: string; children: string }) {
           WebkitMask: mouse
             ? `radial-gradient(100px circle at ${mouse.x}px ${mouse.y}px, black 30%, transparent 70%)`
             : undefined,
-          boxShadow: "inset 0 0 0 1px rgba(217, 70, 239, 0.5)",
+          boxShadow: "inset 0 0 0 1px rgba(167, 139, 250, 0.6)",
         }}
       />
       <span className="relative z-10">{children}</span>
@@ -149,13 +149,13 @@ export const cards: Card[] = [
           </AnimatedLink>
           's largest hackathon.
         </div>
-        <div className="relative min-h-[130px] md:min-h-[170px] flex-1 overflow-hidden rounded-lg border border-fuchsia-200/15 shadow-[0_12px_26px_rgba(0,0,0,0.22)]">
+        <div className="relative min-h-[130px] md:min-h-[170px] flex-1 overflow-hidden rounded-lg border border-violet-400/45 shadow-[0_12px_26px_rgba(0,0,0,0.22)]">
           <motion.img
             src="hero/team.webp"
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#140a1d]/95 via-[#140a1d]/55 to-transparent px-3 py-2">
-            <p className="text-[10px] md:text-xs text-fuchsia-100/90 text-center">
+            <p className="text-[10px] md:text-xs text-[#e8e5ee]/90 text-center">
               my team @ hack western 12 💜
             </p>
           </div>

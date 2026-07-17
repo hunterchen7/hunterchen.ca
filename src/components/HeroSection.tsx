@@ -192,7 +192,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 delay: IS_REVISIT ? 0 : TEXT_CONTAINER_DELAY,
                 duration: IS_REVISIT ? 0.3 : 0.5,
               }}
-              className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-fuchsia-100/80"
+              className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-[#e8e5ee]/80"
             >
               <div className="pointer-events-none absolute left-0 -top-1 z-10 scale-[160%] md:top-1 md:scale-[300%]">
                 <HintSvg
@@ -204,7 +204,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 />
               </div>
               <div>
-                <p className="text-[10px] leading-3 md:text-base md:leading-normal lg:text-lg bg-gradient-to-r from-white to-fuchsia-300/80 bg-clip-text text-transparent">
+                <p className="text-[10px] leading-3 md:text-base md:leading-normal lg:text-lg bg-gradient-to-r from-white to-violet-300/90 bg-clip-text text-transparent">
                   {INTRO_TEXT.slice(0, charCount)}
                   {!typingDone && <span className="animate-pulse">|</span>}
                   <motion.span
@@ -224,7 +224,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showContent ? 1 : 0 }}
                   transition={{ duration: SUBTITLE_FADE_DURATION }}
-                  className="text-[10px] leading-3 md:text-base md:leading-normal mt-2 md:mt-3 bg-gradient-to-r from-fuchsia-200 to-fuchsia-300/80 bg-clip-text text-transparent"
+                  className="text-[10px] leading-3 md:text-base md:leading-normal mt-2 md:mt-3 bg-gradient-to-r from-violet-200 to-violet-300/90 bg-clip-text text-transparent"
                 >
                   welcome to my playground, have a look around
                 </motion.p>

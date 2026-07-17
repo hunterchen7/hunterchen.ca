@@ -13,14 +13,14 @@ html {
     --font-caveat: "Caveat", cursive;
 
     /* Shared canvas palette */
-    --canvas-bg-deep: #110b18;
-    --canvas-bg-mid: #291a38;
-    --canvas-bg-bloom: #452958;
-    --canvas-dot: #9270ad;
-    --surface-bloom: #512a63;
-    --surface-mid: #351943;
-    --surface-low: #211029;
-    --surface-deep: #16091d;
+    --canvas-bg-deep: #0e0e10;
+    --canvas-bg-mid: #19191c;
+    --canvas-bg-bloom: #262629;
+    --canvas-dot: #6e6e76;
+    --surface-bloom: #332e3c;
+    --surface-mid: #24212a;
+    --surface-low: #18161c;
+    --surface-deep: #100f12;
 
     /* ============== Amethyst Glow Theme ============== */
     /* Warmer purple tones with subtle magenta undertones */
@@ -52,12 +52,12 @@ html {
 /* ============== Canvas Library Overrides ============== */
 /* These must be outside @layer to override the library's defaults */
 :root {
-  --canvas-offwhite: #19131f;
-  --canvas-highlight: #261c30;
-  --canvas-pushed: #392448;
-  --canvas-emphasis: #d092ff;
-  --canvas-medium: #a58eaf;
-  --canvas-light: #665271;
+  --canvas-offwhite: #161519;
+  --canvas-highlight: #211f26;
+  --canvas-pushed: #332c40;
+  --canvas-emphasis: #b39dfc;
+  --canvas-medium: #98939f;
+  --canvas-light: #55505c;
   --canvas-heavy: #f3edf6;
   --canvas-border-light: 270 22% 20%;
 }

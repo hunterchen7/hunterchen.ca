@@ -15,8 +15,8 @@ import HintSvg from "./components/HintSvg";
 import ReaderContent from "./components/ReaderContent";
 import { HERO_SEQUENCE_END } from "./components/HeroSection";
 
-// Deep amethyst canvas with a softer, warmer center bloom.
-const CANVAS_GRADIENT = `radial-gradient(ellipse ${canvasWidth}px ${canvasHeight}px at ${canvasWidth / 2}px ${canvasHeight}px, var(--canvas-bg-deep) 0%, var(--canvas-bg-mid) 30%, var(--canvas-bg-bloom) 55%, var(--canvas-bg-deep) 100%)`;
+// Canvas spotlight - circular bloom at canvas center, falling off outward
+const CANVAS_GRADIENT = `radial-gradient(circle ${canvasWidth / 2}px at ${canvasWidth / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
 
 // Dot color (warm purple highlight)
 const DOT_COLOR = "var(--canvas-dot)";
@@ -67,9 +67,9 @@ export default function App() {
           position: "top-right",
           separatorGap: 8,
           style: {
-            backgroundColor: "#19131f",
-            borderColor: "#4b315e",
-            color: "#f3edf6",
+            backgroundColor: "#161519",
+            borderColor: "#46395c",
+            color: "#f3f2f6",
           },
         }}
         zoomConfig={{
@@ -80,17 +80,17 @@ export default function App() {
         }}
         navbarConfig={{
           style: {
-            backgroundColor: "#19131f",
-            borderColor: "#4b315e",
+            backgroundColor: "#161519",
+            borderColor: "#46395c",
           },
           buttonConfig: {
-            style: { color: "#a58eaf" },
-            hoverStyle: { backgroundColor: "#261c30" },
-            activeStyle: { backgroundColor: "#392448" },
-            labelStyle: { color: "#d092ff" },
+            style: { color: "#98939f" },
+            hoverStyle: { backgroundColor: "#211f26" },
+            activeStyle: { backgroundColor: "#332c40" },
+            labelStyle: { color: "#b39dfc" },
           },
           tooltipConfig: {
-            style: { backgroundColor: "#19131f", color: "#f3edf6" },
+            style: { backgroundColor: "#161519", color: "#f3f2f6" },
           },
         }}
       >
