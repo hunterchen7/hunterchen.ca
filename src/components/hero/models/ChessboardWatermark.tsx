@@ -21,6 +21,8 @@ type GameMove = {
 
 type PiecePalette = {
   deep: string;
+  eye: string;
+  eyeStroke: string;
   highlight: string;
   main: string;
   shade: string;
@@ -31,14 +33,17 @@ type Timeline = {
   activeMove: number;
   moveProgress: number;
   sceneOpacity: number;
+  settleProgress: number;
   stateIndex: number;
 };
 
 type RenderPiece = BoardPiece & {
   depth: number;
+  impact: number;
   lift: number;
   opacity: number;
   scale: number;
+  verticalScale: number;
   x: number;
   y: number;
 };
@@ -106,6 +111,7 @@ const IMMORTAL_GAME: GameMove[] = [
 const INTRO_HOLD_MS = 2_800;
 const MOVE_MS = 880;
 const SETTLE_MS = 520;
+const LANDING_SETTLE_MS = 220;
 const STEP_MS = MOVE_MS + SETTLE_MS;
 const MATE_HOLD_MS = 3_000;
 const RESET_FADE_MS = 800;
@@ -120,6 +126,8 @@ const LIGHT_PIECE: PiecePalette = {
   highlight: "rgb(249, 229, 255)",
   shade: "rgb(133, 76, 153)",
   deep: "rgb(77, 39, 92)",
+  eye: "rgb(77, 39, 92)",
+  eyeStroke: "none",
   stroke: "rgba(253, 239, 255, 0.82)",
 };
 
@@ -128,6 +136,8 @@ const DARK_PIECE: PiecePalette = {
   highlight: "rgb(112, 65, 130)",
   shade: "rgb(18, 8, 25)",
   deep: "rgb(7, 3, 11)",
+  eye: "rgb(149, 91, 172)",
+  eyeStroke: "rgba(224, 176, 244, 0.78)",
   stroke: "rgba(221, 173, 242, 0.62)",
 };
 
@@ -138,6 +148,35 @@ function clamp(value: number, minimum = 0, maximum = 1): number {
 function smoothstep(value: number): number {
   const t = clamp(value);
   return t * t * (3 - 2 * t);
+}
+
+function easeOutCubic(value: number): number {
+  const t = 1 - clamp(value);
+  return 1 - t * t * t;
+}
+
+function pieceMotionAt(progress: number) {
+  const t = clamp(progress);
+  const pickup = easeOutCubic(t / 0.18);
+  const travel = smoothstep((t - 0.12) / 0.72);
+  const landing = smoothstep((t - 0.72) / 0.23);
+
+  return {
+    lift: 1.22 * pickup * (1 - landing),
+    travel,
+  };
+}
+
+function landingScaleAt(progress: number): number {
+  const t = clamp(progress);
+  if (t <= 0) return 1;
+  if (t < 0.28) return 1 - 0.035 * easeOutCubic(t / 0.28);
+  if (t < 0.62) return 0.965 + 0.047 * smoothstep((t - 0.28) / 0.34);
+  return 1.012 - 0.012 * smoothstep((t - 0.62) / 0.38);
+}
+
+function landingImpactAt(progress: number): number {
+  return Math.sin(Math.PI * clamp(progress / 0.62));
 }
 
 function point(row: number, column: number) {
@@ -260,6 +299,7 @@ function timelineAt(elapsed: number): Timeline {
       activeMove: -1,
       moveProgress: 0,
       sceneOpacity: smoothstep(localTime / 520),
+      settleProgress: 0,
       stateIndex: 0,
     };
   }
@@ -273,8 +313,11 @@ function timelineAt(elapsed: number): Timeline {
     const withinStep = sequenceTime - activeMove * STEP_MS;
     return {
       activeMove,
-      moveProgress: smoothstep(withinStep / MOVE_MS),
+      moveProgress: clamp(withinStep / MOVE_MS),
       sceneOpacity: 1,
+      settleProgress: clamp(
+        (withinStep - MOVE_MS) / LANDING_SETTLE_MS,
+      ),
       stateIndex: activeMove,
     };
   }
@@ -287,6 +330,7 @@ function timelineAt(elapsed: number): Timeline {
       finaleTime <= MATE_HOLD_MS
         ? 1
         : 1 - smoothstep((finaleTime - MATE_HOLD_MS) / RESET_FADE_MS),
+    settleProgress: 0,
     stateIndex: IMMORTAL_GAME.length,
   };
 }
@@ -325,6 +369,7 @@ function useTimeline(frame: number | null): { elapsed: number; fps: number } {
           nextTimeline.stateIndex,
           nextTimeline.moveProgress.toFixed(3),
           nextTimeline.sceneOpacity.toFixed(3),
+          nextTimeline.settleProgress.toFixed(3),
         ].join(":");
         if (visualFrame !== lastVisualFrame.current) {
           lastVisualFrame.current = visualFrame;
@@ -359,26 +404,31 @@ function renderPiecesForTimeline(timeline: Timeline): RenderPiece[] {
           piece.id !== mover?.id,
       )
     : undefined;
+  const motion = pieceMotionAt(timeline.moveProgress);
 
   return pieces
     .map((piece): RenderPiece => {
       const start = squareCenter(piece.square);
       let x = start.x;
       let y = start.y;
+      let impact = 0;
       let lift = 0;
       let opacity = piece.captured ? 0 : 1;
       let scale = piece.captured ? 0.72 : 1;
+      let verticalScale = 1;
 
       if (move && piece.id === mover?.id) {
         const destination = squareCenter(move.to);
-        x += (destination.x - start.x) * timeline.moveProgress;
-        y += (destination.y - start.y) * timeline.moveProgress;
-        lift = Math.sin(timeline.moveProgress * Math.PI) * 1.55;
+        x += (destination.x - start.x) * motion.travel;
+        y += (destination.y - start.y) * motion.travel;
+        impact = landingImpactAt(timeline.settleProgress);
+        lift = motion.lift;
+        verticalScale = landingScaleAt(timeline.settleProgress);
       }
 
       if (piece.id === captured?.id) {
         const captureProgress = smoothstep(
-          (timeline.moveProgress - 0.52) / 0.38,
+          (motion.travel - 0.52) / 0.38,
         );
         opacity = 1 - captureProgress;
         scale = 1 - captureProgress * 0.28;
@@ -387,9 +437,11 @@ function renderPiecesForTimeline(timeline: Timeline): RenderPiece[] {
       return {
         ...piece,
         depth: y + (piece.id === mover?.id ? 0.08 : 0),
+        impact,
         lift,
         opacity,
         scale,
+        verticalScale,
         x,
         y,
       };
@@ -516,7 +568,16 @@ function Knight({ palette }: { palette: PiecePalette }) {
         strokeWidth="0.26"
         vectorEffect="non-scaling-stroke"
       />
-      <circle cx="1.16" cy="-7.42" fill={palette.deep} r="0.14" />
+      <circle
+        cx="1.16"
+        cy="-7.42"
+        fill={palette.eye}
+        r="0.16"
+        stroke={palette.eyeStroke}
+        strokeWidth="0.07"
+        vectorEffect="non-scaling-stroke"
+      />
+      <circle cx="1.16" cy="-7.42" fill={palette.deep} r="0.065" />
       <circle cx="1.88" cy="-5.72" fill={palette.deep} r="0.09" />
       <path
         d="M1.76,-5.36 L1.74,-4.98"
@@ -608,14 +669,20 @@ const PieceDefinitions = memo(function PieceDefinitions() {
 const PieceModel = memo(function PieceModel({
   color,
   id,
+  impact,
   kind,
   lift,
   opacity,
   scale,
   square,
+  verticalScale,
   x,
   y,
 }: RenderPiece) {
+  const shadowOpacity = clamp(0.92 - lift * 0.25 + impact * 0.08, 0.5, 0.98);
+  const shadowRadiusX = 2.6 - lift * 0.18 + impact * 0.22;
+  const shadowRadiusY = 0.78 - lift * 0.08 + impact * 0.08;
+
   return (
     <g
       data-piece={id}
@@ -628,11 +695,13 @@ const PieceModel = memo(function PieceModel({
       <ellipse
         cy="0.72"
         fill="rgba(5, 2, 9, 0.42)"
-        opacity={0.92 - lift * 0.28}
-        rx={2.6 - lift * 0.22}
-        ry="0.78"
+        opacity={shadowOpacity}
+        rx={shadowRadiusX}
+        ry={shadowRadiusY}
       />
-      <g transform={`translate(0 ${(-lift).toFixed(2)})`}>
+      <g
+        transform={`translate(0 ${(-lift).toFixed(2)}) scale(1 ${verticalScale.toFixed(3)})`}
+      >
         <use href={`#${PIECE_DEFINITION_PREFIX}-${color}-${kind}`} />
       </g>
     </g>
@@ -721,7 +790,12 @@ function ChessboardWatermark() {
   const timeline = timelineAt(elapsed);
   const pieces = useMemo(
     () => renderPiecesForTimeline(timeline),
-    [timeline.activeMove, timeline.moveProgress, timeline.stateIndex],
+    [
+      timeline.activeMove,
+      timeline.moveProgress,
+      timeline.settleProgress,
+      timeline.stateIndex,
+    ],
   );
   const activeMove =
     timeline.activeMove >= 0

@@ -29,14 +29,15 @@ const POST_TYPING_DELAY_MS = 200;
 const TEXT_CONTAINER_DELAY = 0.2;
 const SUBTITLE_FADE_DURATION = 0.2;
 const CARD_STAGGER = 0.267;
-const CARD_SPRING_SETTLE = 0.3;
-const ARTWORK_REVEAL_GAP = 0.12;
+const CARD_SPRING_SETTLE = 0.6;
+const ARTWORK_REVEAL_GAP = 0.35;
+const ARTWORK_STAGGER = 0.14;
 const ARTWORK_REVEAL_DURATION = 1.05;
-const ARTWORK_REVEAL_OFFSET = CARD_SPRING_SETTLE + ARTWORK_REVEAL_GAP;
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
+const ARTWORK_REVEAL_START = CARDS_FINISH + ARTWORK_REVEAL_GAP;
 const ARTWORKS_FINISH =
-  (cards.length - 1) * CARD_STAGGER +
-  ARTWORK_REVEAL_OFFSET +
+  ARTWORK_REVEAL_START +
+  (cards.length - 1) * ARTWORK_STAGGER +
   ARTWORK_REVEAL_DURATION;
 const HERO_CLICKME_DELAY = Math.max(CARDS_FINISH, ARTWORKS_FINISH) + 0.05;
 
@@ -252,7 +253,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   onCardClick={() => setHasBeenClicked(true)}
                   showArtwork={showContent}
                   artworkDelay={
-                    idx * CARD_STAGGER + ARTWORK_REVEAL_OFFSET
+                    ARTWORK_REVEAL_START + idx * ARTWORK_STAGGER
                   }
                   artworkDuration={ARTWORK_REVEAL_DURATION}
                 />

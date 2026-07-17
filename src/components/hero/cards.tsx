@@ -5,9 +5,9 @@ import ContactCard from "./ContactCard";
 import FunCard from "./FunCard";
 import CameraWatermark from "./models/CameraWatermark";
 import ChessboardWatermark from "./models/ChessboardWatermark";
+import ContactDotsWatermark from "./models/ContactDotsWatermark";
 import LaptopWatermark from "./models/LaptopWatermark";
 import RocketWatermark from "./models/RocketWatermark";
-import SpeechBubbleWatermark from "./models/SpeechBubbleWatermark";
 import ProjectsCard from "./ProjectsCard";
 import type { Card } from "./FlipCard";
 
@@ -169,9 +169,9 @@ export const cards: Card[] = [
     id: "5",
     front: "say hello!",
     frontAnchor: "top-left",
-    frontArtwork: <SpeechBubbleWatermark />,
+    frontArtwork: <ContactDotsWatermark />,
     frontArtworkClassName:
-      "absolute bottom-1 right-3 h-[84%] w-[70%] md:bottom-2 md:right-5 md:h-[84%] md:w-[58%]",
+      "absolute bottom-4 right-5 h-9 w-24 md:bottom-6 md:right-8 md:h-10 md:w-28",
     backVariant: "classic",
     back: <ContactCard />,
     gridArea: "[grid-area:7/1/8/6] md:[grid-area:5/3/6/5]",
