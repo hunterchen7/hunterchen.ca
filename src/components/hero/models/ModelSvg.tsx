@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { HERO_COLORS } from "../heroPalette";
 
 type ModelSvgProps = {
   children: ReactNode;
@@ -22,7 +23,7 @@ export default function ModelSvg({
   return (
     <svg
       aria-hidden="true"
-      className="h-full w-full overflow-visible"
+      className="hero-model-svg h-full w-full overflow-visible"
       data-model={name}
       data-model-fps={fps}
       data-model-frame={frame === null || frame === undefined ? undefined : frame.toFixed(3)}
@@ -35,7 +36,7 @@ export default function ModelSvg({
             <feDropShadow
               dx="0"
               dy="1.4"
-              floodColor="#d8a4ff"
+              floodColor={HERO_COLORS.accent}
               floodOpacity="0.24"
               stdDeviation="1.6"
             />

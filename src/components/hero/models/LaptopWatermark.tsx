@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { heroRgba, litHeroTone } from "../heroPalette";
 import {
   modelAnimationStyle,
   readPinnedModelFrame,
@@ -32,31 +33,51 @@ type LineItem = {
 
 type RenderItem = PolygonItem | LineItem;
 
-type KeystrokeEvent = {
-  action: "character" | "enter" | "select-all" | "delete";
-  commitMs: number;
-  endMs: number;
-  keyIds: string[];
-  lineIndex?: number;
-  revealedCharacters?: number;
-  startMs: number;
-};
+type ScreenMutation = "backspace" | "clear" | "insert";
+
+type RecordedKeystroke = readonly [
+  code: string,
+  downMs: number,
+  upMs: number,
+  commitMs?: number,
+  mutation?: ScreenMutation,
+];
 
 type TypingState = {
   activeKeyIds: string[];
   cursorLine: number;
   isSelected: boolean;
   lineProgress: number[];
-  phase: "typing" | "holding" | "selected" | "cleared";
+  phase: "waiting" | "typing" | "holding" | "selected" | "cleared";
+};
+
+type LidPhase = "closed" | "opening" | "open" | "closing";
+
+type LidState = {
+  angleDegrees: number;
+  openProgress: number;
+  phase: LidPhase;
 };
 
 const CAMERA_PITCH = 0.24;
 const CAMERA_DISTANCE = 6.2;
 const PROJECTION_SCALE = 27.5;
 const MODEL_CENTER_Y = 0.82;
-const SWAY_DURATION_MS = 28_000;
-const SWAY_CENTER_DEGREES = 5;
-const SWAY_AMPLITUDE_DEGREES = 4;
+const FRONT_ANGLE_DEGREES = 0;
+const RECORDED_DURATION_MS = 9_051;
+const RECORDED_TYPING_END_MS = 7_377.5;
+const RECORDED_SELECT_ALL_MS = 8_666.6;
+const RECORDED_CLEAR_MS = 8_983.8;
+const RECORDED_WPM = 82.2;
+const CLOSED_HOLD_MS = 0;
+const LID_OPEN_MS = 1_050;
+const OPEN_SETTLE_MS = 420;
+const POST_CLEAR_HOLD_MS = 1_800;
+const LID_CLOSE_MS = 900;
+const CLOSED_LOOP_HOLD_MS = 1_400;
+const CLOSED_LID_ANGLE_DEGREES = -90;
+const OPEN_LID_ANGLE_DEGREES = 12;
+const MIN_KEY_VISUAL_HOLD_MS = 90;
 const INTRO_LINES = [
   "hey, i'm hunter.",
   "i build polished,",
@@ -67,6 +88,81 @@ const COMMAND_KEY_ID = "key-4-3";
 const DELETE_KEY_ID = "key-0-11";
 const ENTER_KEY_ID = "key-2-11";
 const SPACE_KEY_ID = "key-4-4";
+
+// Hunter's recorded 82.2 WPM take. Each tuple preserves the physical key,
+// keydown, keyup, input commit, and (where needed) editing behavior in ms.
+const RECORDED_KEYSTROKES = [
+  ["KeyH", 0, 66.3, 0.6],
+  ["KeyE", 83.1, 151, 83.4],
+  ["KeyY", 166.6, 236.1, 167],
+  ["Comma", 353.3, 458.9, 354.3],
+  ["Space", 441.7, 520.5, 442.2],
+  ["KeyI", 553, 599.7, 553.7],
+  ["Quote", 669.7, 796.4, 670.2],
+  ["KeyM", 764.8, 824.6, 765.6],
+  ["Space", 808.2, 886, 808.5],
+  ["KeyH", 942.5, 1_008.1, 943],
+  ["KeyU", 1_041.8, 1_138.9, 1_042.6],
+  ["KeyN", 1_110.8, 1_187.3, 1_111.3],
+  ["KeyT", 1_168.9, 1_216.3, 1_169.3],
+  ["KeyE", 1_274.8, 1_341.6, 1_275.3],
+  ["KeyR", 1_325.6, 1_391.4, 1_326.1],
+  ["Period", 1_358.5, 1_443.2, 1_359.1],
+  ["Enter", 1_558.3, 1_607.9, 1_558.8],
+  ["KeyI", 1_787.6, 1_900.9, 1_788.1],
+  ["Space", 1_884.4, 1_975.3, 1_884.7],
+  ["KeyB", 2_177.4, 2_235.8, 2_177.9],
+  ["KeyU", 2_252.7, 2_328.8, 2_253],
+  ["KeyI", 2_311, 2_374.5, 2_312],
+  ["KeyL", 2_416.4, 2_500.1, 2_416.7],
+  ["KeyD", 2_525.3, 2_566.2, 2_525.9],
+  ["Space", 2_550.9, 2_612.4, 2_551.6],
+  ["KeyP", 2_630.8, 2_692.7, 2_631.2],
+  ["KeyO", 2_783.7, 2_826.5, 2_784.2],
+  ["KeyL", 2_918.2, 2_983.6, 2_918.6],
+  ["KeyS", 3_054.1, 3_124.7, 3_054.4],
+  ["KeyI", 3_109.7, 3_175.8, 3_110.1],
+  ["KeyH", 3_213.7, 3_291.3, 3_214.1],
+  ["KeyE", 3_416.4, 3_472.3, 3_416.9],
+  ["KeyD", 3_579.9, 3_624.7, 3_580.7],
+  ["Comma", 3_683.6, 3_759.9, 3_683.9],
+  ["Enter", 3_908.2, 3_966.5, 3_908.7],
+  ["KeyP", 4_112.3, 4_171, 4_113],
+  ["KeyL", 4_259, 4_362.3, 4_260.1],
+  ["KeyA", 4_379, 4_447, 4_379.4],
+  ["KeyY", 4_467.8, 4_534.8, 4_468.4],
+  ["KeyF", 4_568.9, 4_641.5, 4_569.4],
+  ["KeyU", 4_654.2, 4_723.2, 4_655],
+  ["KeyL", 4_798.1, 4_874.7, 4_798.6],
+  ["Space", 4_861.7, 4_941.5, 4_862.3],
+  ["KeyT", 4_933.4, 5_002.7, 4_933.9],
+  ["KeyH", 4_994.1, 5_037.8, 4_994.6],
+  ["KeyI", 5_060.4, 5_183, 5_061.1],
+  ["KeyN", 5_142.9, 5_220.5, 5_143.5],
+  ["KeyG", 5_167.1, 5_220.5, 5_167.7],
+  ["KeyS", 5_297.7, 5_373.7, 5_298.3],
+  ["Space", 5_729.6, 5_809.9, 5_730],
+  ["Backspace", 6_047.2, 6_102.9, 6_048.1, "backspace"],
+  ["Enter", 6_254.1, 6_314.4, 6_254.6],
+  ["KeyF", 6_351.7, 6_413, 6_352.3],
+  ["KeyO", 6_456.5, 6_504.9, 6_457],
+  ["KeyR", 6_533.3, 6_571.8, 6_534],
+  ["Space", 6_591.1, 6_662, 6_592],
+  ["KeyT", 6_659.8, 6_717.8, 6_660.6],
+  ["KeyH", 6_743.7, 6_788.3, 6_744.2],
+  ["KeyE", 6_787.7, 6_849.6, 6_788.1],
+  ["Space", 6_837.5, 6_919.4, 6_838.1],
+  ["KeyW", 6_904.8, 6_983.2, 6_905.4],
+  ["KeyE", 6_964, 7_012.1, 6_964.4],
+  ["KeyB", 7_083, 7_152.2, 7_083.4],
+  ["Period", 7_258.1, 7_332.8, 7_258.4],
+  ["Space", 7_316.4, 7_377.5, 7_316.7],
+  ["MetaLeft", 7_724.5, 7_841.2],
+  ["KeyS", 7_766.4, 7_832.9],
+  ["MetaLeft", 8_562.1, 8_784.4],
+  ["KeyA", 8_666.6, 8_767.4],
+  ["Backspace", 8_983.3, 9_051, 8_983.8, "clear"],
+] as const satisfies readonly RecordedKeystroke[];
 
 const LIGHT_DIRECTION = normalize({ x: -0.45, y: 0.7, z: 0.72 });
 
@@ -159,22 +255,22 @@ function polygonPath(points: Vec2[]): string {
 }
 
 function rgba(alpha: number): string {
-  return `rgba(229, 190, 255, ${alpha.toFixed(3)})`;
+  return heroRgba("light", alpha);
 }
 
 function faceFill(material: Material, normal: Vec3): string {
   const diffuse = Math.max(0, dot(normal, LIGHT_DIRECTION));
   if (material === "bezel") {
     const lift = Math.round(diffuse * 5);
-    return `rgb(${6 + lift}, ${3 + lift}, ${9 + lift})`;
+    return litHeroTone("ink", lift);
   }
   if (material === "hinge") {
     const lift = Math.round(diffuse * 7);
-    return `rgb(${14 + lift}, ${8 + lift}, ${19 + lift})`;
+    return litHeroTone("deep", lift);
   }
   if (material === "lid") {
     const lift = Math.round(diffuse * 22);
-    return `rgb(${120 + lift}, ${70 + lift}, ${145 + lift})`;
+    return litHeroTone("mid", lift);
   }
   const alpha = MATERIAL_ALPHA[material] * (0.82 + diffuse * 0.38);
   return rgba(Math.min(alpha, 0.64));
@@ -208,16 +304,6 @@ function roundedRectOutline(
   return points;
 }
 
-function readPinnedAngle(): number | null {
-  if (!import.meta.env.DEV || typeof window === "undefined") return null;
-  const rawAngle = new URLSearchParams(window.location.search).get(
-    "laptopAngle",
-  );
-  if (rawAngle === null) return null;
-  const parsed = Number(rawAngle);
-  return Number.isFinite(parsed) ? ((parsed % 360) + 360) % 360 : null;
-}
-
 const LETTER_KEY_ROWS = [
   { letters: "qwertyuiop", row: 1, startColumn: 1 },
   { letters: "asdfghjkl", row: 2, startColumn: 1 },
@@ -244,112 +330,143 @@ function keyIdForCharacter(character: string): string {
   return SPACE_KEY_ID;
 }
 
-function characterCadenceMs(character: string): number {
-  if (character === " ") return 150;
-  if (PUNCTUATION_KEYS[character]) return 190;
-  return 112;
-}
-
-function buildTypingTimeline() {
-  const events: KeystrokeEvent[] = [];
-  let timeMs = 180;
-
-  for (const [lineIndex, line] of INTRO_LINES.entries()) {
-    for (const [characterIndex, character] of [...line].entries()) {
-      const cadenceMs = characterCadenceMs(character);
-      const pressDurationMs = Math.min(90, cadenceMs * 0.78);
-      events.push({
-        action: "character",
-        commitMs: timeMs + pressDurationMs * 0.58,
-        endMs: timeMs + pressDurationMs,
-        keyIds: [keyIdForCharacter(character)],
-        lineIndex,
-        revealedCharacters: characterIndex + 1,
-        startMs: timeMs,
-      });
-      timeMs += cadenceMs;
-    }
-
-    if (lineIndex < INTRO_LINES.length - 1) {
-      timeMs += 58;
-      events.push({
-        action: "enter",
-        commitMs: timeMs + 72,
-        endMs: timeMs + 118,
-        keyIds: [ENTER_KEY_ID],
-        lineIndex: lineIndex + 1,
-        startMs: timeMs,
-      });
-      timeMs += 278;
-    }
+function keyIdForCode(code: string): string {
+  if (code.startsWith("Key")) {
+    return keyIdForCharacter(code.slice(3).toLowerCase());
   }
 
-  const typingEndMs = timeMs;
-  const selectStartMs = typingEndMs + 880;
-  const selectCommitMs = selectStartMs + 105;
-  const selectEndMs = selectStartMs + 340;
-  events.push({
-    action: "select-all",
-    commitMs: selectCommitMs,
-    endMs: selectEndMs,
-    keyIds: [COMMAND_KEY_ID, "key-2-1"],
-    startMs: selectStartMs,
-  });
+  switch (code) {
+    case "Backspace":
+      return DELETE_KEY_ID;
+    case "Comma":
+      return PUNCTUATION_KEYS[","]!;
+    case "Enter":
+      return ENTER_KEY_ID;
+    case "MetaLeft":
+      return COMMAND_KEY_ID;
+    case "Period":
+      return PUNCTUATION_KEYS["."]!;
+    case "Quote":
+      return PUNCTUATION_KEYS["'"]!;
+    case "Space":
+      return SPACE_KEY_ID;
+    default:
+      return SPACE_KEY_ID;
+  }
+}
 
-  const deleteStartMs = selectEndMs + 155;
-  const deleteCommitMs = deleteStartMs + 92;
-  const deleteEndMs = deleteStartMs + 248;
-  events.push({
-    action: "delete",
-    commitMs: deleteCommitMs,
-    endMs: deleteEndMs,
-    keyIds: [DELETE_KEY_ID],
-    startMs: deleteStartMs,
-  });
+function insertedCharacterForCode(code: string): string | null {
+  if (code.startsWith("Key")) return code.slice(3).toLowerCase();
+
+  switch (code) {
+    case "Comma":
+      return ",";
+    case "Enter":
+      return "\n";
+    case "Period":
+      return ".";
+    case "Quote":
+      return "'";
+    case "Space":
+      return " ";
+    default:
+      return null;
+  }
+}
+
+const LID_OPEN_START_MS = CLOSED_HOLD_MS;
+const LID_OPEN_END_MS = LID_OPEN_START_MS + LID_OPEN_MS;
+const TYPING_START_MS = LID_OPEN_END_MS + OPEN_SETTLE_MS;
+const LID_CLOSE_START_MS =
+  TYPING_START_MS + RECORDED_DURATION_MS + POST_CLEAR_HOLD_MS;
+const LID_CLOSE_END_MS = LID_CLOSE_START_MS + LID_CLOSE_MS;
+const SCREEN_SEQUENCE_MS = LID_CLOSE_END_MS + CLOSED_LOOP_HOLD_MS;
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
+function smoothstep(value: number): number {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
+}
+
+function lidStateAtProgress(progress: number): LidState {
+  const timeMs = clamp01(progress) * SCREEN_SEQUENCE_MS;
+  let openProgress = 0;
+  let phase: LidPhase = "closed";
+
+  if (timeMs < LID_OPEN_START_MS) {
+    openProgress = 0;
+  } else if (timeMs < LID_OPEN_END_MS) {
+    openProgress = smoothstep(
+      (timeMs - LID_OPEN_START_MS) / LID_OPEN_MS,
+    );
+    phase = "opening";
+  } else if (timeMs < LID_CLOSE_START_MS) {
+    openProgress = 1;
+    phase = "open";
+  } else if (timeMs < LID_CLOSE_END_MS) {
+    openProgress =
+      1 -
+      smoothstep((timeMs - LID_CLOSE_START_MS) / LID_CLOSE_MS);
+    phase = "closing";
+  }
 
   return {
-    deleteCommitMs,
-    durationMs: deleteEndMs + 680,
-    events,
-    selectCommitMs,
-    typingEndMs,
+    angleDegrees:
+      CLOSED_LID_ANGLE_DEGREES +
+      (OPEN_LID_ANGLE_DEGREES - CLOSED_LID_ANGLE_DEGREES) * openProgress,
+    openProgress,
+    phase,
   };
 }
 
-const TYPING_TIMELINE = buildTypingTimeline();
-const SCREEN_SEQUENCE_MS = TYPING_TIMELINE.durationMs;
-
 function typingStateAtProgress(progress: number): TypingState {
-  const timeMs = progress * SCREEN_SEQUENCE_MS;
-  const revealedCharacters = INTRO_LINES.map(() => 0);
-  let activeKeyIds: string[] = [];
+  const timeMs = progress * SCREEN_SEQUENCE_MS - TYPING_START_MS;
+  const lineLengths = INTRO_LINES.map(() => 0);
+  const activeKeyIds = new Set<string>();
   let cursorLine = 0;
 
-  for (const event of TYPING_TIMELINE.events) {
-    if (timeMs >= event.startMs && timeMs < event.endMs) {
-      activeKeyIds = event.keyIds;
-    }
-    if (timeMs < event.commitMs) continue;
-
+  for (const [code, downMs, upMs, commitMs, mutation] of RECORDED_KEYSTROKES) {
     if (
-      event.action === "character" &&
-      event.lineIndex !== undefined &&
-      event.revealedCharacters !== undefined
+      timeMs >= downMs &&
+      timeMs < Math.max(upMs, downMs + MIN_KEY_VISUAL_HOLD_MS)
     ) {
-      revealedCharacters[event.lineIndex] = event.revealedCharacters;
-      cursorLine = event.lineIndex;
-    } else if (event.action === "enter" && event.lineIndex !== undefined) {
-      cursorLine = event.lineIndex;
+      activeKeyIds.add(keyIdForCode(code));
+    }
+    if (commitMs === undefined || timeMs < commitMs) continue;
+
+    const resolvedMutation = mutation ?? "insert";
+    if (resolvedMutation === "clear") {
+      lineLengths.fill(0);
+      cursorLine = 0;
+      continue;
+    }
+    if (resolvedMutation === "backspace") {
+      if (lineLengths[cursorLine]! > 0) {
+        lineLengths[cursorLine] = lineLengths[cursorLine]! - 1;
+      } else if (cursorLine > 0) {
+        cursorLine -= 1;
+      }
+      continue;
+    }
+
+    const character = insertedCharacterForCode(code);
+    if (character === "\n") {
+      cursorLine = Math.min(cursorLine + 1, INTRO_LINES.length - 1);
+    } else if (character !== null) {
+      lineLengths[cursorLine] = lineLengths[cursorLine]! + 1;
     }
   }
 
-  const isCleared = timeMs >= TYPING_TIMELINE.deleteCommitMs;
-  const isSelected =
-    timeMs >= TYPING_TIMELINE.selectCommitMs && !isCleared;
+  const isCleared = timeMs >= RECORDED_CLEAR_MS;
+  const isSelected = timeMs >= RECORDED_SELECT_ALL_MS && !isCleared;
   const lineProgress = isCleared
     ? INTRO_LINES.map(() => 0)
-    : revealedCharacters.map(
-        (characters, index) => characters / INTRO_LINES[index]!.length,
+    : lineLengths.map(
+        (characters, index) =>
+          Math.min(1, characters / INTRO_LINES[index]!.length),
       );
   if (isCleared) cursorLine = 0;
 
@@ -357,39 +474,60 @@ function typingStateAtProgress(progress: number): TypingState {
     ? "cleared"
     : isSelected
       ? "selected"
-      : timeMs >= TYPING_TIMELINE.typingEndMs
-        ? "holding"
-        : "typing";
+      : timeMs < 0
+        ? "waiting"
+        : timeMs >= RECORDED_TYPING_END_MS
+          ? "holding"
+          : "typing";
 
-  return { activeKeyIds, cursorLine, isSelected, lineProgress, phase };
+  return {
+    activeKeyIds: [...activeKeyIds],
+    cursorLine,
+    isSelected,
+    lineProgress,
+    phase,
+  };
 }
 
 function useLaptopMotion(frame: number | null): {
-  angle: number;
   fps: number;
   screenProgress: number;
 } {
-  const { fps, frameIntervalMs, prefersReducedMotion } =
+  const { animationReady, fps, frameIntervalMs, prefersReducedMotion } =
     useModelTiming("laptop");
-  const [pinnedAngle] = useState<number | null>(readPinnedAngle);
-  const [motion, setMotion] = useState(() => ({
-    screenProgress: frame ?? 0,
-    swayProgress: frame ?? 0,
-  }));
+  const [screenProgress, setScreenProgress] = useState(() => {
+    if (frame !== null) return frame;
+
+    if (!animationReady) return 0;
+
+    if (prefersReducedMotion) {
+      return (
+        (TYPING_START_MS + RECORDED_TYPING_END_MS + 300) /
+        SCREEN_SEQUENCE_MS
+      );
+    }
+
+    return 0;
+  });
   const startTime = useRef<number | null>(null);
 
   useEffect(() => {
     if (frame !== null) {
-      setMotion({ screenProgress: frame, swayProgress: frame });
+      setScreenProgress(frame);
+      return;
+    }
+
+    if (!animationReady) {
+      startTime.current = null;
+      setScreenProgress(0);
       return;
     }
 
     if (prefersReducedMotion) {
-      setMotion({
-        screenProgress:
-          (TYPING_TIMELINE.typingEndMs + 300) / SCREEN_SEQUENCE_MS,
-        swayProgress: 0,
-      });
+      setScreenProgress(
+        (TYPING_START_MS + RECORDED_TYPING_END_MS + 300) /
+          SCREEN_SEQUENCE_MS,
+      );
       return;
     }
 
@@ -401,10 +539,7 @@ function useLaptopMotion(frame: number | null): {
       const frameDelta = time - lastFrame;
       if (frameDelta >= frameIntervalMs) {
         const elapsed = time - startTime.current;
-        setMotion({
-          screenProgress: (elapsed % SCREEN_SEQUENCE_MS) / SCREEN_SEQUENCE_MS,
-          swayProgress: (elapsed % SWAY_DURATION_MS) / SWAY_DURATION_MS,
-        });
+        setScreenProgress((elapsed % SCREEN_SEQUENCE_MS) / SCREEN_SEQUENCE_MS);
         lastFrame = time - (frameDelta % frameIntervalMs);
       }
       animationFrame = window.requestAnimationFrame(update);
@@ -412,20 +547,17 @@ function useLaptopMotion(frame: number | null): {
 
     animationFrame = window.requestAnimationFrame(update);
     return () => window.cancelAnimationFrame(animationFrame);
-  }, [frame, frameIntervalMs, prefersReducedMotion]);
+  }, [animationReady, frame, frameIntervalMs, prefersReducedMotion]);
 
   return {
-    angle:
-      pinnedAngle ??
-      SWAY_CENTER_DEGREES +
-        Math.sin(motion.swayProgress * Math.PI * 2) * SWAY_AMPLITUDE_DEGREES,
     fps,
-    screenProgress: motion.screenProgress,
+    screenProgress,
   };
 }
 
 function buildLaptop(
   angleDegrees: number,
+  lidOpenProgress: number,
   typingState: TypingState,
 ): RenderItem[] {
   const angle = (angleDegrees * Math.PI) / 180;
@@ -521,7 +653,11 @@ function buildLaptop(
     );
   }
 
-  const lean = (12 * Math.PI) / 180;
+  const lidAngleDegrees =
+    CLOSED_LID_ANGLE_DEGREES +
+    (OPEN_LID_ANGLE_DEGREES - CLOSED_LID_ANGLE_DEGREES) *
+      lidOpenProgress;
+  const lean = (lidAngleDegrees * Math.PI) / 180;
   const hinge = { x: 0, y: 0.084, z: -0.82 };
   const screenUp = { x: 0, y: Math.cos(lean), z: -Math.sin(lean) };
   const screenFront = { x: 0, y: Math.sin(lean), z: Math.cos(lean) };
@@ -534,12 +670,16 @@ function buildLaptop(
       scale(screenFront, depth),
     );
 
-  const screenOutline = roundedRectOutline(1.48, 0, 2.06, 0.12, 4);
+  const screenOutline = roundedRectOutline(1.48, 0, 2.03, 0.12, 4);
   const screenFrontOutline = screenOutline.map((point) =>
     screenPoint(point.x, point.y, halfThickness),
   );
   const screenBackOutline = screenOutline.map((point) =>
     screenPoint(point.x, point.y, -halfThickness),
+  );
+  const screenBezelFill = faceFill(
+    "bezel",
+    normalize(rotateToCamera(faceNormal(screenFrontOutline), angle)),
   );
   const screenSurfaceDepth = averageDepth(
     screenFrontOutline.map((point) => rotateToCamera(point, angle)),
@@ -569,8 +709,8 @@ function buildLaptop(
       screenPoint(point.x, point.y, displayDepth),
     ),
     screenFront,
-    "rgba(18, 8, 28, 0.82)",
-    "rgba(242, 220, 255, 0.16)",
+    heroRgba("ink", 0.82),
+    heroRgba("light", 0.16),
     0.28,
     0.08,
     screenSurfaceDepth + 0.01,
@@ -579,17 +719,17 @@ function buildLaptop(
   addDetailPolygon(
     "camera-notch",
     [
-      screenPoint(-0.14, 2.01, displayDepth + 0.006),
-      screenPoint(0.14, 2.01, displayDepth + 0.006),
-      screenPoint(0.14, 1.92, displayDepth + 0.006),
-      screenPoint(0.085, 1.885, displayDepth + 0.006),
-      screenPoint(-0.085, 1.885, displayDepth + 0.006),
-      screenPoint(-0.14, 1.92, displayDepth + 0.006),
+      screenPoint(-0.13, 2.025, displayDepth + 0.006),
+      screenPoint(0.13, 2.025, displayDepth + 0.006),
+      screenPoint(0.13, 1.972, displayDepth + 0.006),
+      screenPoint(0.08, 1.948, displayDepth + 0.006),
+      screenPoint(-0.08, 1.948, displayDepth + 0.006),
+      screenPoint(-0.13, 1.972, displayDepth + 0.006),
     ],
     screenFront,
-    "rgba(7, 3, 12, 0.96)",
-    "rgba(240, 217, 255, 0.12)",
-    0.24,
+    screenBezelFill,
+    "none",
+    0,
     0.08,
     screenSurfaceDepth + 0.03,
   );
@@ -617,8 +757,8 @@ function buildLaptop(
       ],
       screenFront,
       typingState.isSelected
-        ? "rgba(249, 222, 255, 0.96)"
-        : `rgba(234, 198, 255, ${line.alpha})`,
+        ? heroRgba("light", 0.96)
+        : heroRgba("light", line.alpha),
       line.width + (typingState.isSelected ? 0.18 : 0),
       1,
       0.08,
@@ -631,7 +771,7 @@ function buildLaptop(
     lineStart +
     (activeLine.to - lineStart) *
       (typingState.lineProgress[typingState.cursorLine] ?? 0);
-  if (!typingState.isSelected) {
+  if (!typingState.isSelected && typingState.phase !== "cleared") {
     addDetailLine(
       "screen-cursor",
       [
@@ -639,7 +779,7 @@ function buildLaptop(
         screenPoint(cursorX + 0.025, activeLine.y + 0.075, displayDepth + 0.009),
       ],
       screenFront,
-      "rgba(251, 233, 255, 0.96)",
+      heroRgba("light", 0.96),
       0.82,
       1,
       0.08,
@@ -657,8 +797,8 @@ function buildLaptop(
       z: point.y,
     })),
     topNormal,
-    "rgba(86, 42, 104, 0.14)",
-    "rgba(239, 208, 255, 0.26)",
+    heroRgba("mid", 0.14),
+    heroRgba("light", 0.26),
     0.38,
     0.025,
     baseSurfaceDepth + 0.01,
@@ -693,8 +833,8 @@ function buildLaptop(
           z: point.y,
         })),
         topNormal,
-        "rgba(10, 4, 15, 0.8)",
-        "rgba(242, 220, 255, 0.4)",
+        heroRgba("ink", 0.8),
+        heroRgba("light", 0.4),
         0.22,
         0.025,
         baseSurfaceDepth + 0.02,
@@ -720,8 +860,8 @@ function buildLaptop(
         }),
       ),
       topNormal,
-      "rgba(10, 4, 15, 0.8)",
-      "rgba(242, 220, 255, 0.4)",
+      heroRgba("ink", 0.8),
+      heroRgba("light", 0.4),
       0.22,
       0.025,
       baseSurfaceDepth + 0.02,
@@ -737,8 +877,8 @@ function buildLaptop(
       z: point.y,
     })),
     topNormal,
-    "rgba(229, 190, 255, 0.08)",
-    "rgba(241, 216, 255, 0.42)",
+    heroRgba("accent", 0.08),
+    heroRgba("light", 0.42),
     0.42,
     0.025,
     baseSurfaceDepth + 0.02,
@@ -756,7 +896,7 @@ function buildLaptop(
           { x, y: 0.046, z: z + (side === "left" && index === 0 ? 0.17 : 0.12) },
         ],
         normal,
-        "rgba(14, 6, 20, 0.76)",
+        heroRgba("ink", 0.76),
         0.5,
         0.88,
       );
@@ -770,9 +910,23 @@ function buildLaptop(
       { x: 0.23, y: 0.05, z: 1.216 },
     ],
     { x: 0, y: 0, z: 1 },
-    "rgba(246, 225, 255, 0.36)",
+    heroRgba("light", 0.36),
     0.55,
     0.8,
+  );
+
+  addDetailLine(
+    "closed-seam",
+    [
+      { x: -1.31, y: 0.076, z: 1.214 },
+      { x: 1.31, y: 0.076, z: 1.214 },
+    ],
+    { x: 0, y: 0, z: 1 },
+    heroRgba("ink", 0.82),
+    0.38,
+    (1 - lidOpenProgress) * 0.82,
+    0.025,
+    baseSurfaceDepth + 1,
   );
 
   return items.sort((a, b) => a.depth - b.depth);
@@ -780,14 +934,23 @@ function buildLaptop(
 
 function LaptopWatermark() {
   const frame = readPinnedModelFrame();
-  const { angle, fps, screenProgress } = useLaptopMotion(frame);
+  const { fps, screenProgress } = useLaptopMotion(frame);
+  const lidState = useMemo(
+    () => lidStateAtProgress(screenProgress),
+    [screenProgress],
+  );
   const typingState = useMemo(
     () => typingStateAtProgress(screenProgress),
     [screenProgress],
   );
   const items = useMemo(
-    () => buildLaptop(angle, typingState),
-    [angle, typingState],
+    () =>
+      buildLaptop(
+        FRONT_ANGLE_DEGREES,
+        lidState.openProgress,
+        typingState,
+      ),
+    [lidState.openProgress, typingState],
   );
   const keyboardKeys = useMemo(
     () =>
@@ -814,11 +977,15 @@ function LaptopWatermark() {
   return (
     <svg
       aria-hidden="true"
-      className="h-full w-full overflow-visible"
+      className="hero-model-svg h-full w-full overflow-visible"
       data-model="work-laptop"
-      data-model-angle={angle.toFixed(1)}
+      data-model-angle={FRONT_ANGLE_DEGREES.toFixed(1)}
       data-model-fps={fps}
+      data-model-lid-angle={lidState.angleDegrees.toFixed(1)}
+      data-model-lid-open={lidState.openProgress.toFixed(3)}
+      data-model-lid-phase={lidState.phase}
       data-model-typing-phase={typingState.phase}
+      data-model-typing-wpm={RECORDED_WPM}
       fill="none"
       viewBox="0 0 120 100"
     >
@@ -879,9 +1046,9 @@ function LaptopWatermark() {
           <polygon
             key={`${key.id}-press`}
             data-part={`${key.id}-press`}
-            fill="rgba(221, 158, 255, 0.92)"
+            fill={heroRgba("accent", 0.92)}
             points={formatPoints(key.points)}
-            stroke="rgba(250, 232, 255, 0.72)"
+            stroke={heroRgba("light", 0.72)}
             strokeLinejoin="round"
             strokeWidth="0.3"
             vectorEffect="non-scaling-stroke"

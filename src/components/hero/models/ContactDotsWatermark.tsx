@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { HERO_COLORS } from "../heroPalette";
 import ModelSvg from "./ModelSvg";
 
 const DOTS = [42, 60, 78] as const;
@@ -9,14 +10,12 @@ function ContactDotsWatermark() {
       {DOTS.map((cx, index) => (
         <circle
           key={cx}
+          className="hero-contact-dot"
           cx={cx}
           cy="20"
-          fill="rgba(246, 227, 255, 0.82)"
-          opacity={index === 1 ? 1 : 0.72}
-          r="5"
-          stroke="rgba(221, 173, 242, 0.5)"
-          strokeWidth="0.7"
-          vectorEffect="non-scaling-stroke"
+          fill={HERO_COLORS.accent}
+          r="4.25"
+          style={{ animationDelay: `${index * 140}ms` }}
         />
       ))}
     </ModelSvg>

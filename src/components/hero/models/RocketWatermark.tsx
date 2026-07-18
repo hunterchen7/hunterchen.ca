@@ -1,4 +1,5 @@
 import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
+import { HERO_COLORS, heroRgba, litHeroTone } from "../heroPalette";
 import ModelSvg from "./ModelSvg";
 import {
   modelAnimationStyle,
@@ -145,11 +146,8 @@ function averageDepth(points: Vec3[]): number {
 
 function finColor(normal: Vec3): string {
   const diffuse = Math.max(0, dot(normal, LIGHT_DIRECTION));
-  const factor = Math.min(
-    1,
-    0.54 + diffuse * 0.4 + Math.max(0, normal.z) * 0.06,
-  );
-  return `rgb(${Math.round(105 * factor)}, ${Math.round(54 * factor)}, ${Math.round(126 * factor)})`;
+  const lift = Math.round(-12 + diffuse * 22 + Math.max(0, normal.z) * 4);
+  return litHeroTone("mid", lift);
 }
 
 function addFinFace(
@@ -314,16 +312,16 @@ function RocketWatermark() {
     >
       <defs>
         <linearGradient id={hullGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#341a43" />
-          <stop offset="18%" stopColor="#75458c" />
-          <stop offset="42%" stopColor="#a46aba" />
-          <stop offset="68%" stopColor="#6c3b82" />
-          <stop offset="100%" stopColor="#24102f" />
+          <stop offset="0%" stopColor={HERO_COLORS.deep} />
+          <stop offset="18%" stopColor={HERO_COLORS.mid} />
+          <stop offset="42%" stopColor={HERO_COLORS.accent} />
+          <stop offset="68%" stopColor={HERO_COLORS.mid} />
+          <stop offset="100%" stopColor={HERO_COLORS.deep} />
         </linearGradient>
         <linearGradient id={collarGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#1b0b24" />
-          <stop offset="46%" stopColor="#563067" />
-          <stop offset="100%" stopColor="#16081d" />
+          <stop offset="0%" stopColor={HERO_COLORS.ink} />
+          <stop offset="46%" stopColor={HERO_COLORS.mid} />
+          <stop offset="100%" stopColor={HERO_COLORS.ink} />
         </linearGradient>
       </defs>
       <g transform="rotate(8 57 56)">
@@ -339,7 +337,7 @@ function RocketWatermark() {
               data-part={face.id}
               fill={face.fill}
               points={formatPoints(face.points)}
-              stroke={face.fill}
+              stroke={heroRgba("light", 0.42)}
               strokeWidth="0.15"
               vectorEffect="non-scaling-stroke"
             />
@@ -349,20 +347,20 @@ function RocketWatermark() {
             data-part="smooth-hull"
             d={HULL_PATH}
             fill={`url(#${hullGradientId})`}
-            stroke="rgba(235, 206, 255, 0.76)"
+            stroke={heroRgba("light", 0.76)}
             strokeWidth="0.95"
             vectorEffect="non-scaling-stroke"
           />
           <path
             data-part="hull-highlight"
             d="M49.2 23 C45.8 33 44.4 46 44.8 62.5 Q45 68 49 69.4 C47.8 55 48 37 52 18.4 Z"
-            fill="rgba(245, 220, 255, 0.16)"
+            fill={heroRgba("light", 0.16)}
           />
           <path
             data-part="engine-collar"
             d="M44.8 68.5 Q57 73.5 69.2 68.5 L67.6 77 Q57 81 46.4 77 Z"
             fill={`url(#${collarGradientId})`}
-            stroke="rgba(229, 190, 255, 0.58)"
+            stroke={heroRgba("light", 0.58)}
             strokeWidth="0.75"
             vectorEffect="non-scaling-stroke"
           />
@@ -370,10 +368,10 @@ function RocketWatermark() {
             data-part="nozzle-opening"
             cx="57"
             cy="77.2"
-            fill="rgb(14, 6, 19)"
+            fill={HERO_COLORS.ink}
             rx="10.6"
             ry="3.35"
-            stroke="rgba(229, 190, 255, 0.42)"
+            stroke={heroRgba("light", 0.42)}
             strokeWidth="0.65"
             vectorEffect="non-scaling-stroke"
           />
@@ -383,7 +381,7 @@ function RocketWatermark() {
               data-part={face.id}
               fill={face.fill}
               points={formatPoints(face.points)}
-              stroke={face.fill}
+              stroke={heroRgba("light", 0.42)}
               strokeWidth="0.15"
               vectorEffect="non-scaling-stroke"
             />
@@ -392,14 +390,14 @@ function RocketWatermark() {
           <g className="model-rocket-flame" style={flameStyle}>
             <path
               d="M49.5 77.5 Q48.5 91 57 107 Q65.5 91 64.5 77.5 Q57 82 49.5 77.5 Z"
-              fill="rgba(174, 92, 224, 0.38)"
-              stroke="rgba(229, 190, 255, 0.54)"
+              fill={heroRgba("accent", 0.38)}
+              stroke={heroRgba("light", 0.54)}
               strokeWidth="0.72"
               vectorEffect="non-scaling-stroke"
             />
             <path
               d="M52.5 78.5 Q52 89 57 100 Q62 89 61.5 78.5 Q57 81.5 52.5 78.5 Z"
-              fill="rgba(247, 219, 255, 0.72)"
+              fill={heroRgba("light", 0.72)}
             />
           </g>
 
@@ -407,7 +405,7 @@ function RocketWatermark() {
             className="model-rocket-ember-one"
             cx="50"
             cy="100"
-            fill="rgba(229, 190, 255, 0.72)"
+            fill={heroRgba("light", 0.72)}
             r="1.2"
             style={emberOneStyle}
           />
@@ -415,7 +413,7 @@ function RocketWatermark() {
             className="model-rocket-ember-two"
             cx="64"
             cy="98"
-            fill="rgba(184, 116, 228, 0.68)"
+            fill={heroRgba("accent", 0.68)}
             r="0.92"
             style={emberTwoStyle}
           />
