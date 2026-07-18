@@ -636,18 +636,28 @@ function renderPiecesForTimeline(timeline: Timeline): RenderPiece[] {
           SETUP_EMPTY_HOLD_MS + pair * SETUP_PAIR_INTERVAL_MS,
           SETUP_PIECE_MS,
         );
-        const entranceVector = {
-          x: start.x - BOARD_CENTER.x,
-          y: start.y - BOARD_CENTER.y,
-        };
+        const entranceVector =
+          piece.kind === "p"
+            ? {
+                x: COLUMN.x * (piece.color === "b" ? 1 : -1),
+                y: COLUMN.y * (piece.color === "b" ? 1 : -1),
+              }
+            : {
+                x: start.x - BOARD_CENTER.x,
+                y: start.y - BOARD_CENTER.y,
+              };
         const entranceDistance =
           Math.hypot(entranceVector.x, entranceVector.y) || 1;
         const directionX = entranceVector.x / entranceDistance;
         const directionY = entranceVector.y / entranceDistance;
         const remaining = 1 - entranceProgress;
+        const entranceTravel = piece.kind === "p" ? 10 : 19;
 
-        x += directionX * remaining * 19;
-        y += directionY * remaining * 12;
+        x += directionX * remaining * entranceTravel;
+        y +=
+          directionY *
+          remaining *
+          (piece.kind === "p" ? entranceTravel : 12);
         opacity = smoothstep(entranceProgress / 0.42);
         lift = Math.sin(Math.PI * entranceProgress) * 1.25;
         rotation =
