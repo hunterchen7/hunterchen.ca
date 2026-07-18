@@ -80,6 +80,8 @@ export const cards: Card[] = [
     front: "work",
     frontAnchor: "bottom-right",
     frontArtwork: <LaptopWatermark />,
+    frontArtworkClassName:
+      "absolute left-1/2 top-1/2 h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 md:h-[60%] md:w-[58%]",
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
         <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
@@ -112,7 +114,7 @@ export const cards: Card[] = [
     frontAnchor: "bottom-left",
     frontArtwork: <ChessboardWatermark />,
     frontArtworkClassName:
-      "absolute right-3 top-3 h-[74%] w-[82%] md:right-6 md:top-6 md:h-[76%] md:w-[78%]",
+      "absolute left-1/2 top-1/2 h-[74%] w-[82%] -translate-x-1/2 -translate-y-1/2 md:h-[76%] md:w-[78%]",
     back: <ProjectsCard />,
     gridArea: "[grid-area:1/4/4/6] md:[grid-area:1/3/3/5]",
     color: "var(--surface-mid)",
@@ -123,7 +125,7 @@ export const cards: Card[] = [
     frontAnchor: "top-left",
     frontArtwork: <CameraWatermark />,
     frontArtworkClassName:
-      "absolute bottom-3 right-3 h-[64%] w-[74%] md:bottom-6 md:right-6 md:h-[64%] md:w-[66%]",
+      "absolute left-1/2 top-1/2 h-[64%] w-[74%] -translate-x-1/2 -translate-y-1/2 md:w-[66%]",
     back: <FunCard />,
     gridArea: "[grid-area:4/4/7/6] md:[grid-area:3/3/5/5]",
     color: "var(--surface-mid)",
@@ -133,6 +135,8 @@ export const cards: Card[] = [
     front: "hackathons",
     frontAnchor: "top-right",
     frontArtwork: <RocketWatermark />,
+    frontArtworkClassName:
+      "absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2",
     back: (
       <div className="h-full w-full flex flex-col gap-3 md:gap-4">
         <div className="text-[10.5px] md:text-sm leading-relaxed text-left text-balance">
