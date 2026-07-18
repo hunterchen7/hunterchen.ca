@@ -16,8 +16,7 @@ export interface Project {
   videoFit?: "cover" | "contain";
 }
 
-export const PROJECTS_GRADIENT =
-  "radial-gradient(ellipse at 50% 45%, var(--surface-bloom) 0%, var(--surface-mid) 42%, var(--surface-low) 72%, var(--surface-deep) 100%)";
+export const PROJECTS_GRADIENT = "var(--surface-panel)";
 
 // Grid area assignments for the 3x4 bento layout
 // ┌──────────┬─────────────────────┐

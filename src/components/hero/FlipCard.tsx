@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { SHARED_GRADIENT } from "./cards";
+import { heroRgba } from "./heroPalette";
 
 const ARTWORK_HIDDEN = { opacity: 0, scale: 0.78, y: 7 };
 const ARTWORK_RESTING = { opacity: 1, scale: 1, y: 0 };
@@ -17,7 +18,6 @@ export interface Card {
   frontArtworkClassName?: string;
   frontAnchor?:
     | "top-left"
-    | "top-left-lower"
     | "top-right"
     | "bottom-left"
     | "bottom-right"
@@ -68,23 +68,21 @@ export default function FlipCard({
   // renders content at native resolution instead of caching a composite layer.
   const settled = flipped && !isAnimating;
 
-  // Cache card position relative to grid via ResizeObserver
+  // Cache the grid item's layout-space bounds. Measuring the card itself with
+  // getBoundingClientRect() captures its parent's entrance scale, and CSS
+  // transforms do not retrigger ResizeObserver when that scale settles.
   useEffect(() => {
     const cardEl = cardRef.current;
     const gridEl = gridRef.current;
-    if (!cardEl || !gridEl) return;
+    const layoutEl = cardEl?.parentElement;
+    if (!cardEl || !gridEl || !layoutEl) return;
 
     const update = () => {
-      const cardRect = cardEl.getBoundingClientRect();
-      const gridRect = gridEl.getBoundingClientRect();
-      // Convert screen-space to layout-space (accounts for canvas zoom)
-      const scaleX = gridEl.offsetWidth / gridRect.width;
-      const scaleY = gridEl.offsetHeight / gridRect.height;
       setBounds({
-        offsetLeft: (cardRect.left - gridRect.left) * scaleX,
-        offsetTop: (cardRect.top - gridRect.top) * scaleY,
-        width: cardRect.width * scaleX,
-        height: cardRect.height * scaleY,
+        offsetLeft: layoutEl.offsetLeft,
+        offsetTop: layoutEl.offsetTop,
+        width: layoutEl.offsetWidth,
+        height: layoutEl.offsetHeight,
         gridWidth: gridEl.offsetWidth,
         gridHeight: gridEl.offsetHeight,
       });
@@ -93,6 +91,7 @@ export default function FlipCard({
     update();
     const ro = new ResizeObserver(update);
     ro.observe(gridEl);
+    ro.observe(layoutEl);
     return () => ro.disconnect();
   }, [gridRef]);
 
@@ -103,39 +102,37 @@ export default function FlipCard({
     {
       center: "absolute inset-[18%]",
       "top-left":
-        "absolute bottom-3 right-3 h-[58%] w-[58%] md:bottom-5 md:right-5",
-      "top-left-lower":
-        "absolute bottom-3 right-3 h-[58%] w-[58%] md:bottom-5 md:right-5",
+        "absolute bottom-3 right-3 h-[58%] w-[58%] md:bottom-6 md:right-6",
       "top-right":
-        "absolute bottom-3 left-3 h-[58%] w-[58%] md:bottom-5 md:left-5",
+        "absolute bottom-3 left-3 h-[58%] w-[58%] md:bottom-6 md:left-6",
       "bottom-left":
-        "absolute top-3 right-3 h-[58%] w-[58%] md:top-5 md:right-5",
+        "absolute top-3 right-3 h-[58%] w-[58%] md:top-6 md:right-6",
       "bottom-right":
-        "absolute left-3 top-3 h-[62%] w-[62%] md:left-5 md:top-16 md:h-[60%] md:w-[58%]",
+        "absolute left-3 top-3 h-[62%] w-[62%] md:left-6 md:top-6 md:h-[60%] md:w-[58%]",
       "top-center":
-        "absolute bottom-3 left-1/2 h-[52%] w-[52%] -translate-x-1/2 md:bottom-5",
+        "absolute bottom-3 left-1/2 h-[52%] w-[52%] -translate-x-1/2 md:bottom-6",
     }[frontAnchor];
 
   // Shared gradient: each card shows its slice of the full grid gradient
   const sharedBg = bounds
     ? {
-        background: SHARED_GRADIENT,
+        backgroundColor: card.color,
+        backgroundImage: SHARED_GRADIENT,
         backgroundSize: `${bounds.gridWidth}px ${bounds.gridHeight}px`,
         backgroundPosition: `${-bounds.offsetLeft}px ${-bounds.offsetTop}px`,
+        backgroundRepeat: "no-repeat",
       }
-    : { background: card.color };
+    : { backgroundColor: card.color };
 
   const radialGlow = bounds
-    ? `radial-gradient(600px circle at calc(var(--hero-glow-x, 0px) - ${bounds.offsetLeft}px) calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px), rgba(255, 255, 255, 0.022), transparent 40%)`
-    : "radial-gradient(600px circle at 50% 50%, rgba(255, 255, 255, 0.022), transparent 40%)";
+    ? `radial-gradient(600px circle at calc(var(--hero-glow-x, 0px) - ${bounds.offsetLeft}px) calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px), ${heroRgba("light", 0.022)}, transparent 40%)`
+    : `radial-gradient(600px circle at 50% 50%, ${heroRgba("light", 0.022)}, transparent 40%)`;
 
   const frontAnchorClass = {
     center:
       "absolute inset-0 flex items-center justify-center text-center px-8",
     "top-left":
       "absolute top-5 left-5 md:top-6 md:left-6 text-left max-w-[70%]",
-    "top-left-lower":
-      "absolute top-5 left-5 md:top-16 md:left-6 text-left max-w-[70%]",
     "top-right":
       "absolute top-5 right-5 md:top-6 md:right-6 text-right max-w-[70%]",
     "bottom-left":
@@ -150,13 +147,13 @@ export default function FlipCard({
     backVariant === "classic" ? "relative z-10" : "relative z-10 h-full w-full";
   const backFaceClass =
     backVariant === "classic"
-      ? "absolute inset-0 border-[1.5px] border-violet-400/55 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-8 flex items-center justify-center overflow-hidden"
-      : "absolute inset-0 border-[1.5px] border-violet-400/55 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden";
+      ? "absolute inset-0 rounded-2xl p-8 flex items-center justify-center overflow-hidden text-[color:var(--hero-light)]"
+      : "absolute inset-0 rounded-2xl p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden text-[color:var(--hero-light)]";
 
   const backContent = (
     <div className={backContentClass}>
       {typeof card.back === "string" ? (
-        <p className="text-fuchsia-100/90 text-base leading-relaxed text-center">
+        <p className="text-[color:var(--hero-light)] text-base leading-relaxed text-center">
           {card.back}
         </p>
       ) : (
@@ -178,7 +175,7 @@ export default function FlipCard({
   return (
     <div
       ref={cardRef}
-      className="relative w-full h-full cursor-pointer"
+      className="site-panel-depth relative h-full w-full cursor-pointer rounded-2xl"
       data-flip-card={card.id}
       style={{
         perspective: 1200,
@@ -226,7 +223,7 @@ export default function FlipCard({
       >
         {/* Front */}
         <div
-          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl border-[1.5px] border-violet-400/55 shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)]"
+          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl"
           style={{
             ...sharedBg,
             backfaceVisibility: "hidden",
@@ -268,7 +265,7 @@ export default function FlipCard({
             </div>
           )}
           <h3
-            className={`${frontAnchorClass} text-sm md:text-base text-violet-300 leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
+            className={`${frontAnchorClass} text-sm md:text-base text-[color:var(--hero-accent)] leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
           >
             {card.front}
           </h3>

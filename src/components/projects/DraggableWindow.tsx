@@ -116,7 +116,7 @@ export default function DraggableWindow({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.85 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="relative bg-[#1a1528]/90 border-[1.5px] border-fuchsia-400/30 rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_80px_rgba(168,85,247,0.06)] backdrop-blur-xl flex flex-col overflow-hidden"
+        className="site-window-surface relative flex flex-col overflow-hidden rounded-xl border-[1.5px] border-fuchsia-400/30 backdrop-blur-xl"
         ref={windowRef}
         style={{
           width: size.w,
@@ -132,7 +132,7 @@ export default function DraggableWindow({
             }
             dragControls.start(e);
           }}
-          className="flex items-center justify-between px-4 py-2.5 bg-neutral-100/20 border-b border-fuchsia-300/20 cursor-grab active:cursor-grabbing flex-shrink-0 select-none"
+          className="site-window-titlebar flex flex-shrink-0 cursor-grab select-none items-center justify-between border-b border-fuchsia-300/20 px-4 py-2.5 active:cursor-grabbing"
         >
           <h3 className="text-sm font-medium text-fuchsia-100/90">{title}</h3>
           <button

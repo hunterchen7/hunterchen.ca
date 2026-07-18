@@ -14,6 +14,11 @@ import ChessSection from "./components/ChessSection";
 import HintSvg from "./components/HintSvg";
 import ReaderContent from "./components/ReaderContent";
 import { HERO_SEQUENCE_END } from "./components/HeroSection";
+import {
+  HERO_COLORS,
+  HERO_THEME_STYLE,
+  heroRgba,
+} from "./components/hero/heroPalette";
 
 // Canvas spotlight - circular bloom at canvas center, falling off outward
 const CANVAS_GRADIENT = `radial-gradient(circle ${canvasWidth / 2}px at ${canvasWidth / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
@@ -44,12 +49,16 @@ export default function App() {
   }, [showClickMe]);
 
   return (
-    <main id="home" className="relative min-h-screen">
+    <main
+      id="home"
+      className="relative min-h-screen"
+      style={HERO_THEME_STYLE}
+    >
       <ReaderContent />
       <HintSvg
         variant="nav"
         show={showClickMe}
-        enterDelay={HERO_SEQUENCE_END}
+        enterDelay={Math.max(0, HERO_SEQUENCE_END - 0.45)}
         className="pointer-events-none fixed bottom-[49px] left-[53%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
       />
       <Canvas
@@ -67,9 +76,9 @@ export default function App() {
           position: "top-right",
           separatorGap: 8,
           style: {
-            backgroundColor: "#161519",
-            borderColor: "#46395c",
-            color: "#f3f2f6",
+            backgroundColor: HERO_COLORS.surface,
+            borderColor: heroRgba("accent", 0.45),
+            color: HERO_COLORS.light,
           },
         }}
         zoomConfig={{
@@ -80,17 +89,20 @@ export default function App() {
         }}
         navbarConfig={{
           style: {
-            backgroundColor: "#161519",
-            borderColor: "#46395c",
+            backgroundColor: HERO_COLORS.surface,
+            borderColor: heroRgba("accent", 0.45),
           },
           buttonConfig: {
-            style: { color: "#98939f" },
-            hoverStyle: { backgroundColor: "#211f26" },
-            activeStyle: { backgroundColor: "#332c40" },
-            labelStyle: { color: "#b39dfc" },
+            style: { color: heroRgba("light", 0.58) },
+            hoverStyle: { backgroundColor: HERO_COLORS.raised },
+            activeStyle: { backgroundColor: HERO_COLORS.deep },
+            labelStyle: { color: HERO_COLORS.accent },
           },
           tooltipConfig: {
-            style: { backgroundColor: "#161519", color: "#f3f2f6" },
+            style: {
+              backgroundColor: HERO_COLORS.surface,
+              color: HERO_COLORS.light,
+            },
           },
         }}
       >

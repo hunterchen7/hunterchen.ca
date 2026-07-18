@@ -32,7 +32,7 @@ export function AnimatedLink({
       className={`group inline ${className}`}
     >
       <span
-        className={`animated-underline ${textClassName ?? "text-fuchsia-300/80"} group-hover:text-fuchsia-200`}
+        className={`animated-underline ${textClassName ?? "text-[color:var(--hero-accent)]"} group-hover:text-[color:var(--hero-light)]`}
         style={{
           backgroundImage: "linear-gradient(currentColor, currentColor)",
           backgroundPosition: "0 100%",

@@ -163,8 +163,7 @@ function MoreProjectsContent({
           <div className="w-[266px] h-[200px] rounded-lg bg-fuchsia-950/40 flex-shrink-0 border border-fuchsia-400/20" />
         );
 
-        const rowBg =
-          idx % 2 === 0 ? "bg-[#1e1a28]/40" : "bg-neutral-800/[0.35]";
+        const rowBg = idx % 2 === 0 ? "site-list-row" : "site-list-row-alt";
 
         return (
           <div
@@ -262,7 +261,7 @@ function MoreProjectsTile({
         backgroundSize: `${bounds.gridWidth}px ${bounds.gridHeight}px`,
         backgroundPosition: `${-bounds.offsetLeft}px ${-bounds.offsetTop}px`,
       }
-    : { background: "#3d1a50" };
+    : { background: "var(--surface-mid)" };
 
   const localX = bounds && gridMouse ? gridMouse.x - bounds.offsetLeft : 0;
   const localY = bounds && gridMouse ? gridMouse.y - bounds.offsetTop : 0;
@@ -286,7 +285,7 @@ function MoreProjectsTile({
       <div
         ref={boundsCallback}
         onClick={onClick}
-        className="group relative w-full h-full border border-fuchsia-300/30 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:brightness-105 hover:scale-[1.01] flex items-center justify-center"
+        className="site-panel-depth site-panel-interactive group relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl transition-all duration-200 ease-out hover:scale-[1.01] hover:brightness-105"
         style={sharedBg}
       >
         <div

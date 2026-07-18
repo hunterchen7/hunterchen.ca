@@ -1,9 +1,13 @@
 import { AnimatedLink } from "../AnimatedLink";
 import { useNavigateToSection } from "../../hooks/useNavigateToSection";
+import { heroRgba } from "./heroPalette";
 
 export function ListItem({ children }: { children: React.ReactNode }) {
   return (
-    <li className="border-t border-fuchsia-200/10 py-0.5 md:pt-2">
+    <li
+      className="border-t py-0.5 md:pt-2"
+      style={{ borderColor: heroRgba("accent", 0.3) }}
+    >
       {children}
     </li>
   );

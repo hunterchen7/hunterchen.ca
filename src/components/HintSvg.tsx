@@ -27,7 +27,7 @@ export const HINT_TOTAL_DURATION = DRAW_DURATION;
 /** @deprecated Use HINT_TOTAL_DURATION */
 export const CLICKME_TOTAL_DURATION = DRAW_DURATION;
 
-// Animated gradient colors
+// Keep the handwritten hints as the one expressive color moment in the UI.
 const GRADIENT_WHITE = "#e48dffff";
 const GRADIENT_FUCHSIA = "#f09efdff";
 const GRADIENT_LAVENDER = "#c4b5fd";

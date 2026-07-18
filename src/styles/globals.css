@@ -17,10 +17,24 @@ html {
     --canvas-bg-mid: #19191c;
     --canvas-bg-bloom: #262629;
     --canvas-dot: #6e6e76;
-    --surface-bloom: #332e3c;
-    --surface-mid: #24212a;
-    --surface-low: #18161c;
-    --surface-deep: #100f12;
+    --surface-bloom: #342a3d;
+    --surface-mid: #28212f;
+    --surface-low: #201a25;
+    --surface-deep: #17131b;
+    --surface-window: rgba(32, 26, 37, 0.94);
+    --surface-panel: radial-gradient(
+      ellipse at 50% 42%,
+      var(--surface-bloom) 0%,
+      var(--surface-mid) 46%,
+      var(--surface-low) 76%,
+      var(--surface-deep) 100%
+    );
+    --shadow-panel:
+      0 18px 42px rgba(4, 2, 8, 0.44),
+      0 0 34px rgba(112, 65, 151, 0.1);
+    --shadow-panel-raised:
+      0 24px 56px rgba(4, 2, 8, 0.52),
+      0 0 48px rgba(112, 65, 151, 0.12);
 
     /* ============== Amethyst Glow Theme ============== */
     /* Warmer purple tones with subtle magenta undertones */
@@ -46,6 +60,37 @@ html {
     --ring: 285 50% 55%;
 
     --radius: 0.5rem;
+  }
+}
+
+.site-panel-depth {
+  box-shadow: var(--shadow-panel);
+}
+
+.site-panel-interactive {
+  transition-property: box-shadow, filter, transform;
+}
+
+.site-window-surface {
+  background: var(--surface-window);
+  box-shadow: var(--shadow-panel-raised);
+}
+
+.site-window-titlebar {
+  background: color-mix(in srgb, var(--surface-bloom) 78%, transparent);
+}
+
+.site-list-row {
+  background: color-mix(in srgb, var(--surface-low) 72%, transparent);
+}
+
+.site-list-row-alt {
+  background: color-mix(in srgb, var(--surface-mid) 48%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .site-panel-interactive:hover {
+    box-shadow: var(--shadow-panel-raised);
   }
 }
 
@@ -298,6 +343,27 @@ html {
 
 /* ============== Hero card object models ============== */
 
+.hero-model-svg {
+  shape-rendering: geometricPrecision;
+}
+
+.hero-models-paused .hero-model-svg,
+.hero-models-paused .hero-model-svg * {
+  animation-play-state: paused !important;
+}
+
+.hero-contact-dot {
+  animation: hero-contact-dot-wave 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes hero-contact-dot-wave {
+  0%, 18%, 68%, 100% { transform: translateY(0); }
+  36% { transform: translateY(-3.5px); }
+  48% { transform: translateY(0.8px); }
+}
+
 .model-rocket-hover,
 .model-rocket-flame,
 .model-rocket-ember-one,
@@ -367,7 +433,8 @@ html {
   .model-rocket-flame,
   .model-rocket-ember-one,
   .model-rocket-ember-two,
-  .model-laptop-cursor {
+  .model-laptop-cursor,
+  .hero-contact-dot {
     animation: none !important;
   }
 
