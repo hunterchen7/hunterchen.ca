@@ -1217,6 +1217,23 @@ function mateShakeAt(timeline: Timeline): { x: number; y: number } {
   };
 }
 
+function captureShakeAt(
+  timeline: Timeline,
+  capturedPiece: BoardPiece | undefined,
+): { x: number; y: number } {
+  if (!capturedPiece) return { x: 0, y: 0 };
+
+  const captureProgress = captureProgressAt(timeline.moveProgress);
+  const t = clamp((captureProgress - 0.42) / 0.58);
+  if (t <= 0 || t >= 1) return { x: 0, y: 0 };
+
+  const envelope = Math.sin(Math.PI * t);
+  return {
+    x: Math.sin(t * Math.PI * 4) * 0.17 * envelope,
+    y: Math.sin(t * Math.PI * 6) * 0.055 * envelope,
+  };
+}
+
 function MoveHighlights({
   activeMove,
   moveProgress,
@@ -1283,6 +1300,11 @@ function ChessboardWatermark() {
     ? captureProgressAt(timeline.moveProgress)
     : 0;
   const mateShake = mateShakeAt(timeline);
+  const captureShake = captureShakeAt(timeline, moveContext?.captured);
+  const boardShake = {
+    x: mateShake.x + captureShake.x,
+    y: mateShake.y + captureShake.y,
+  };
 
   return (
     <ModelSvg
@@ -1294,10 +1316,10 @@ function ChessboardWatermark() {
     >
       <PieceDefinitions />
       <g
-        data-board-shake={`${mateShake.x.toFixed(3)},${mateShake.y.toFixed(3)}`}
+        data-board-shake={`${boardShake.x.toFixed(3)},${boardShake.y.toFixed(3)}`}
         data-chess-phase={timeline.phase}
         data-chess-phase-elapsed={timeline.phaseElapsed.toFixed(1)}
-        transform={`translate(${mateShake.x.toFixed(3)} ${mateShake.y.toFixed(3)})`}
+        transform={`translate(${boardShake.x.toFixed(3)} ${boardShake.y.toFixed(3)})`}
       >
         <BoardSurface />
         <MoveHighlights
