@@ -1,4 +1,10 @@
-import { useState, useEffect } from "react";
+import {
+  lazy,
+  startTransition,
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
 import {
   Canvas,
   DefaultCanvasBackground,
@@ -8,9 +14,6 @@ import {
 } from "@hunterchen/canvas";
 import { coordinates, navItems } from "./constants/coordinates";
 import HeroSection from "./components/HeroSection";
-import ProjectsSection from "./components/ProjectsSection";
-import GallerySection from "./components/GallerySection";
-import ChessSection from "./components/ChessSection";
 import HintSvg from "./components/HintSvg";
 import ReaderContent from "./components/ReaderContent";
 import { HERO_SEQUENCE_END } from "./components/HeroSection";
@@ -19,6 +22,7 @@ import {
   HERO_THEME_STYLE,
   heroRgba,
 } from "./components/hero/heroPalette";
+import { afterFirstContentfulPaint } from "./utils/afterFirstContentfulPaint";
 
 // Canvas spotlight - circular bloom at canvas center, falling off outward
 const CANVAS_GRADIENT = `radial-gradient(circle ${canvasWidth / 2}px at ${canvasWidth / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
@@ -26,8 +30,24 @@ const CANVAS_GRADIENT = `radial-gradient(circle ${canvasWidth / 2}px at ${canvas
 // Dot color (warm purple highlight)
 const DOT_COLOR = "var(--canvas-dot)";
 
+const loadDeferredCanvasSections = () =>
+  import("./components/DeferredCanvasSections");
+const DeferredCanvasSections = lazy(loadDeferredCanvasSections);
+
 export default function App() {
   const [showClickMe, setShowClickMe] = useState(true);
+  const [loadDeferredSections, setLoadDeferredSections] = useState(false);
+
+  // Keep the initial commit hero-only. As soon as it has actually painted,
+  // eagerly fetch and mount the rest so its media can warm in the background.
+  useEffect(() => {
+    const cancel = afterFirstContentfulPaint(() => {
+      void loadDeferredCanvasSections();
+      startTransition(() => setLoadDeferredSections(true));
+    });
+
+    return cancel;
+  }, []);
 
   useEffect(() => {
     if (!showClickMe) return;
@@ -107,9 +127,11 @@ export default function App() {
         }}
       >
         <HeroSection offset={coordinates.hero} />
-        <GallerySection offset={coordinates.gallery} />
-        <ChessSection offset={coordinates.chess} />
-        <ProjectsSection offset={coordinates.projects} />
+        {loadDeferredSections ? (
+          <Suspense fallback={null}>
+            <DeferredCanvasSections />
+          </Suspense>
+        ) : null}
       </Canvas>
     </main>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { SHARED_GRADIENT } from "./cards";
 import { heroRgba } from "./heroPalette";
@@ -230,7 +230,7 @@ export default function FlipCard({
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {card.frontArtwork && (
+          {card.frontArtwork && showArtwork ? (
             <div
               className={`${frontArtworkClass} pointer-events-none z-[1]`}
             >
@@ -260,10 +260,10 @@ export default function FlipCard({
                 }
                 style={{ transformOrigin: "50% 58%" }}
               >
-                {card.frontArtwork}
+                <Suspense fallback={null}>{card.frontArtwork}</Suspense>
               </motion.div>
             </div>
-          )}
+          ) : null}
           <h3
             className={`${frontAnchorClass} text-sm md:text-base text-[color:var(--hero-accent)] leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
           >

@@ -68,9 +68,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "~": path.resolve(__dirname, "./src"),
-      "onnxruntime-web": "onnxruntime-web/wasm",
     },
     conditions: ["onnxruntime-web-use-extern-wasm"],
+  },
+  optimizeDeps: {
+    exclude: ["onnxruntime-web"],
   },
   build: {
     rollupOptions: {

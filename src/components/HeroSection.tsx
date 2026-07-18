@@ -1,10 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { motion } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import FlipCard from "./hero/FlipCard";
 import { cards } from "./hero/cards";
 import { HeroModelAnimationProvider } from "./hero/modelAnimationContext";
+import { preloadHeroModels } from "./hero/deferredHeroModels";
 import HintSvg, { HINT_TOTAL_DURATION } from "./HintSvg";
+import { afterFirstContentfulPaint } from "../utils/afterFirstContentfulPaint";
 
 interface HeroSectionProps {
   offset: SectionCoordinates;
@@ -58,7 +66,14 @@ export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
   const [charCount, setCharCount] = useState(0);
   const [showContent, setShowContent] = useState(IS_REVISIT);
+  const [showArtwork, setShowArtwork] = useState(false);
   const [modelAnimationsReady, setModelAnimationsReady] = useState(false);
+  const [isHeroVisible, setIsHeroVisible] = useState(true);
+  const [isDocumentVisible, setIsDocumentVisible] = useState(
+    () =>
+      typeof document === "undefined" ||
+      document.visibilityState !== "hidden",
+  );
   const gridRef = useRef<HTMLDivElement>(null);
   const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
   const glowFrameRef = useRef<number | null>(null);
@@ -142,6 +157,34 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     }
   }, [showContent]);
 
+  // Fetch the decorative model chunks immediately after the hero's first
+  // contentful paint instead of competing with it.
+  useEffect(() => {
+    return afterFirstContentfulPaint(preloadHeroModels);
+  }, []);
+
+  // Mount the large inline SVG trees in a later commit than the card shells.
+  useEffect(() => {
+    if (!showContent) {
+      setShowArtwork(false);
+      return;
+    }
+
+    let secondFrame: number | null = null;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        startTransition(() => setShowArtwork(true));
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame !== null) {
+        window.cancelAnimationFrame(secondFrame);
+      }
+    };
+  }, [showContent]);
+
   useEffect(() => {
     if (!showContent) {
       setModelAnimationsReady(false);
@@ -154,6 +197,34 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     );
     return () => window.clearTimeout(timer);
   }, [showContent]);
+
+  // Canvas sections stay mounted while the viewport pans elsewhere. Pause the
+  // model clocks when the hero is offscreen or the tab is hidden so the large
+  // SVG scenes do not keep scheduling React updates in the background.
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid || !("IntersectionObserver" in window)) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsHeroVisible(entry?.isIntersecting ?? true),
+      { threshold: 0.01 },
+    );
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const updateVisibility = () => {
+      setIsDocumentVisible(document.visibilityState !== "hidden");
+    };
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", updateVisibility);
+  }, []);
+
+  const modelAnimationsActive =
+    modelAnimationsReady && isHeroVisible && isDocumentVisible;
 
   useEffect(
     () => () => {
@@ -168,12 +239,14 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     <CanvasComponent offset={offset}>
       <div className="relative h-full w-full flex items-center justify-center p-8">
         <div className="hero-composition w-[95vw] md:w-[700px] lg:w-[1000px] -mt-32 md:-mt-24 md:h-[1000px] flex flex-col">
-          <HeroModelAnimationProvider ready={modelAnimationsReady}>
+          <HeroModelAnimationProvider ready={modelAnimationsActive}>
             <div
               ref={gridRef}
               onMouseMove={handleGridMouseMove}
               onMouseLeave={handleGridMouseLeave}
-              className={`relative grid gap-2 md:gap-3 lg:gap-4 grid-cols-5 grid-rows-7 md:grid-cols-4 md:grid-rows-5 mt-20 ${modelAnimationsReady ? "" : "hero-models-paused"}`}
+              className={`relative grid gap-2 md:gap-3 lg:gap-4 grid-cols-5 grid-rows-7 md:grid-cols-4 md:grid-rows-5 mt-20 ${
+                modelAnimationsActive ? "" : "hero-models-paused"
+              }`}
               style={
                 {
                   "--hero-glow-opacity": "0",
@@ -251,7 +324,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   card={card}
                   gridRef={gridRef}
                   onCardClick={() => setHasBeenClicked(true)}
-                  showArtwork={showContent}
+                  showArtwork={showArtwork}
                   artworkDelay={
                     ARTWORK_REVEAL_START + idx * ARTWORK_STAGGER
                   }

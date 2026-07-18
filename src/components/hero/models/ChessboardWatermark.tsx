@@ -130,13 +130,20 @@ const IMMORTAL_GAME: GameMove[] = [
 ];
 
 const SETUP_EMPTY_HOLD_MS = 140;
-const SETUP_PAIR_COUNT = 16;
-const SETUP_PAIR_INTERVAL_MS = 195;
+const SETUP_BACK_RANK_PAIR_COUNT = 8;
+const SETUP_PAWN_PAIR_COUNT = 8;
+const SETUP_PAIR_INTERVAL_MS = 225;
 const SETUP_PIECE_MS = 720;
+const SETUP_PAWN_GAP_MS = 260;
 const SETUP_SETTLE_MS = 660;
-const SETUP_DURATION_MS =
+const SETUP_BACK_RANK_END_MS =
   SETUP_EMPTY_HOLD_MS +
-  (SETUP_PAIR_COUNT - 1) * SETUP_PAIR_INTERVAL_MS +
+  (SETUP_BACK_RANK_PAIR_COUNT - 1) * SETUP_PAIR_INTERVAL_MS +
+  SETUP_PIECE_MS;
+const SETUP_PAWN_START_MS = SETUP_BACK_RANK_END_MS + SETUP_PAWN_GAP_MS;
+const SETUP_DURATION_MS =
+  SETUP_PAWN_START_MS +
+  (SETUP_PAWN_PAIR_COUNT - 1) * SETUP_PAIR_INTERVAL_MS +
   SETUP_PIECE_MS +
   SETUP_SETTLE_MS;
 const MOVE_MS = 880;
@@ -149,6 +156,7 @@ const RESET_WAVE_INTERVAL_MS = 110;
 const RESET_PIECE_MS = 680;
 const RESET_SCATTER_MS = 1_400;
 const RESET_EMPTY_HOLD_MS = 900;
+const PLAYBACK_RATE = 1.15;
 const LOOP_DURATION_MS =
   SETUP_DURATION_MS +
   IMMORTAL_GAME.length * STEP_MS +
@@ -254,6 +262,18 @@ function setupPairForPiece(piece: BoardPiece): number {
   const rankOffset = piece.kind === "p" ? BOARD_SIZE : 0;
 
   return rankOffset + edgeDepth * 2 + colorOffset;
+}
+
+function setupStartForPiece(piece: BoardPiece): number {
+  const pair = setupPairForPiece(piece);
+  if (piece.kind === "p") {
+    return (
+      SETUP_PAWN_START_MS +
+      (pair - SETUP_BACK_RANK_PAIR_COUNT) * SETUP_PAIR_INTERVAL_MS
+    );
+  }
+
+  return SETUP_EMPTY_HOLD_MS + pair * SETUP_PAIR_INTERVAL_MS;
 }
 
 function timedProgress(
@@ -536,7 +556,7 @@ function useTimeline(frame: number | null): { elapsed: number; fps: number } {
       if (startTime.current === null) startTime.current = time;
       const frameDelta = time - lastFrame;
       if (frameDelta >= frameIntervalMs) {
-        const nextElapsed = time - startTime.current;
+        const nextElapsed = (time - startTime.current) * PLAYBACK_RATE;
         const nextTimeline = timelineAt(nextElapsed);
         const visualFrame = [
           nextTimeline.activeMove,
@@ -630,10 +650,9 @@ function renderPiecesForTimeline(timeline: Timeline): RenderPiece[] {
       }
 
       if (timeline.phase === "setup") {
-        const pair = setupPairForPiece(piece);
         const entranceProgress = timedProgress(
           timeline.phaseElapsed,
-          SETUP_EMPTY_HOLD_MS + pair * SETUP_PAIR_INTERVAL_MS,
+          setupStartForPiece(piece),
           SETUP_PIECE_MS,
         );
         if (piece.kind === "p") {

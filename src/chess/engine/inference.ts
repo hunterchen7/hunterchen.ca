@@ -4,13 +4,22 @@ let session: ort.InferenceSession | null = null;
 let inputName = "/input/planes";
 let outputNames: string[] = [];
 
-export async function initModel(modelData: ArrayBuffer): Promise<void> {
-  // Configure ONNX Runtime — WASM only, no GPU
+export async function initModel(
+  modelData: ArrayBuffer,
+  runtimeBinary: ArrayBuffer,
+): Promise<void> {
+  // Keep WASM configured as the universal fallback for browsers without WebGPU.
   ort.env.wasm.wasmPaths = "/";
+  ort.env.wasm.wasmBinary = runtimeBinary;
   ort.env.wasm.numThreads = navigator.hardwareConcurrency ?? 4;
 
+  // A single ordered provider list lets ONNX Runtime partition unsupported
+  // WebGPU operators onto WASM without trying to initialize the runtime twice.
+  const providers: ort.InferenceSession.ExecutionProviderConfig[] =
+    "gpu" in navigator ? ["webgpu", "wasm"] : ["wasm"];
+
   session = await ort.InferenceSession.create(new Uint8Array(modelData), {
-    executionProviders: ["wasm"],
+    executionProviders: providers,
   });
 
   // Discover tensor names dynamically

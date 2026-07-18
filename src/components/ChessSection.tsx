@@ -159,13 +159,19 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
     const engine = new Lc0Engine();
     engineRef.current = engine;
+    setEngineState(INITIAL_ENGINE_STATE);
+    setGameStarted(true);
 
     engine.subscribe((state) => {
       setEngineState((prev) => ({ ...prev, ...state }));
+      if (state.error) {
+        engine.terminate();
+        if (engineRef.current === engine) engineRef.current = null;
+        setGameStarted(false);
+      }
     });
 
     engine.init(MODEL_URL);
-    setGameStarted(true);
   }, []);
 
   // Clean up the opt-in engine worker on unmount.
@@ -192,7 +198,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
     const searchFen = game.fen();
     engine
-      .mctsSearch(searchFen, fenHistory, 50, 0.5)
+      .mctsSearch(searchFen, fenHistory, 150, 0.67)
       .then(({ move }) => {
         setEngineState((prev) => ({ ...prev, isThinking: true }));
         return new Promise<string>((resolve) =>
@@ -285,6 +291,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
   const onSquareClick = (square: string) => {
     if (
+      !gameStarted ||
+      !engineState.isReady ||
       game.turn() !== playerColor ||
       engineState.isThinking ||
       game.isGameOver()

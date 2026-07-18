@@ -3,11 +3,13 @@ import { motion } from "framer-motion";
 import { AnimatedLink } from "../AnimatedLink";
 import ContactCard from "./ContactCard";
 import FunCard from "./FunCard";
-import CameraWatermark from "./models/CameraWatermark";
-import ChessboardWatermark from "./models/ChessboardWatermark";
 import ContactDotsWatermark from "./models/ContactDotsWatermark";
-import LaptopWatermark from "./models/LaptopWatermark";
-import RocketWatermark from "./models/RocketWatermark";
+import {
+  CameraWatermark,
+  ChessboardWatermark,
+  LaptopWatermark,
+  RocketWatermark,
+} from "./deferredHeroModels";
 import ProjectsCard from "./ProjectsCard";
 import type { Card } from "./FlipCard";
 import { heroRgba } from "./heroPalette";
@@ -81,7 +83,7 @@ export const cards: Card[] = [
     frontAnchor: "bottom-right",
     frontArtwork: <LaptopWatermark />,
     frontArtworkClassName:
-      "absolute left-1/2 top-[48%] h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 md:h-[73%] md:w-[70%]",
+      "absolute left-1/2 top-[42%] h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 md:h-[73%] md:w-[70%]",
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
         <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
