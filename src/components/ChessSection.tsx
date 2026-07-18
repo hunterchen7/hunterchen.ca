@@ -34,6 +34,29 @@ const INITIAL_ENGINE_STATE: EngineState = {
 
 
 
+interface DownloadProgressProps {
+  message: string;
+  progress: number;
+}
+
+function DownloadProgress({ message, progress }: DownloadProgressProps) {
+  const percentage = Math.round(progress * 100);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between font-mono text-xs text-purple-200/65">
+        <span>{message}</span>
+        <span>{percentage}%</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-fuchsia-950/50">
+        <div
+          className="h-full rounded-full bg-fuchsia-400/60 transition-[width] duration-200"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function ChessSection({ offset }: ChessSectionProps) {
   const gameRef = useRef(new Chess());
   const game = gameRef.current;
@@ -145,9 +168,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     setGameStarted(true);
   }, []);
 
-  // Initialize engine on mount, cleanup on unmount
+  // Clean up the opt-in engine worker on unmount.
   useEffect(() => {
-    startGame();
     return () => {
       engineRef.current?.terminate();
       engineRef.current = null;
@@ -428,19 +450,30 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 boxShadow: "0 0 20px rgba(192, 132, 252, 0.12)",
               }}
             />
+            {!gameStarted && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-8 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={startGame}
+                    className="cursor-pointer rounded-lg bg-[#1b1524]/65 px-5 py-2.5 font-mono text-sm text-fuchsia-200 shadow-lg ring-1 ring-inset ring-fuchsia-300/30 backdrop-blur-[2px] transition-colors hover:bg-[#1b1524]/80"
+                  >
+                    play
+                  </button>
+                  <p className="rounded-md bg-[#1b1524]/55 px-3 py-1.5 font-mono text-xs text-purple-200/70 backdrop-blur-[2px]">
+                    this will incur a one-time 27 MB download
+                  </p>
+                </div>
+              </div>
+            )}
             {engineState.isLoading && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg backdrop-blur-sm bg-black/30">
-                <div className="w-48 h-1.5 rounded-full bg-fuchsia-950/50 overflow-hidden">
-                  <div
-                    className="h-full bg-fuchsia-400/60 transition-all duration-300 rounded-full"
-                    style={{
-                      width: `${engineState.loadingProgress * 100}%`,
-                    }}
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg p-8">
+                <div className="w-full max-w-xs rounded-lg bg-[#1b1524]/55 px-4 py-3 backdrop-blur-[2px]">
+                  <DownloadProgress
+                    message={engineState.loadingMessage}
+                    progress={engineState.loadingProgress}
                   />
                 </div>
-                <span className="text-fuchsia-300/50 font-mono">
-                  {engineState.loadingMessage}
-                </span>
               </div>
             )}
             {showConfetti && <Confetti key={confettiKey} />}
