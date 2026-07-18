@@ -81,7 +81,7 @@ export const cards: Card[] = [
     frontAnchor: "bottom-right",
     frontArtwork: <LaptopWatermark />,
     frontArtworkClassName:
-      "absolute left-1/2 top-1/2 h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 md:h-[60%] md:w-[58%]",
+      "absolute left-1/2 top-[47%] h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 md:h-[60%] md:w-[58%]",
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
         <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
