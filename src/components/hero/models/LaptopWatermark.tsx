@@ -74,7 +74,7 @@ const LID_OPEN_MS = 1_050;
 const OPEN_SETTLE_MS = 420;
 const POST_CLEAR_HOLD_MS = 1_800;
 const LID_CLOSE_MS = 900;
-const CLOSED_LOOP_HOLD_MS = 1_400;
+const CLOSED_LOOP_HOLD_MS = 2_400;
 const CLOSED_LID_ANGLE_DEGREES = -90;
 const OPEN_LID_ANGLE_DEGREES = 12;
 const MIN_KEY_VISUAL_HOLD_MS = 90;
@@ -85,8 +85,8 @@ const INTRO_LINES = [
   "for the web.",
 ] as const;
 const COMMAND_KEY_ID = "key-4-3";
-const DELETE_KEY_ID = "key-0-11";
-const ENTER_KEY_ID = "key-2-11";
+const DELETE_KEY_ID = "key-0-13";
+const ENTER_KEY_ID = "key-2-12";
 const SPACE_KEY_ID = "key-4-4";
 
 // Hunter's recorded 82.2 WPM take. Each tuple preserves the physical key,
@@ -791,7 +791,7 @@ function buildLaptop(
   const deckY = 0.08;
   addDetailPolygon(
     "keyboard-deck",
-    roundedRectOutline(1.34, -0.79, 0.24, 0.055, 2).map((point) => ({
+    roundedRectOutline(1.42, -0.79, 0.39, 0.055, 2).map((point) => ({
       x: point.x,
       y: deckY,
       z: point.y,
@@ -804,55 +804,32 @@ function buildLaptop(
     baseSurfaceDepth + 0.01,
   );
 
-  const keyDepth = 0.15;
-  const keyRadius = 0.028;
-  const standardKeyWidth = 0.18;
-  const standardKeyGap = 0.037;
-  const standardColumns = 12;
-  const standardRowWidth =
-    standardKeyWidth * standardColumns + standardKeyGap * (standardColumns - 1);
+  type KeySpec = { id: string; units: number };
 
-  for (let row = 0; row < 4; row += 1) {
-    for (let column = 0; column < standardColumns; column += 1) {
-      const centerX =
-        -standardRowWidth / 2 +
-        standardKeyWidth / 2 +
-        column * (standardKeyWidth + standardKeyGap);
-      const back = -0.74 + row * 0.19;
-      addDetailPolygon(
-        `key-${row}-${column}`,
-        roundedRectOutline(
-          standardKeyWidth / 2,
-          back,
-          back + keyDepth,
-          keyRadius,
-          1,
-        ).map((point) => ({
-          x: centerX + point.x,
-          y: deckY + 0.004,
-          z: point.y,
-        })),
-        topNormal,
-        heroRgba("ink", 0.8),
-        heroRgba("light", 0.4),
-        0.22,
-        0.025,
-        baseSurfaceDepth + 0.02,
-      );
-    }
-  }
+  const keyboardWidth = 2.74;
+  const keyGap = 0.017;
+  const keyRadius = 0.024;
+  const keyFill = heroRgba("ink", 0.8);
+  const keyStroke = heroRgba("light", 0.4);
+  const keySortDepth = baseSurfaceDepth + 0.02;
+  const keyUnitForRow = (keys: readonly KeySpec[]) => {
+    const rowUnits = keys.reduce((sum, key) => sum + key.units, 0);
+    return (keyboardWidth - keyGap * (rowUnits - 1)) / rowUnits;
+  };
+  const keyWidthForUnits = (units: number, keyUnit: number) =>
+    units * keyUnit + (units - 1) * keyGap;
 
-  const bottomKeyWidths = [0.18, 0.18, 0.18, 0.18, 0.86, 0.18, 0.18, 0.18, 0.18];
-  const bottomGap = standardKeyGap;
-  const bottomRowWidth =
-    bottomKeyWidths.reduce((sum, width) => sum + width, 0) +
-    bottomGap * (bottomKeyWidths.length - 1);
-  let bottomKeyLeft = -bottomRowWidth / 2;
-  for (const [column, width] of bottomKeyWidths.entries()) {
-    const centerX = bottomKeyLeft + width / 2;
+  const addKey = (
+    id: string,
+    centerX: number,
+    width: number,
+    back: number,
+    front: number,
+    radius = keyRadius,
+  ) => {
     addDetailPolygon(
-      `key-4-${column}`,
-      roundedRectOutline(width / 2, 0.04, 0.19, keyRadius, 1).map(
+      id,
+      roundedRectOutline(width / 2, back, front, radius, 1).map(
         (point) => ({
           x: centerX + point.x,
           y: deckY + 0.004,
@@ -860,18 +837,174 @@ function buildLaptop(
         }),
       ),
       topNormal,
-      heroRgba("ink", 0.8),
-      heroRgba("light", 0.4),
+      keyFill,
+      keyStroke,
       0.22,
       0.025,
-      baseSurfaceDepth + 0.02,
+      keySortDepth,
     );
-    bottomKeyLeft += width + bottomGap;
+  };
+
+  const addKeyRow = (
+    keys: readonly KeySpec[],
+    back: number,
+    front: number,
+  ) => {
+    const keyUnit = keyUnitForRow(keys);
+    let left = -keyboardWidth / 2;
+    const centers = new Map<string, { x: number; width: number }>();
+
+    for (const key of keys) {
+      const width = keyWidthForUnits(key.units, keyUnit);
+      const centerX = left + width / 2;
+      addKey(key.id, centerX, width, back, front);
+      centers.set(key.id, { x: centerX, width });
+      left += width + keyGap;
+    }
+
+    return centers;
+  };
+
+  const functionKeys: KeySpec[] = [
+    { id: "key-function-escape", units: 1.28 },
+    ...Array.from({ length: 12 }, (_, index) => ({
+      id: `key-function-${index + 1}`,
+      units: 0.92,
+    })),
+    { id: "key-function-touch-id", units: 0.92 },
+  ];
+  const functionKeyCenters = addKeyRow(functionKeys, -0.76, -0.628);
+
+  const touchIdKey = functionKeyCenters.get("key-function-touch-id");
+  if (touchIdKey) {
+    const sensorRadius = 0.029;
+    addDetailPolygon(
+      "touch-id-sensor",
+      roundedRectOutline(
+        sensorRadius,
+        -0.727,
+        -0.661,
+        sensorRadius,
+        4,
+      ).map((point) => ({
+        x: touchIdKey.x + point.x,
+        y: deckY + 0.006,
+        z: point.y,
+      })),
+      topNormal,
+      heroRgba("mid", 0.36),
+      heroRgba("light", 0.46),
+      0.2,
+      0.025,
+      keySortDepth + 0.002,
+    );
   }
+
+  addKeyRow(
+    [
+      ...Array.from({ length: 13 }, (_, column) => ({
+        id: `key-0-${column}`,
+        units: 1,
+      })),
+      { id: DELETE_KEY_ID, units: 1.75 },
+    ],
+    -0.612,
+    -0.445,
+  );
+
+  addKeyRow(
+    [
+      { id: "key-1-0", units: 1.5 },
+      ...Array.from({ length: 12 }, (_, index) => ({
+        id: `key-1-${index + 1}`,
+        units: 1,
+      })),
+      { id: "key-1-13", units: 1.25 },
+    ],
+    -0.429,
+    -0.262,
+  );
+
+  addKeyRow(
+    [
+      { id: "key-2-0", units: 1.75 },
+      ...Array.from({ length: 11 }, (_, index) => ({
+        id: `key-2-${index + 1}`,
+        units: 1,
+      })),
+      { id: ENTER_KEY_ID, units: 2 },
+    ],
+    -0.246,
+    -0.079,
+  );
+
+  addKeyRow(
+    [
+      { id: "key-3-0", units: 2.25 },
+      ...Array.from({ length: 10 }, (_, index) => ({
+        id: `key-3-${index + 1}`,
+        units: 1,
+      })),
+      { id: "key-3-11", units: 2.5 },
+    ],
+    -0.063,
+    0.104,
+  );
+
+  const bottomKeys: KeySpec[] = [
+    { id: "key-4-0", units: 1.1 },
+    { id: "key-4-1", units: 1.1 },
+    { id: "key-4-2", units: 1.1 },
+    { id: COMMAND_KEY_ID, units: 1.35 },
+    { id: SPACE_KEY_ID, units: 5.45 },
+    { id: "key-4-5", units: 1.35 },
+    { id: "key-4-6", units: 1.1 },
+  ];
+  const arrowKeys: KeySpec[] = [
+    { id: "key-4-7", units: 1 },
+    { id: "key-4-arrow-center", units: 1 },
+    { id: "key-4-10", units: 1 },
+  ];
+  const bottomKeyUnit = keyUnitForRow([...bottomKeys, ...arrowKeys]);
+  let bottomLeft = -keyboardWidth / 2;
+  for (const key of bottomKeys) {
+    const width = keyWidthForUnits(key.units, bottomKeyUnit);
+    addKey(key.id, bottomLeft + width / 2, width, 0.12, 0.334);
+    bottomLeft += width + keyGap;
+  }
+
+  const arrowWidth = keyWidthForUnits(1, bottomKeyUnit);
+  const arrowCenterGap = 0.016;
+  addKey("key-4-7", bottomLeft + arrowWidth / 2, arrowWidth, 0.12, 0.334);
+  const centerArrowX = bottomLeft + arrowWidth + keyGap + arrowWidth / 2;
+  const arrowCenter = 0.234;
+  addKey(
+    "key-4-8",
+    centerArrowX,
+    arrowWidth,
+    0.12,
+    arrowCenter - arrowCenterGap / 2,
+    0.017,
+  );
+  addKey(
+    "key-4-9",
+    centerArrowX,
+    arrowWidth,
+    arrowCenter + arrowCenterGap / 2,
+    0.334,
+    0.017,
+  );
+  addKey(
+    "key-4-10",
+    bottomLeft + (arrowWidth + keyGap) * 2 + arrowWidth / 2,
+    arrowWidth,
+    0.12,
+    0.334,
+  );
 
   addDetailPolygon(
     "trackpad",
-    roundedRectOutline(0.64, 0.32, 1.1, 0.075, 3).map((point) => ({
+    roundedRectOutline(0.64, 0.5, 1.16, 0.075, 3).map((point) => ({
       x: point.x,
       y: deckY + 0.004,
       z: point.y,
