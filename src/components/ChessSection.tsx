@@ -452,15 +452,15 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             />
             {!gameStarted && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-8 text-center">
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-1.5">
                   <button
                     type="button"
                     onClick={startGame}
-                    className="cursor-pointer rounded-lg bg-[#1b1524]/65 px-5 py-2.5 font-mono text-sm text-fuchsia-200 shadow-lg ring-1 ring-inset ring-fuchsia-300/30 backdrop-blur-[2px] transition-colors hover:bg-[#1b1524]/80"
+                    className="cursor-pointer rounded-lg bg-[#1b1524] px-5 py-2.5 font-mono text-sm text-fuchsia-200 shadow-lg ring-1 ring-inset ring-fuchsia-300/30 transition-colors hover:bg-[#2a2036]"
                   >
                     play
                   </button>
-                  <p className="rounded-md bg-[#1b1524]/55 px-3 py-1.5 font-mono text-xs text-purple-200/70 backdrop-blur-[2px]">
+                  <p className="rounded-sm bg-[#1b1524]/30 px-2 py-0.5 font-mono text-[10px] leading-4 text-purple-100/70 backdrop-blur-[1px]">
                     this will incur a one-time 27 MB download
                   </p>
                 </div>
@@ -468,7 +468,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             )}
             {engineState.isLoading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg p-8">
-                <div className="w-full max-w-xs rounded-lg bg-[#1b1524]/55 px-4 py-3 backdrop-blur-[2px]">
+                <div className="w-full max-w-xs rounded-md bg-[#1b1524]/30 px-4 py-3 backdrop-blur-[1px]">
                   <DownloadProgress
                     message={engineState.loadingMessage}
                     progress={engineState.loadingProgress}
