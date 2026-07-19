@@ -27,11 +27,16 @@ const IS_REVISIT =
 
 // Typewriter timing (ms)
 const INTRO_TEXT = "hey, I'm Hunter!";
+const INTRO_SEQUENCE_LENGTH = INTRO_TEXT.length + 1;
 const CHAR_DELAY = 50;
 const PUNCT_DELAY = 120;
 const PUNCTUATION = ",;:.!?";
-const TYPING_DURATION_MS = Array.from({ length: INTRO_TEXT.length }, (_, i) =>
-  PUNCTUATION.includes(INTRO_TEXT[i - 1] ?? "") ? PUNCT_DELAY : CHAR_DELAY,
+const TYPING_DURATION_MS = Array.from(
+  { length: INTRO_SEQUENCE_LENGTH },
+  (_, i) =>
+    PUNCTUATION.includes(INTRO_TEXT[i - 1] ?? "")
+      ? PUNCT_DELAY
+      : CHAR_DELAY,
 ).reduce((a, b) => a + b, 0);
 const POST_TYPING_DELAY_MS = 200;
 
@@ -121,14 +126,15 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     }
     gridRef.current?.style.setProperty("--hero-glow-opacity", "0");
   }, []);
-  const typingDone = charCount >= INTRO_TEXT.length;
+  const typingDone = charCount >= INTRO_SEQUENCE_LENGTH;
+  const waveTyped = charCount > INTRO_TEXT.length;
 
   // Typewriter effect (skipped on revisit since typingDone is already true)
   useEffect(() => {
     if (typingDone) return;
     let cancelled = false;
     const tick = (count: number) => {
-      if (cancelled || count >= INTRO_TEXT.length) return;
+      if (cancelled || count >= INTRO_SEQUENCE_LENGTH) return;
       const delay = PUNCTUATION.includes(INTRO_TEXT[count - 1] ?? "")
         ? PUNCT_DELAY
         : CHAR_DELAY;
@@ -280,23 +286,22 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               </div>
               <div>
               <p className="text-[10px] leading-3 md:text-base md:leading-normal lg:text-lg bg-gradient-to-r from-[#e48dff] via-[#f09efd] to-[#c4b5fd] bg-clip-text text-transparent">
-                  {INTRO_TEXT.slice(0, charCount)}
+                  {INTRO_TEXT.slice(0, Math.min(charCount, INTRO_TEXT.length))}
                   {!typingDone && <span className="animate-pulse">|</span>}
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: typingDone ? 1 : 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className={`inline-block ml-1 ${typingDone ? "animate-wave" : ""}`}
-                    style={{
-                      WebkitTextFillColor: "initial",
-                      animationDelay: "-200ms",
-                      color: "initial",
-                      fontFamily:
-                        '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                    }}
-                  >
-                    {"\u{1F44B}\uFE0F"}
-                  </motion.span>
+                  {waveTyped ? (
+                    <span
+                      className="inline-block ml-1 animate-wave"
+                      style={{
+                        WebkitTextFillColor: "initial",
+                        animationDelay: "-200ms",
+                        color: "initial",
+                        fontFamily:
+                          '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+                      }}
+                    >
+                      {"\u{1F44B}\uFE0F"}
+                    </span>
+                  ) : null}
                 </p>
                 <motion.p
                   initial={{ opacity: 0 }}
