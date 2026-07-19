@@ -18,6 +18,9 @@ export interface ChessBoardProps {
   animationDuration?: number;
   orientation?: "w" | "b";
   playerColor?: "w" | "b";
+  selectedSquare?: string | null;
+  legalMoveSquares?: string[];
+  isInteractive?: boolean;
 }
 
 export interface CapturedPiece {

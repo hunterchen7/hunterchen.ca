@@ -16,8 +16,7 @@ export interface Project {
   videoFit?: "cover" | "contain";
 }
 
-export const PROJECTS_GRADIENT =
-  "radial-gradient(ellipse at 50% 45%, var(--surface-bloom) 0%, var(--surface-mid) 42%, var(--surface-low) 72%, var(--surface-deep) 100%)";
+export const PROJECTS_GRADIENT = "var(--surface-panel)";
 
 // Grid area assignments for the 3x4 bento layout
 // ┌──────────┬─────────────────────┐
@@ -66,7 +65,7 @@ export const featuredProjects: Project[] = [
     tech: ["Rust", "C/C++", "Swift", "Kotlin", "TypeScript", "WASM"],
     github: "https://github.com/hunterchen7/calc",
     demo: "https://ti84ce.pages.dev/",
-    video: "/projects/ti84ce/video.webm",
+    video: "/projects/ti84ce/ti84ce-video.webm",
     videoFit: "contain",
   },
   {
@@ -79,7 +78,7 @@ export const featuredProjects: Project[] = [
     tech: ["TypeScript", "React", "ONNX Runtime", "WebGPU", "WASM"],
     github: "https://github.com/hunterchen7/play-lc0",
     demo: "https://play-lc0.pages.dev",
-    video: "/projects/play-lc0/video.webm",
+    video: "/projects/play-lc0/play-lc0-video.webm",
   },
   {
     id: "hackwestern",
@@ -91,7 +90,7 @@ export const featuredProjects: Project[] = [
     tech: ["TypeScript", "React", "Next.js", "PostgreSQL"],
     github: "https://github.com/hackwestern/hackwestern/tree/2025",
     demo: "https://archive.hackwestern.com/2025",
-    video: "/projects/hw12/video.webm",
+    video: "/projects/hw12/hw12-video.webm",
   },
   {
     id: "ce-chess",
@@ -104,7 +103,7 @@ export const featuredProjects: Project[] = [
     demo: "https://ti84ce.pages.dev/chess",
     otherUrl:
       "https://github.com/hunterchen7/CE-games/blob/main/chess/bench/RESULTS.md",
-    video: "/projects/ce-chess/video.webm",
+    video: "/projects/ce-chess/ce-chess-video.webm",
   },
   {
     id: "stabl",
@@ -115,7 +114,7 @@ export const featuredProjects: Project[] = [
       "A python program that stabilizes video footage by tracking a subject & cropping to center on it. Uses YOLOv8, OpenCV and FFMPEG. Built to stabilize some footage I shot from London Airshow 2025 (shows off my poor camera work).",
     tech: ["Python", "YOLOv8", "OpenCV"],
     github: "https://github.com/hunterchen7/stabl",
-    video: "/projects/stabl/video.webm",
+    video: "/projects/stabl/stabl-video.webm",
   },
   {
     id: "canvas",
@@ -127,8 +126,8 @@ export const featuredProjects: Project[] = [
     tech: ["TypeScript", "React", "Framer Motion"],
     github: "https://github.com/hunterchen7/canvas",
     otherUrl: "https://www.npmjs.com/package/@hunterchen/canvas",
-    video: "/projects/canvas/video.webm",
-    thumbnailVideo: "/projects/canvas/video-thumb.webm",
+    video: "/projects/canvas/canvas-video.webm",
+    thumbnailVideo: "/projects/canvas/canvas-video-thumb.webm",
   },
 ];
 
@@ -186,7 +185,7 @@ export const otherProjects: Project[] = [
       "AI discord chat bot that can also generate images from user prompts. Uses llama-4-maverick for text gen and gemini flash 2.0 for image gen. I use a modified version on a personal server and it has sent 2,000+ messages.",
     tech: ["TypeScript"],
     github: "https://github.com/hunterchen7/marvin",
-    video: "/projects/marvin/video.webm",
+    video: "/projects/marvin/marvin-video.webm",
   },
   {
     id: "viewr",
@@ -212,7 +211,7 @@ export const otherProjects: Project[] = [
     tech: ["TypeScript", "React", "Python"],
     github: "https://github.com/hunterchen7/pawfect-pitch",
     demo: "https://devpost.com/software/pawfect-pitch",
-    video: "/projects/pawfect/video.webm",
+    video: "/projects/pawfect/pawfect-video.webm",
     images: [
       "/projects/pawfect/1.webp",
       "/projects/pawfect/2.webp",
@@ -230,7 +229,7 @@ export const otherProjects: Project[] = [
     tech: ["TypeScript", "React", "Next.js", "PostgreSQL"],
     github: "https://github.com/hackwestern/hackwestern/tree/hw11",
     demo: "https://2024.hackwestern.com",
-    video: "/projects/hw11/video.webm",
+    video: "/projects/hw11/hw11-video.webm",
     images: ["/projects/hw11/image.webp", "/projects/hw11/live.webp"],
   },
   {
@@ -242,7 +241,7 @@ export const otherProjects: Project[] = [
     tech: ["Java", "SQLite"],
     github: "https://github.com/hunterchen7/typing-game",
     demo: "https://www.youtube.com/watch?v=1PN8l_tNcNQ",
-    video: "/projects/typing/video.webm",
+    video: "/projects/typing/typing-video.webm",
   },
 
   {
@@ -286,7 +285,7 @@ export const otherProjects: Project[] = [
     tech: ["Rust", "TypeScript", "WASM"],
     github: "https://github.com/hunterchen7/wasm-game-of-life",
     demo: "https://hunterchen7.github.io/wasm-game-of-life/",
-    video: "/projects/gameoflife/video.webm",
+    video: "/projects/gameoflife/gameoflife-video.webm",
   },
   {
     id: "scavenger",
@@ -298,7 +297,7 @@ export const otherProjects: Project[] = [
     tech: ["TypeScript", "React", "Next.js", "PostgreSQL"],
     github: "https://github.com/hunterchen7/scavenger-hunt",
     demo: "https://scavenger-hunt-pink.vercel.app/",
-    video: "/projects/scavenger/video.webm",
+    video: "/projects/scavenger/scavenger-video.webm",
     images: [
       "/projects/scavenger/image.webp",
       "/projects/scavenger/submission.webp",
@@ -351,7 +350,7 @@ export const otherProjects: Project[] = [
     tech: ["TypeScript", "React", "Next.js"],
     github: "https://github.com/hunterchen7/daovos-website",
     demo: "https://daovoz.pages.dev/",
-    video: "/projects/daovoz/video.webm",
+    video: "/projects/daovoz/daovoz-video.webm",
   },
   {
     id: "dechess",
@@ -374,7 +373,7 @@ export const otherProjects: Project[] = [
     tech: ["JavaScript", "React"],
     github: "https://github.com/hunterchen7/spacestagram",
     demo: "https://spacestagram.hunterchen.ca",
-    video: "/projects/spacestagram/video.webm",
+    video: "/projects/spacestagram/spacestagram-video.webm",
     images: [
       "/projects/spacestagram/image.webp",
       "/projects/spacestagram/image2.webp",
@@ -389,7 +388,7 @@ export const otherProjects: Project[] = [
     tech: ["Python", "JavaScript"],
     github: "https://github.com/Coin-Port/CoinPort",
     demo: "https://ethglobal.com/showcase/coinport-todjy",
-    video: "/projects/coinport/video.webm",
+    video: "/projects/coinport/coinport-video.webm",
     images: ["/projects/coinport/image.webp", "/projects/coinport/image2.webp"],
   },
   {
@@ -422,7 +421,7 @@ export const otherProjects: Project[] = [
     tech: ["GameMaker"],
     demo: "https://hunterchen.ca/tank/tankgame.exe",
     otherUrl: "https://hunterchen.ca/tank/tankgame.gmz",
-    video: "/projects/tank/video.webm",
+    video: "/projects/tank/tank-video.webm",
     images: [
       "/projects/tank/level1.webp",
       "/projects/tank/level2.webp",

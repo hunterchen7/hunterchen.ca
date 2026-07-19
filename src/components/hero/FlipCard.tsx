@@ -1,13 +1,23 @@
-import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { SHARED_GRADIENT } from "./cards";
+import { heroRgba } from "./heroPalette";
+
+const ARTWORK_HIDDEN = { opacity: 0, scale: 0.78, y: 7 };
+const ARTWORK_RESTING = { opacity: 1, scale: 1, y: 0 };
+const ARTWORK_POP_IN = {
+  opacity: [0, 1, 1, 1],
+  scale: [0.78, 1.025, 0.992, 1],
+  y: [7, -1, 0, 0],
+};
 
 export interface Card {
   id: string;
   front: string;
+  frontArtwork?: React.ReactNode;
+  frontArtworkClassName?: string;
   frontAnchor?:
     | "top-left"
-    | "top-left-lower"
     | "top-right"
     | "bottom-left"
     | "bottom-right"
@@ -30,22 +40,25 @@ interface CardBounds {
 
 export default function FlipCard({
   card,
-  gridMouse,
   gridRef,
   onCardClick,
+  artworkDelay = 0,
+  artworkDuration = 1.05,
+  showArtwork = true,
 }: {
   card: Card;
-  gridMouse: { x: number; y: number } | null;
   gridRef: React.RefObject<HTMLDivElement | null>;
   onCardClick?: () => void;
+  artworkDelay?: number;
+  artworkDuration?: number;
+  showArtwork?: boolean;
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const [rotation, setRotation] = useState(0);
   const flipped = Math.round(Math.abs(rotation) / 180) % 2 !== 0;
   const [isAnimating, setIsAnimating] = useState(false);
-  const [tiltPosition, setTiltPosition] = useState({ x: 0.5, y: 0.5 });
   const cardRef = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState<CardBounds | null>(null);
-  const lastGlowPos = useRef({ localX: 0, localY: 0 });
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const wasDragged = useRef(false);
   const frontAnchor = card.frontAnchor ?? "center";
@@ -55,23 +68,21 @@ export default function FlipCard({
   // renders content at native resolution instead of caching a composite layer.
   const settled = flipped && !isAnimating;
 
-  // Cache card position relative to grid via ResizeObserver
+  // Cache the grid item's layout-space bounds. Measuring the card itself with
+  // getBoundingClientRect() captures its parent's entrance scale, and CSS
+  // transforms do not retrigger ResizeObserver when that scale settles.
   useEffect(() => {
     const cardEl = cardRef.current;
     const gridEl = gridRef.current;
-    if (!cardEl || !gridEl) return;
+    const layoutEl = cardEl?.parentElement;
+    if (!cardEl || !gridEl || !layoutEl) return;
 
     const update = () => {
-      const cardRect = cardEl.getBoundingClientRect();
-      const gridRect = gridEl.getBoundingClientRect();
-      // Convert screen-space to layout-space (accounts for canvas zoom)
-      const scaleX = gridEl.offsetWidth / gridRect.width;
-      const scaleY = gridEl.offsetHeight / gridRect.height;
       setBounds({
-        offsetLeft: (cardRect.left - gridRect.left) * scaleX,
-        offsetTop: (cardRect.top - gridRect.top) * scaleY,
-        width: cardRect.width * scaleX,
-        height: cardRect.height * scaleY,
+        offsetLeft: layoutEl.offsetLeft,
+        offsetTop: layoutEl.offsetTop,
+        width: layoutEl.offsetWidth,
+        height: layoutEl.offsetHeight,
         gridWidth: gridEl.offsetWidth,
         gridHeight: gridEl.offsetHeight,
       });
@@ -80,60 +91,57 @@ export default function FlipCard({
     update();
     const ro = new ResizeObserver(update);
     ro.observe(gridEl);
+    ro.observe(layoutEl);
     return () => ro.disconnect();
   }, [gridRef]);
 
   const TAP_THRESHOLD = 8;
 
-  // Per-card mouse tracking for tilt only (avoids re-rendering all cards)
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTiltPosition({
-      x: (e.clientX - rect.left) / rect.width,
-      y: (e.clientY - rect.top) / rect.height,
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setTiltPosition({ x: 0.5, y: 0.5 });
-  };
-
-  // Compute local mouse position relative to this card (for shared glow)
-  const localX = bounds && gridMouse ? gridMouse.x - bounds.offsetLeft : 0;
-  const localY = bounds && gridMouse ? gridMouse.y - bounds.offsetTop : 0;
-
-  // Tilt: "press down" — surface tilts away under the cursor
-  const tiltX = (0.5 - tiltPosition.y) * 10;
-  const tiltY = (tiltPosition.x - 0.5) * 10;
-
-  // 2D parallax for front title text (simulates depth without 3D compositing blur)
-  const textShiftX = (tiltPosition.x - 0.5) * 8;
-  const textShiftY = (tiltPosition.y - 0.5) * 8;
-  const frontParallaxMultiplier = frontAnchor === "center" ? 1 : 0.7;
+  const frontArtworkClass =
+    card.frontArtworkClassName ??
+    {
+      center: "absolute inset-[18%]",
+      "top-left":
+        "absolute bottom-3 right-3 h-[58%] w-[58%] md:bottom-6 md:right-6",
+      "top-right":
+        "absolute bottom-3 left-3 h-[58%] w-[58%] md:bottom-6 md:left-6",
+      "bottom-left":
+        "absolute top-3 right-3 h-[58%] w-[58%] md:top-6 md:right-6",
+      "bottom-right":
+        "absolute left-3 top-3 h-[62%] w-[62%] md:left-6 md:top-6 md:h-[60%] md:w-[58%]",
+      "top-center":
+        "absolute bottom-3 left-1/2 h-[52%] w-[52%] -translate-x-1/2 md:bottom-6",
+    }[frontAnchor];
 
   // Shared gradient: each card shows its slice of the full grid gradient
   const sharedBg = bounds
     ? {
-        background: SHARED_GRADIENT,
+        backgroundColor: card.color,
+        backgroundImage: SHARED_GRADIENT,
         backgroundSize: `${bounds.gridWidth}px ${bounds.gridHeight}px`,
         backgroundPosition: `${-bounds.offsetLeft}px ${-bounds.offsetTop}px`,
+        backgroundRepeat: "no-repeat",
       }
-    : { background: card.color };
+    : { backgroundColor: card.color };
 
-  // Remember last glow position so gradient stays rendered during fade-out
-  if (bounds && gridMouse) {
-    lastGlowPos.current = { localX, localY };
-  }
-  const glowPos = lastGlowPos.current;
-  const radialGlow = `radial-gradient(600px circle at ${glowPos.localX}px ${glowPos.localY}px, rgba(255, 255, 255, 0.022), transparent 40%)`;
+  const radialGlow = bounds
+    ? `radial-gradient(600px circle at calc(var(--hero-glow-x, 0px) - ${bounds.offsetLeft}px) calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px), ${heroRgba("light", 0.022)}, transparent 40%)`
+    : `radial-gradient(600px circle at 50% 50%, ${heroRgba("light", 0.022)}, transparent 40%)`;
+
+  const localGlowX = bounds
+    ? `calc(var(--hero-glow-x, 0px) - ${bounds.offsetLeft}px)`
+    : "50%";
+  const localGlowY = bounds
+    ? `calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px)`
+    : "50%";
+  const activeRadialGlow = `radial-gradient(230px circle at ${localGlowX} ${localGlowY}, ${heroRgba("accent", 0.09)}, transparent 68%)`;
+  const activeBorderMask = `radial-gradient(240px circle at ${localGlowX} ${localGlowY}, black 18%, transparent 72%)`;
 
   const frontAnchorClass = {
     center:
       "absolute inset-0 flex items-center justify-center text-center px-8",
     "top-left":
       "absolute top-5 left-5 md:top-6 md:left-6 text-left max-w-[70%]",
-    "top-left-lower":
-      "absolute top-5 left-5 md:top-16 md:left-6 text-left max-w-[70%]",
     "top-right":
       "absolute top-5 right-5 md:top-6 md:right-6 text-right max-w-[70%]",
     "bottom-left":
@@ -144,17 +152,28 @@ export default function FlipCard({
       "absolute top-5 left-1/2 -translate-x-1/2 md:top-6 text-center max-w-[80%]",
   }[frontAnchor];
 
+  const frontLabelOrigin = {
+    center: "center",
+    "top-left": "top left",
+    "top-right": "top right",
+    "bottom-left": "bottom left",
+    "bottom-right": "bottom right",
+    "top-center": "top center",
+  }[frontAnchor];
+
   const backContentClass =
-    backVariant === "classic" ? "relative z-10" : "relative z-10 h-full w-full";
+    backVariant === "classic"
+      ? "hero-card-back-content relative z-10"
+      : "hero-card-back-content relative z-10 h-full w-full";
   const backFaceClass =
     backVariant === "classic"
-      ? "absolute inset-0 border border-fuchsia-200/25 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-8 flex items-center justify-center overflow-hidden"
-      : "absolute inset-0 border border-fuchsia-200/25 rounded-2xl shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)] p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden";
+      ? "absolute inset-0 rounded-2xl p-8 flex items-center justify-center overflow-hidden text-[color:var(--hero-light)]"
+      : "absolute inset-0 rounded-2xl p-5 md:p-6 flex items-stretch justify-stretch overflow-hidden text-[color:var(--hero-light)]";
 
   const backContent = (
     <div className={backContentClass}>
       {typeof card.back === "string" ? (
-        <p className="text-fuchsia-100/90 text-base leading-relaxed text-center">
+        <p className="text-[color:var(--hero-light)] text-base leading-relaxed text-center">
           {card.back}
         </p>
       ) : (
@@ -163,26 +182,62 @@ export default function FlipCard({
     </div>
   );
 
-  const glowOverlay = (
+  const renderBorderOverlays = () => (
+    <>
+      <div
+        className="hero-card-active-border pointer-events-none absolute inset-0 z-[62] rounded-[inherit]"
+        style={{
+          mask: activeBorderMask,
+          WebkitMask: activeBorderMask,
+          boxShadow: `inset 0 0 0 1.5px ${heroRgba("accent", 0.72)}, inset 0 0 20px ${heroRgba("accent", 0.045)}`,
+        }}
+      />
+      <div
+        className="hero-card-focus-border pointer-events-none absolute inset-0 z-[63] rounded-[inherit]"
+        style={{
+          boxShadow: `inset 0 0 0 1.5px ${heroRgba("accent", 0.56)}`,
+        }}
+      />
+    </>
+  );
+
+  const renderActiveGlow = () => (
     <div
-      className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
-      style={{
-        opacity: gridMouse ? 1 : 0,
-        background: radialGlow,
-      }}
+      className="hero-card-active-glow pointer-events-none absolute inset-0 z-[61] overflow-hidden rounded-[inherit]"
+      style={{ background: activeRadialGlow }}
     />
   );
+
+  const glowOverlay = (
+    <>
+      <div
+        className="pointer-events-none absolute inset-0 z-[60] overflow-hidden rounded-2xl transition-opacity duration-500"
+        style={{
+          opacity: "var(--hero-glow-opacity, 0)",
+          background: radialGlow,
+        }}
+      />
+      {renderActiveGlow()}
+      {renderBorderOverlays()}
+    </>
+  );
+
+  const toggleCard = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setRotation(flipped ? 0 : 180);
+    onCardClick?.();
+  };
 
   return (
     <div
       ref={cardRef}
-      className="relative w-full h-full cursor-pointer transition-transform duration-200 ease-out"
+      className="site-panel-depth hero-flip-card relative h-full w-full cursor-pointer rounded-2xl"
+      data-flip-card={card.id}
+      data-card-state={isAnimating ? "animating" : flipped ? "back" : "front"}
       style={{
         perspective: 1200,
         zIndex: flipped ? 50 : 1,
-        transform: flipped
-          ? `perspective(1000px) rotateX(${tiltX / 3}deg) rotateY(${tiltY / 3}deg)`
-          : `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.01)`,
       }}
       onPointerDown={(e) => {
         pointerStart.current = { x: e.clientX, y: e.clientY };
@@ -197,25 +252,22 @@ export default function FlipCard({
         }
       }}
       onPointerUp={(e) => {
-        if (wasDragged.current || !pointerStart.current) return;
+        if (isAnimating || wasDragged.current || !pointerStart.current) return;
         // Don't flip when tapping interactive children (links, buttons)
         if ((e.target as HTMLElement).closest("a, button, input")) return;
-        setIsAnimating(true);
-        const delta = tiltPosition.x >= 0.5 ? 180 : -180;
-        setRotation((r) => r + delta);
-        onCardClick?.();
+        toggleCard();
       }}
-      onKeyDown={(e) => {
-        if (e.key === " " || e.key === "Enter") {
-          setIsAnimating(true);
-          setRotation((r) => r + 180);
-          onCardClick?.();
-        }
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      tabIndex={0}
     >
+      {/* A real button supplies native Tab, Enter, and Space behavior. Pointer
+          events pass through it so dragging on a card can still pan the canvas. */}
+      <button
+        type="button"
+        className="hero-card-toggle pointer-events-none absolute inset-0 z-[70] rounded-2xl"
+        aria-expanded={flipped}
+        aria-label={`${flipped ? "Hide" : "Show"} ${card.front} details`}
+        onClick={toggleCard}
+      />
+
       {/* 3D flip container — always mounted so rotateY state is preserved */}
       <motion.div
         className="absolute inset-0"
@@ -229,27 +281,61 @@ export default function FlipCard({
       >
         {/* Front */}
         <div
-          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl border border-fuchsia-200/25 shadow-[0_18px_38px_rgba(7,2,12,0.34),inset_0_1px_0_rgba(255,255,255,0.08)]"
+          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl"
           style={{
             ...sharedBg,
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {glowOverlay}
+          {card.frontArtwork && showArtwork ? (
+            <div
+              className={`${frontArtworkClass} pointer-events-none z-[1]`}
+            >
+              <motion.div
+                className="h-full w-full"
+                data-front-artwork={card.id}
+                data-front-artwork-delay={artworkDelay.toFixed(3)}
+                initial={prefersReducedMotion ? false : ARTWORK_HIDDEN}
+                animate={
+                  prefersReducedMotion
+                    ? showArtwork
+                      ? ARTWORK_RESTING
+                      : ARTWORK_HIDDEN
+                    : showArtwork
+                      ? ARTWORK_POP_IN
+                      : ARTWORK_HIDDEN
+                }
+                transition={
+                  prefersReducedMotion
+                    ? { duration: 0 }
+                    : {
+                        delay: showArtwork ? artworkDelay : 0,
+                        duration: artworkDuration,
+                        ease: [0.16, 1, 0.3, 1],
+                        times: [0, 0.68, 0.86, 1],
+                      }
+                }
+                style={{ transformOrigin: "50% 58%" }}
+              >
+                <Suspense fallback={null}>{card.frontArtwork}</Suspense>
+              </motion.div>
+            </div>
+          ) : null}
           <h3
-            className={`${frontAnchorClass} text-sm md:text-base text-fuchsia-100 leading-tight z-10 transition-transform duration-200 ease-out drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
-            style={{
-              transform: `translate(${textShiftX * frontParallaxMultiplier}px, ${textShiftY * frontParallaxMultiplier}px)`,
-            }}
+            className={`${frontAnchorClass} hero-card-label text-sm md:text-base text-[color:var(--hero-accent)] leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
+            style={{ transformOrigin: frontLabelOrigin }}
           >
             {card.front}
           </h3>
+          {glowOverlay}
         </div>
 
         {/* Back */}
         <div
           className={backFaceClass}
+          aria-hidden="true"
+          inert
           style={{
             ...sharedBg,
             transform: "rotateY(180deg) translateZ(1px)",
@@ -257,16 +343,21 @@ export default function FlipCard({
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {glowOverlay}
-          {backContent}
+          {isAnimating ? backContent : null}
         </div>
       </motion.div>
 
       {/* Settled overlay: plain div on top, no 3D — renders at native zoom resolution */}
       {settled && (
-        <div className={backFaceClass} style={sharedBg}>
-          {glowOverlay}
+        <div
+          className={backFaceClass}
+          role="region"
+          aria-label={`${card.front} details`}
+          style={sharedBg}
+        >
           {backContent}
+          {renderActiveGlow()}
+          {renderBorderOverlays()}
         </div>
       )}
     </div>

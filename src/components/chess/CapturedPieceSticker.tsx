@@ -24,6 +24,7 @@ export default function CapturedPieceSticker({
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
       <DraggableImage
+        tabIndex={-1}
         src={PIECE_SRCS[piece]}
         initialPos={targetPos}
         width={size}

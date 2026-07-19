@@ -27,7 +27,7 @@ export const HINT_TOTAL_DURATION = DRAW_DURATION;
 /** @deprecated Use HINT_TOTAL_DURATION */
 export const CLICKME_TOTAL_DURATION = DRAW_DURATION;
 
-// Animated gradient colors
+// Keep the handwritten hints as the one expressive color moment in the UI.
 const GRADIENT_WHITE = "#e48dffff";
 const GRADIENT_FUCHSIA = "#f09efdff";
 const GRADIENT_LAVENDER = "#c4b5fd";
@@ -182,7 +182,7 @@ function GradientDefs({
         x2={x2}
         y2={y2}
       >
-        <stop offset="0%">
+        <stop offset="0%" stopColor={GRADIENT_WHITE}>
           <animate
             attributeName="stop-color"
             values={`${GRADIENT_WHITE};${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER};${GRADIENT_WHITE}`}
@@ -190,7 +190,7 @@ function GradientDefs({
             repeatCount="indefinite"
           />
         </stop>
-        <stop offset="50%">
+        <stop offset="50%" stopColor={GRADIENT_FUCHSIA}>
           <animate
             attributeName="stop-color"
             values={`${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER};${GRADIENT_WHITE};${GRADIENT_FUCHSIA}`}
@@ -198,7 +198,7 @@ function GradientDefs({
             repeatCount="indefinite"
           />
         </stop>
-        <stop offset="100%">
+        <stop offset="100%" stopColor={GRADIENT_LAVENDER}>
           <animate
             attributeName="stop-color"
             values={`${GRADIENT_LAVENDER};${GRADIENT_WHITE};${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER}`}

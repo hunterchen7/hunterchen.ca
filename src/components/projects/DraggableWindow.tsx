@@ -95,6 +95,7 @@ export default function DraggableWindow({
 
   return (
     <Draggable
+      tabIndex={-1}
       initialPos={initialPos ?? { x: 0, y: 0 }}
       dragListener={false}
       dragControls={dragControls}
@@ -112,11 +113,13 @@ export default function DraggableWindow({
       )}
 
       <motion.div
+        role="dialog"
+        aria-label={title}
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.85 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="relative bg-[#1a1528]/90 border-[1.5px] border-fuchsia-400/30 rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_80px_rgba(168,85,247,0.06)] backdrop-blur-xl flex flex-col overflow-hidden"
+        className="project-window site-window-surface relative flex flex-col overflow-hidden rounded-xl border-[1.5px] border-fuchsia-400/30 backdrop-blur-xl"
         ref={windowRef}
         style={{
           width: size.w,
@@ -132,10 +135,12 @@ export default function DraggableWindow({
             }
             dragControls.start(e);
           }}
-          className="flex items-center justify-between px-4 py-2.5 bg-neutral-100/20 border-b border-fuchsia-300/20 cursor-grab active:cursor-grabbing flex-shrink-0 select-none"
+          className="site-window-titlebar flex flex-shrink-0 cursor-grab select-none items-center justify-between border-b border-fuchsia-300/20 px-4 py-2.5 active:cursor-grabbing"
         >
           <h3 className="text-sm font-medium text-fuchsia-100/90">{title}</h3>
           <button
+            type="button"
+            aria-label={`Close ${title}`}
             onClick={onClose}
             onPointerDown={(e) => e.stopPropagation()}
             className="p-1 rounded-full text-neutral-100 hover:bg-fuchsia-400/10 hover:text-fuchsia-200/70 transition-colors"

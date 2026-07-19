@@ -3,6 +3,7 @@ import { AnimatePresence } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { Chess, type Square } from "chess.js";
 import { Lc0Engine } from "../chess/engine/workerInterface";
+import { hasModelCached } from "../chess/engine/modelCache";
 import { MODEL_URL } from "../chess/config";
 import { uciToChessJsMove } from "../chess/utils";
 import type { EngineState } from "../chess/types";
@@ -13,6 +14,7 @@ import Confetti from "./chess/Confetti";
 import CapturedPieceSticker from "./chess/CapturedPieceSticker";
 import { AnimatedLink } from "./AnimatedLink";
 import { playSoundForMove } from "./chess/sounds";
+import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 
 interface ChessSectionProps {
   offset: SectionCoordinates;
@@ -34,6 +36,29 @@ const INITIAL_ENGINE_STATE: EngineState = {
 
 
 
+interface DownloadProgressProps {
+  message: string;
+  progress: number;
+}
+
+function DownloadProgress({ message, progress }: DownloadProgressProps) {
+  const percentage = Math.round(progress * 100);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between font-mono text-xs text-purple-200/65">
+        <span>{message}</span>
+        <span>{percentage}%</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-fuchsia-950/50">
+        <div
+          className="h-full rounded-full bg-fuchsia-400/60 transition-[width] duration-200"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function ChessSection({ offset }: ChessSectionProps) {
   const gameRef = useRef(new Chess());
   const game = gameRef.current;
@@ -42,6 +67,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   const [engineState, setEngineState] =
     useState<EngineState>(INITIAL_ENGINE_STATE);
   const [gameStarted, setGameStarted] = useState(false);
+  const [hasCachedModel, setHasCachedModel] = useState<boolean | null>(null);
   const [playerColor, setPlayerColor] = useState<"w" | "b">("w");
   const engineColor = playerColor === "w" ? "b" : "w";
   const [lastMoveSquares, setLastMoveSquares] = useState<{
@@ -136,18 +162,39 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
     const engine = new Lc0Engine();
     engineRef.current = engine;
+    setEngineState(INITIAL_ENGINE_STATE);
+    setGameStarted(true);
 
     engine.subscribe((state) => {
       setEngineState((prev) => ({ ...prev, ...state }));
+      if (state.error) {
+        engine.terminate();
+        if (engineRef.current === engine) engineRef.current = null;
+        setGameStarted(false);
+      }
     });
 
     engine.init(MODEL_URL);
-    setGameStarted(true);
   }, []);
 
-  // Initialize engine on mount, cleanup on unmount
+  // Cached players can enter immediately; the opt-in gate is only needed
+  // before the one-time model download.
   useEffect(() => {
-    startGame();
+    let cancelled = false;
+
+    void hasModelCached(MODEL_URL).then((isCached) => {
+      if (cancelled) return;
+      setHasCachedModel(isCached);
+      if (isCached) startGame();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [startGame]);
+
+  // Clean up the opt-in engine worker on unmount.
+  useEffect(() => {
     return () => {
       engineRef.current?.terminate();
       engineRef.current = null;
@@ -170,7 +217,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
     const searchFen = game.fen();
     engine
-      .mctsSearch(searchFen, fenHistory, 50, 0.5)
+      .mctsSearch(searchFen, fenHistory, 150, 0.67)
       .then(({ move }) => {
         setEngineState((prev) => ({ ...prev, isThinking: true }));
         return new Promise<string>((resolve) =>
@@ -263,6 +310,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
   const onSquareClick = (square: string) => {
     if (
+      !gameStarted ||
+      !engineState.isReady ||
       game.turn() !== playerColor ||
       engineState.isThinking ||
       game.isGameOver()
@@ -319,6 +368,12 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   };
 
   const gameStatus = getGameStatus();
+  const canPlayerMove =
+    gameStarted &&
+    engineState.isReady &&
+    !engineState.isThinking &&
+    !game.isGameOver() &&
+    game.turn() === playerColor;
   const playerWon = game.isCheckmate() && game.turn() !== playerColor;
   const [confettiKey, setConfettiKey] = useState(0);
   const showConfetti = confettiKey > 0;
@@ -341,6 +396,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = {
       backgroundColor: "rgba(192, 132, 252, 0.5)",
+      boxShadow: "inset 0 0 0 4px rgba(240, 171, 252, 0.78)",
     };
   }
   if (draggedSquare) {
@@ -377,7 +433,11 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
   return (
     <CanvasComponent offset={offset}>
-      <div className="relative h-full w-full flex items-center justify-center p-4">
+      <AccessibleCanvasSection
+        sectionId="chess"
+        label="Chess"
+        className="relative flex h-full w-full items-center justify-center p-4"
+      >
         <div className="flex flex-col items-center gap-4 w-full">
           <h2 className="text-xl font-thin text-fuchsia-200">
             play against my chess AI
@@ -409,13 +469,10 @@ export default function ChessSection({ offset }: ChessSectionProps) {
               onPieceDrop={(from, to) => makeMove(from, to)}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
-              isDraggable={
-                gameStarted &&
-                engineState.isReady &&
-                !engineState.isThinking &&
-                !game.isGameOver() &&
-                game.turn() === playerColor
-              }
+              isDraggable={canPlayerMove}
+              isInteractive={canPlayerMove}
+              selectedSquare={selectedSquare}
+              legalMoveSquares={legalMoveSquares}
               animationDuration={200}
               squareStyles={customSquareStyles}
               orientation={playerColor}
@@ -428,19 +485,30 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 boxShadow: "0 0 20px rgba(192, 132, 252, 0.12)",
               }}
             />
+            {!gameStarted && hasCachedModel === false && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-8 text-center">
+                <div className="flex flex-col items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={startGame}
+                    className="cursor-pointer rounded-lg bg-[#1b1524] px-5 py-2.5 font-mono text-sm text-fuchsia-200 shadow-lg ring-1 ring-inset ring-fuchsia-300/30 transition-colors hover:bg-[#2a2036]"
+                  >
+                    play
+                  </button>
+                  <p className="rounded-sm bg-[#1b1524]/30 px-2 py-0.5 font-mono text-[10px] leading-4 text-purple-100/70 backdrop-blur-[1px]">
+                    this will incur a one-time 27 MB download
+                  </p>
+                </div>
+              </div>
+            )}
             {engineState.isLoading && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg backdrop-blur-sm bg-black/30">
-                <div className="w-48 h-1.5 rounded-full bg-fuchsia-950/50 overflow-hidden">
-                  <div
-                    className="h-full bg-fuchsia-400/60 transition-all duration-300 rounded-full"
-                    style={{
-                      width: `${engineState.loadingProgress * 100}%`,
-                    }}
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg p-8">
+                <div className="w-full max-w-xs rounded-md bg-[#1b1524]/30 px-4 py-3 backdrop-blur-[1px]">
+                  <DownloadProgress
+                    message={engineState.loadingMessage}
+                    progress={engineState.loadingProgress}
                   />
                 </div>
-                <span className="text-fuchsia-300/50 font-mono">
-                  {engineState.loadingMessage}
-                </span>
               </div>
             )}
             {showConfetti && <Confetti key={confettiKey} />}
@@ -506,7 +574,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             />
           ))}
         </AnimatePresence>
-      </div>
+      </AccessibleCanvasSection>
     </CanvasComponent>
   );
 }

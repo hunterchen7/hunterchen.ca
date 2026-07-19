@@ -15,13 +15,13 @@ export default function FunCard() {
         </AnimatedLink>
         .
       </div>
-      <div className="md:order-2 relative overflow-hidden rounded-lg border border-fuchsia-200/15 shadow-[0_10px_24px_rgba(0,0,0,0.24)] md:h-full">
+      <div className="md:order-2 relative overflow-hidden rounded-lg border border-[color:var(--hero-border)] shadow-[0_10px_24px_rgba(0,0,0,0.24)] md:h-full">
         <motion.img
           src="hero/rocks.webp"
           className="h-[130px] md:h-full w-full object-cover"
         />
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#160b20]/95 via-[#160b20]/55 to-transparent pr-1 py-1">
-          <p className="text-[8px] md:text-xs text-fuchsia-100/90 text-right">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[color:var(--hero-ink)] via-[color:var(--hero-deep)] to-transparent pr-1 py-1">
+          <p className="text-[8px] md:text-xs text-[color:var(--hero-light)] text-right">
             Kananaskis, Alberta 🇨🇦
           </p>
         </div>

@@ -13,14 +13,28 @@ html {
     --font-caveat: "Caveat", cursive;
 
     /* Shared canvas palette */
-    --canvas-bg-deep: #110b18;
-    --canvas-bg-mid: #291a38;
-    --canvas-bg-bloom: #452958;
-    --canvas-dot: #9270ad;
-    --surface-bloom: #512a63;
-    --surface-mid: #351943;
-    --surface-low: #211029;
-    --surface-deep: #16091d;
+    --canvas-bg-deep: #0e0e10;
+    --canvas-bg-mid: #19191c;
+    --canvas-bg-bloom: #262629;
+    --canvas-dot: #6e6e76;
+    --surface-bloom: #342a3d;
+    --surface-mid: #28212f;
+    --surface-low: #201a25;
+    --surface-deep: #17131b;
+    --surface-window: rgba(32, 26, 37, 0.94);
+    --surface-panel: radial-gradient(
+      ellipse at 50% 42%,
+      var(--surface-bloom) 0%,
+      var(--surface-mid) 46%,
+      var(--surface-low) 76%,
+      var(--surface-deep) 100%
+    );
+    --shadow-panel:
+      0 18px 42px rgba(4, 2, 8, 0.44),
+      0 0 34px rgba(112, 65, 151, 0.1);
+    --shadow-panel-raised:
+      0 24px 56px rgba(4, 2, 8, 0.52),
+      0 0 48px rgba(112, 65, 151, 0.12);
 
     /* ============== Amethyst Glow Theme ============== */
     /* Warmer purple tones with subtle magenta undertones */
@@ -49,15 +63,190 @@ html {
   }
 }
 
+.site-panel-depth {
+  box-shadow: var(--shadow-panel);
+}
+
+.site-panel-interactive {
+  transition-property: box-shadow, filter, transform;
+}
+
+.hero-card-active-glow,
+.hero-card-active-border,
+.hero-card-focus-border {
+  opacity: 0;
+  transition: opacity 130ms ease-out;
+}
+
+.hero-flip-card {
+  transition:
+    box-shadow 170ms ease-out,
+    scale 280ms cubic-bezier(0.16, 1.2, 0.3, 1);
+}
+
+.hero-card-label {
+  transition:
+    scale 280ms cubic-bezier(0.16, 1.35, 0.3, 1),
+    color 95ms linear,
+    filter 120ms ease-out;
+}
+
+.hero-card-toggle {
+  border: 0;
+  background: transparent;
+}
+
+.hero-card-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hero-light) 82%, transparent);
+  outline-offset: 3px;
+}
+
+.site-navbar button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hero-light) 88%, transparent);
+  outline-offset: 3px;
+}
+
+.canvas-focus-section:focus {
+  outline: none;
+}
+
+.project-tile-button {
+  border: 0;
+  background: transparent;
+}
+
+.project-tile-button:focus-visible,
+.project-list-button:focus-visible,
+.project-window :is(a, button):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hero-light) 88%, transparent);
+  outline-offset: -3px;
+}
+
+.project-bento-card:has(.project-tile-button:focus-visible) {
+  scale: 1.01;
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-panel-raised);
+}
+
+.project-bento-card:has(.project-tile-button:focus-visible) .project-tile-overview {
+  transform: translateY(0);
+}
+
+.chess-square:focus-visible,
+.chess-promotion-button:focus-visible {
+  z-index: 3;
+  outline: 3px solid rgba(250, 232, 255, 0.95);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 5px rgba(192, 132, 252, 0.72);
+}
+
+.chess-square[data-selected="true"] {
+  z-index: 2;
+}
+
+.gallery-photo-button:focus-visible {
+  outline: 4px solid color-mix(in srgb, var(--hero-light) 92%, transparent);
+  outline-offset: 5px;
+}
+
+.gallery-polaroid:has(.gallery-photo-button:focus-visible) {
+  scale: 1.02;
+  filter: drop-shadow(0 16px 20px rgba(76, 29, 109, 0.42));
+}
+
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) {
+  scale: 1.01;
+  box-shadow:
+    0 21px 48px rgba(4, 2, 8, 0.48),
+    0 0 38px rgba(112, 65, 151, 0.105);
+}
+
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-active-glow,
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-active-border,
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-focus-border,
+.hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-active-glow,
+.hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-active-border,
+.hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-focus-border {
+  opacity: 1;
+}
+
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-label {
+  scale: 1.05;
+  color: var(--hero-light);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--hero-accent) 55%, transparent));
+}
+
+.hero-card-back-content :is(a, button.animated-link):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hero-light) 88%, transparent);
+  outline-offset: 3px;
+  color: var(--hero-light);
+}
+
+.hero-card-back-content :is(a, button.animated-link):focus-visible .animated-underline {
+  background-size: 100% 1px !important;
+  color: var(--hero-light);
+}
+
+.site-window-surface {
+  background: var(--surface-window);
+  box-shadow: var(--shadow-panel-raised);
+}
+
+.site-window-titlebar {
+  background: color-mix(in srgb, var(--surface-bloom) 78%, transparent);
+}
+
+.site-list-row {
+  background: color-mix(in srgb, var(--surface-low) 72%, transparent);
+}
+
+.site-list-row-alt {
+  background: color-mix(in srgb, var(--surface-mid) 48%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .site-panel-interactive:hover {
+    box-shadow: var(--shadow-panel-raised);
+  }
+
+  .hero-flip-card[data-card-state="front"]:hover .hero-card-active-glow,
+  .hero-flip-card[data-card-state="front"]:hover .hero-card-active-border,
+  .hero-flip-card[data-card-state="back"]:hover .hero-card-active-glow,
+  .hero-flip-card[data-card-state="back"]:hover .hero-card-active-border {
+    opacity: 1;
+  }
+
+  .hero-flip-card[data-card-state="front"]:hover {
+    scale: 1.01;
+    box-shadow:
+      0 21px 48px rgba(4, 2, 8, 0.48),
+      0 0 38px rgba(112, 65, 151, 0.105);
+  }
+
+  .hero-flip-card[data-card-state="front"]:hover .hero-card-label {
+    scale: 1.05;
+    color: var(--hero-light);
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--hero-accent) 55%, transparent));
+  }
+}
+
+/* The affordance lives on the front face. Snap the outer shadow back to its
+   resting state while either face is rotating so no flat halo lingers behind. */
+.hero-flip-card[data-card-state="animating"] {
+  box-shadow: var(--shadow-panel);
+  scale: 1;
+  transition: scale 280ms cubic-bezier(0.16, 1.2, 0.3, 1);
+}
+
 /* ============== Canvas Library Overrides ============== */
 /* These must be outside @layer to override the library's defaults */
 :root {
-  --canvas-offwhite: #19131f;
-  --canvas-highlight: #261c30;
-  --canvas-pushed: #392448;
-  --canvas-emphasis: #d092ff;
-  --canvas-medium: #a58eaf;
-  --canvas-light: #665271;
+  --canvas-offwhite: #161519;
+  --canvas-highlight: #211f26;
+  --canvas-pushed: #332c40;
+  --canvas-emphasis: #b39dfc;
+  --canvas-medium: #98939f;
+  --canvas-light: #55505c;
   --canvas-heavy: #f3edf6;
   --canvas-border-light: 270 22% 20%;
 }
@@ -296,6 +485,86 @@ html {
   75% { transform: translate(-7px, 2px); }
 }
 
+/* ============== Hero card object models ============== */
+
+.hero-model-svg {
+  shape-rendering: geometricPrecision;
+}
+
+.hero-models-paused .hero-model-svg,
+.hero-models-paused .hero-model-svg * {
+  animation-play-state: paused !important;
+}
+
+.hero-contact-dot {
+  animation: hero-contact-dot-wave 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes hero-contact-dot-wave {
+  0%, 18%, 68%, 100% { transform: translateY(0); }
+  36% { transform: translateY(-3.5px); }
+  48% { transform: translateY(0.8px); }
+}
+
+.model-rocket-hover,
+.model-rocket-flame,
+.model-rocket-ember-one,
+.model-rocket-ember-two {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes model-rocket-hover {
+  0%, 100% { transform: translateY(2px) rotate(-1.5deg); }
+  48% { transform: translateY(-4.5px) rotate(1.4deg); }
+  58% { transform: translateY(-4px) rotate(1deg); }
+}
+
+@keyframes model-rocket-flame-pulse {
+  0%, 100% { opacity: 0.72; transform: scaleY(0.84); }
+  52% { opacity: 1; transform: scaleY(1.16); }
+}
+
+@keyframes model-rocket-ember-one {
+  0% { opacity: 0; transform: translate(0, -2px) scale(0.6); }
+  28% { opacity: 0.72; }
+  100% { opacity: 0; transform: translate(-4px, 10px) scale(0.2); }
+}
+
+@keyframes model-rocket-ember-two {
+  0% { opacity: 0; transform: translate(0, -2px) scale(0.55); }
+  34% { opacity: 0.64; }
+  100% { opacity: 0; transform: translate(4px, 9px) scale(0.15); }
+}
+
+.model-rocket-hover {
+  animation: model-rocket-hover 4.4s ease-in-out infinite;
+}
+
+.model-rocket-flame {
+  animation: model-rocket-flame-pulse 0.85s ease-in-out infinite;
+  transform-origin: 50% 0%;
+}
+
+.model-rocket-ember-one {
+  animation: model-rocket-ember-one 2.2s ease-out infinite;
+}
+
+.model-rocket-ember-two {
+  animation: model-rocket-ember-two 2.7s ease-out infinite;
+}
+
+.model-laptop-cursor {
+  animation: model-laptop-cursor-blink 0.78s steps(2, end) infinite;
+}
+
+@keyframes model-laptop-cursor-blink {
+  0%, 46% { opacity: 0.95; }
+  47%, 100% { opacity: 0.12; }
+}
+
 /* Accessibility: disable continuous animations for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .animate-holo-bob,
@@ -303,7 +572,17 @@ html {
   .animate-holo-ambient,
   .holo-static::after,
   .holo-ambient-scanlines::before,
-  .holo-ambient-scanlines::after {
-    animation: none;
+  .holo-ambient-scanlines::after,
+  .model-rocket-hover,
+  .model-rocket-flame,
+  .model-rocket-ember-one,
+  .model-rocket-ember-two,
+  .model-laptop-cursor,
+  .hero-contact-dot {
+    animation: none !important;
+  }
+
+  .model-laptop-cursor {
+    opacity: 0.72;
   }
 }

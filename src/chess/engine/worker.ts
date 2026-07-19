@@ -5,9 +5,53 @@ import { initModel, runInference } from "./inference";
 import { getCachedModel, cacheModel, decompressGzip } from "./modelCache";
 import { mctsSearch } from "./mcts";
 import { Chess } from "chess.js";
+import { RUNTIME_URL } from "../config";
+
+const MODEL_DOWNLOAD_BYTES = 2_300_000;
+const RUNTIME_DOWNLOAD_BYTES = 24_925_138;
+const TOTAL_DOWNLOAD_BYTES = MODEL_DOWNLOAD_BYTES + RUNTIME_DOWNLOAD_BYTES;
 
 function post(msg: WorkerResponse) {
   self.postMessage(msg);
+}
+
+async function downloadBuffer(
+  url: string,
+  expectedBytes: number,
+  onProgress: (progress: number) => void,
+): Promise<ArrayBuffer> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  }
+
+  const total = Number(response.headers.get("Content-Length")) || expectedBytes;
+  if (!response.body) {
+    const buffer = await response.arrayBuffer();
+    onProgress(1);
+    return buffer;
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(Math.min(received / total, 0.99));
+  }
+
+  const buffer = new Uint8Array(received);
+  let position = 0;
+  for (const chunk of chunks) {
+    buffer.set(chunk, position);
+    position += chunk.length;
+  }
+  onProgress(1);
+  return buffer.buffer;
 }
 
 self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
@@ -16,10 +60,22 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   switch (msg.type) {
     case "init": {
       try {
+        const runtimeBinary = await downloadBuffer(
+          RUNTIME_URL,
+          RUNTIME_DOWNLOAD_BYTES,
+          (progress) =>
+            post({
+              type: "initProgress",
+              progress:
+                (progress * RUNTIME_DOWNLOAD_BYTES) / TOTAL_DOWNLOAD_BYTES,
+              message: "downloading engine runtime...",
+            }),
+        );
+
         post({
           type: "initProgress",
-          progress: 0,
-          message: "Checking cache...",
+          progress: RUNTIME_DOWNLOAD_BYTES / TOTAL_DOWNLOAD_BYTES,
+          message: "checking model cache...",
         });
 
         let modelData = await getCachedModel(msg.modelUrl);
@@ -27,57 +83,27 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         if (!modelData) {
           post({
             type: "initProgress",
-            progress: 0.1,
-            message: "Downloading model...",
+            progress: RUNTIME_DOWNLOAD_BYTES / TOTAL_DOWNLOAD_BYTES,
+            message: "downloading chess model...",
           });
 
-          let response = await fetch(msg.modelUrl);
-          if (!response.ok) {
-            response = await fetch(msg.modelUrl + ".bin");
-          }
-          if (!response.ok) {
-            throw new Error(
-              `Failed to fetch model: ${response.status} (${msg.modelUrl})`,
-            );
-          }
-
-          const contentLength = response.headers.get("Content-Length");
-          const total = contentLength ? parseInt(contentLength) : 0;
-
-          let compressed: ArrayBuffer;
-          if (total > 0 && response.body) {
-            const reader = response.body.getReader();
-            const chunks: Uint8Array[] = [];
-            let received = 0;
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              chunks.push(value);
-              received += value.length;
-              const dlProgress = 0.1 + (received / total) * 0.6;
+          const compressed = await downloadBuffer(
+            msg.modelUrl,
+            MODEL_DOWNLOAD_BYTES,
+            (progress) =>
               post({
                 type: "initProgress",
-                progress: dlProgress,
-                message: `Downloading... ${Math.round((received / total) * 100)}%`,
-              });
-            }
-
-            const buffer = new Uint8Array(received);
-            let pos = 0;
-            for (const chunk of chunks) {
-              buffer.set(chunk, pos);
-              pos += chunk.length;
-            }
-            compressed = buffer.buffer;
-          } else {
-            compressed = await response.arrayBuffer();
-          }
+                progress:
+                  (RUNTIME_DOWNLOAD_BYTES + progress * MODEL_DOWNLOAD_BYTES) /
+                  TOTAL_DOWNLOAD_BYTES,
+                message: "downloading chess model...",
+              }),
+          );
 
           post({
             type: "initProgress",
-            progress: 0.7,
-            message: "Decompressing...",
+            progress: 1,
+            message: "decompressing model...",
           });
           try {
             modelData = await decompressGzip(compressed);
@@ -87,24 +113,24 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 
           post({
             type: "initProgress",
-            progress: 0.75,
-            message: "Caching model...",
+            progress: 1,
+            message: "caching model...",
           });
           await cacheModel(msg.modelUrl, modelData);
         } else {
           post({
             type: "initProgress",
-            progress: 0.7,
-            message: "Loaded from cache",
+            progress: 1,
+            message: "model loaded from cache",
           });
         }
 
         post({
           type: "initProgress",
-          progress: 0.8,
-          message: "Initializing neural network...",
+          progress: 1,
+          message: "initializing neural network...",
         });
-        await initModel(modelData);
+        await initModel(modelData, runtimeBinary);
 
         post({ type: "ready" });
       } catch (error) {
