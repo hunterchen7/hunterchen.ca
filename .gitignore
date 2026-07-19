@@ -40,9 +40,3 @@ public/ort-wasm-*
 
 # TypeScript incremental build cache
 *.tsbuildinfo
-
-# compiled Android pinch-injector artifacts (source: PinchInjector.java)
-perf/PinchInjector.class
-perf/pinch-dex/
-perf/fps-results/flicker-frames/
-perf/fps-results/aa/

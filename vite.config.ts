@@ -95,10 +95,6 @@ export default defineConfig({
       "Cross-Origin-Embedder-Policy": "credentialless",
     },
   },
-  preview: {
-    // Allow serving through a cloudflared quick tunnel (phone testing).
-    allowedHosts: [".trycloudflare.com"],
-  },
   worker: {
     format: "es",
   },
