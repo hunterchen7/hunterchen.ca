@@ -1,31 +1,36 @@
-import {
-  usePerformanceMode,
-  type PerformanceMode,
-} from "@hunterchen/canvas";
+import { usePerformanceMode } from "@hunterchen/canvas";
 import type { CSSProperties } from "react";
 import { useHeroModelAnimationReady } from "../modelAnimationContext";
 
 export type AnimatedModel = "camera" | "chess" | "laptop" | "rocket";
 
-const MODEL_FPS: Record<
-  PerformanceMode,
-  Record<AnimatedModel, number>
-> = {
-  high: { camera: 24, chess: 60, laptop: 60, rocket: 24 },
-  medium: { camera: 20, chess: 30, laptop: 20, rocket: 20 },
-  low: { camera: 15, chess: 20, laptop: 15, rocket: 15 },
+// One cadence per model, identical across devices. Mobile used to run reduced
+// caps (e.g. chess 30fps) which just read as choppy; instead the models render
+// SIMPLER variants on mobile (see `simplified` below) and keep the full frame
+// rate. Camera/rocket run 24fps everywhere by design (deliberate film-like
+// cadence), not as a performance concession.
+const MODEL_FPS: Record<AnimatedModel, number> = {
+  camera: 24,
+  chess: 60,
+  laptop: 60,
+  rocket: 24,
 };
 
 export function useModelTiming(model: AnimatedModel) {
   const { mode, prefersReducedMotion } = usePerformanceMode();
   const animationReady = useHeroModelAnimationReady();
-  const fps = MODEL_FPS[mode][model];
+  const fps = MODEL_FPS[model];
 
   return {
     animationReady,
     fps,
     frameIntervalMs: 1_000 / fps,
     prefersReducedMotion: prefersReducedMotion || !animationReady,
+    // On non-desktop devices the models drop decorative detail (fewer SVG
+    // nodes, no secondary effects) instead of dropping frame rate. Resolved
+    // before any geometry is built, so simplified variants are constructed
+    // directly rather than stripped after the fact.
+    simplified: mode !== "high",
   };
 }
 

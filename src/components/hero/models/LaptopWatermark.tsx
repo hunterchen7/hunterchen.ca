@@ -428,6 +428,15 @@ function lidStateAtProgress(progress: number): LidState {
   };
 }
 
+// Simplified (mobile) lid: permanently open — no open/close cycle. The typing
+// sequence still runs on the same clock; the screen just sits open through the
+// portions where the lid would be closed or mid-swing.
+const OPEN_LID_STATE: LidState = {
+  angleDegrees: OPEN_LID_ANGLE_DEGREES,
+  openProgress: 1,
+  phase: "open",
+};
+
 function typingStateAtProgress(progress: number): TypingState {
   const timeMs = progress * SCREEN_SEQUENCE_MS - TYPING_START_MS;
   const lineLengths = INTRO_LINES.map(() => 0);
@@ -498,8 +507,9 @@ function typingStateAtProgress(progress: number): TypingState {
 function useLaptopMotion(frame: number | null): {
   fps: number;
   screenProgress: number;
+  simplified: boolean;
 } {
-  const { animationReady, fps, frameIntervalMs, prefersReducedMotion } =
+  const { animationReady, fps, frameIntervalMs, prefersReducedMotion, simplified } =
     useModelTiming("laptop");
   const [screenProgress, setScreenProgress] = useState(() => {
     if (frame !== null) return frame;
@@ -558,6 +568,7 @@ function useLaptopMotion(frame: number | null): {
   return {
     fps,
     screenProgress,
+    simplified,
   };
 }
 
@@ -1073,10 +1084,10 @@ function buildLaptop(
 
 function LaptopWatermark() {
   const frame = readPinnedModelFrame();
-  const { fps, screenProgress } = useLaptopMotion(frame);
+  const { fps, screenProgress, simplified } = useLaptopMotion(frame);
   const lidState = useMemo(
-    () => lidStateAtProgress(screenProgress),
-    [screenProgress],
+    () => (simplified ? OPEN_LID_STATE : lidStateAtProgress(screenProgress)),
+    [screenProgress, simplified],
   );
   const typingState = useMemo(
     () => typingStateAtProgress(screenProgress),
