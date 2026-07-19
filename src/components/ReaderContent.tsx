@@ -149,7 +149,7 @@ export default function ReaderContent() {
             <a href="https://x.com/hunterchen_7">X</a>.
           </p>
           <p>
-            <a href="https://hunterchen.ca/resume.pdf">Download my resume</a>.
+            <a href="/resume.pdf">View or download my resume</a>.
           </p>
         </section>
       </article>

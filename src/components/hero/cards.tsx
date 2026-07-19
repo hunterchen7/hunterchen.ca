@@ -13,13 +13,22 @@ import {
 import ProjectsCard from "./ProjectsCard";
 import type { Card } from "./FlipCard";
 import { heroRgba } from "./heroPalette";
+import { useResumeViewer } from "../../contexts/resumeViewer";
 
 export const SHARED_GRADIENT = "var(--surface-panel)";
 
 const pillLinkClass =
   "relative inline-flex items-center rounded-full border border-[color:var(--hero-border)] bg-[color:var(--hero-surface)] px-1.5 py-0.5 text-[8px] md:text-xs md:px-2.5 md:py-1 text-[color:var(--hero-accent)] overflow-hidden transition-colors hover:text-[color:var(--hero-light)]";
 
-function PillLink({ href, children }: { href: string; children: string }) {
+function PillLink({
+  href,
+  children,
+  onActivate,
+}: {
+  href: string;
+  children: string;
+  onActivate?: () => void;
+}) {
   const ref = useRef<HTMLAnchorElement>(null);
   const [mouse, setMouse] = useState<{ x: number; y: number } | null>(null);
 
@@ -39,9 +48,15 @@ function PillLink({ href, children }: { href: string; children: string }) {
     <a
       ref={ref}
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
+      target={onActivate ? undefined : "_blank"}
+      rel={onActivate ? undefined : "noopener noreferrer"}
+      onClick={(event) => {
+        event.stopPropagation();
+        if (onActivate) {
+          event.preventDefault();
+          onActivate();
+        }
+      }}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setMouse(null)}
       className={pillLinkClass}
@@ -75,6 +90,16 @@ function PillLink({ href, children }: { href: string; children: string }) {
   );
 }
 
+function ResumePillLink() {
+  const { openResume } = useResumeViewer();
+
+  return (
+    <PillLink href="/resume.pdf" onActivate={openResume}>
+      Resume
+    </PillLink>
+  );
+}
+
 export const cards: Card[] = [
   {
     id: "1",
@@ -99,7 +124,7 @@ export const cards: Card[] = [
             LinkedIn
           </PillLink>
           <PillLink href="https://github.com/hunterchen7">GitHub</PillLink>
-          <PillLink href="https://hunterchen.ca/resume.pdf">Resume</PillLink>
+          <ResumePillLink />
         </div>
       </div>
     ),

@@ -32,6 +32,7 @@ import {
   SectionFocusContext,
   type SectionName,
 } from "./contexts/SectionFocusContext";
+import { ResumeViewerProvider } from "./contexts/ResumeViewerContext";
 
 // Canvas spotlight - circular bloom at canvas center, falling off outward
 const CANVAS_GRADIENT = `radial-gradient(circle ${canvasWidth / 2}px at ${canvasWidth / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
@@ -130,12 +131,13 @@ export default function App() {
 
   return (
     <SectionFocusContext.Provider value={sectionFocusValue}>
-      <main
-        id="home"
-        className="relative min-h-screen"
-        style={HERO_THEME_STYLE}
-        onClickCapture={handleNavigationClick}
-      >
+      <ResumeViewerProvider>
+        <main
+          id="home"
+          className="relative min-h-screen"
+          style={HERO_THEME_STYLE}
+          onClickCapture={handleNavigationClick}
+        >
         <ReaderContent />
         <HintSvg
           variant="nav"
@@ -197,7 +199,8 @@ export default function App() {
             </Suspense>
           ) : null}
         </Canvas>
-      </main>
+        </main>
+      </ResumeViewerProvider>
     </SectionFocusContext.Provider>
   );
 }
