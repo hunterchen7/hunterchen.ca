@@ -175,6 +175,7 @@ export default function ChessBoard({
   const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
   const [keyboardSquare, setKeyboardSquare] = useState<string | null>(null);
   const [anim, setAnim] = useState<AnimatingPiece | null>(null);
+  const pendingKeyboardRestoreRef = useRef<string | null>(null);
   const skipNextAnimRef = useRef(false);
   const onDragStartRef = useRef(onDragStart);
   onDragStartRef.current = onDragStart;
@@ -201,31 +202,31 @@ export default function ChessBoard({
     [currentPosition, isPlayersPiece],
   );
 
-  // Re-enter the board on one of the player's pieces after each completed
-  // move, while preserving free arrow-key exploration during the turn.
+  // Choose an initial entry point once. After that, preserve the roving square
+  // even when it is empty so keyboard focus never jumps after a completed move.
+  useEffect(() => {
+    if (!isInteractive || keyboardSquare) return;
+    setKeyboardSquare(defaultKeyboardSquare);
+  }, [defaultKeyboardSquare, isInteractive, keyboardSquare]);
+
+  // The board is temporarily disabled while the engine moves. Restore focus
+  // to the destination the keyboard user activated when their turn resumes.
   useEffect(() => {
     if (!isInteractive) return;
-    if (selectedSquare) {
-      setKeyboardSquare(selectedSquare);
-      return;
-    }
 
-    if (
-      !keyboardSquare ||
-      !isPlayersPiece(currentPosition[keyboardSquare])
-    ) {
-      setKeyboardSquare(defaultKeyboardSquare);
-    }
-    // keyboardSquare is intentionally omitted so arrowing onto an empty
-    // square does not immediately snap focus back to a piece.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    currentPosition,
-    defaultKeyboardSquare,
-    isInteractive,
-    isPlayersPiece,
-    selectedSquare,
-  ]);
+    const square = pendingKeyboardRestoreRef.current;
+    if (!square) return;
+
+    pendingKeyboardRestoreRef.current = null;
+    setKeyboardSquare(square);
+    const frame = window.requestAnimationFrame(() => {
+      boardRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-square="${square}"]`)
+        ?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isInteractive]);
 
   const moveKeyboardFocus = useCallback(
     (square: string, key: string) => {
@@ -477,15 +478,34 @@ export default function ChessBoard({
                       ? 0
                       : -1
                   }
-                  onClick={() => onSquareClick?.(square)}
+                  onClick={(event) => {
+                    if (event.detail > 0) {
+                      pendingKeyboardRestoreRef.current = null;
+                    }
+                    onSquareClick?.(square);
+                  }}
                   onFocus={() => setKeyboardSquare(square)}
                   onKeyDown={(event) => {
-                    if (!event.key.startsWith("Arrow")) return;
+                    if (event.key.startsWith("Arrow")) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      moveKeyboardFocus(square, event.key);
+                      return;
+                    }
+
+                    if (event.key !== "Enter" && event.key !== " ") return;
                     event.preventDefault();
                     event.stopPropagation();
-                    moveKeyboardFocus(square, event.key);
+                    pendingKeyboardRestoreRef.current =
+                      selectedSquare && legalMoveSquares.includes(square)
+                        ? square
+                        : null;
+                    onSquareClick?.(square);
                   }}
-                  onPointerDown={(e) => handlePointerDown(e, square, piece)}
+                  onPointerDown={(e) => {
+                    pendingKeyboardRestoreRef.current = null;
+                    handlePointerDown(e, square, piece);
+                  }}
                   onPointerEnter={() => {
                     if (isPlayerPiece) setHoveredSquare(square);
                   }}
