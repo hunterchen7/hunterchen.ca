@@ -5,6 +5,7 @@ import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import ProjectBentoCard from "./projects/ProjectBentoCard";
 import DraggableWindow from "./projects/DraggableWindow";
 import HintSvg from "./HintSvg";
+import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 import {
   type Project,
   featuredProjects,
@@ -169,8 +170,18 @@ function MoreProjectsContent({
           <div
             key={project.id}
             onClick={() => onProjectClick(project)}
-            className={`flex items-center gap-3 px-4 py-3 border-b border-fuchsia-300/10 cursor-pointer hover:bg-fuchsia-500/[0.06] transition-colors ${rowBg}`}
+            className={`relative flex w-full items-center gap-3 border-b border-fuchsia-300/10 px-4 py-3 text-left cursor-pointer hover:bg-fuchsia-500/[0.06] transition-colors ${rowBg}`}
           >
+            <button
+              type="button"
+              className="project-list-button pointer-events-none absolute inset-0 z-20 border-0 bg-transparent"
+              aria-haspopup="dialog"
+              aria-label={`Open ${project.title} project details`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onProjectClick(project);
+              }}
+            />
             <div className="flex-1 min-w-0">
               <h4 className="text-base font-medium text-neutral-200 truncate">
                 {project.title}
@@ -285,9 +296,19 @@ function MoreProjectsTile({
       <div
         ref={boundsCallback}
         onClick={onClick}
-        className="site-panel-depth site-panel-interactive group relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl transition-all duration-200 ease-out hover:scale-[1.01] hover:brightness-105"
+        className="project-bento-card site-panel-depth site-panel-interactive group relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl transition-all duration-200 ease-out hover:scale-[1.01] hover:brightness-105"
         style={sharedBg}
       >
+        <button
+          type="button"
+          className="project-tile-button pointer-events-none absolute inset-0 z-20 rounded-2xl"
+          aria-haspopup="dialog"
+          aria-label={`Open ${count} more projects`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick();
+          }}
+        />
         <div
           className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
           style={{ opacity: gridMouse ? 1 : 0, background: radialGlow }}
@@ -529,10 +550,15 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
 
   return (
     <CanvasComponent offset={offset}>
-      <div
-        ref={sectionRef}
-        className="relative flex h-full w-full flex-col items-center justify-center p-8"
+      <AccessibleCanvasSection
+        sectionId="projects"
+        label="Projects"
+        className="h-full w-full"
       >
+        <div
+          ref={sectionRef}
+          className="relative flex h-full w-full flex-col items-center justify-center p-8"
+        >
         <h2 className="mb-2 text-3xl font-thin text-fuchsia-200">projects</h2>
         <p className="mb-4 text-sm text-fuchsia-300/60">
           a compilation of some things i've worked on..
@@ -625,7 +651,8 @@ export default function ProjectsSection({ offset }: ProjectsSectionProps) {
             ))}
           </AnimatePresence>
         </div>
-      </div>
+        </div>
+      </AccessibleCanvasSection>
     </CanvasComponent>
   );
 }

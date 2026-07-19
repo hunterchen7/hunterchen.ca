@@ -162,7 +162,9 @@ export default function FlipCard({
   }[frontAnchor];
 
   const backContentClass =
-    backVariant === "classic" ? "relative z-10" : "relative z-10 h-full w-full";
+    backVariant === "classic"
+      ? "hero-card-back-content relative z-10"
+      : "hero-card-back-content relative z-10 h-full w-full";
   const backFaceClass =
     backVariant === "classic"
       ? "absolute inset-0 rounded-2xl p-8 flex items-center justify-center overflow-hidden text-[color:var(--hero-light)]"
@@ -220,6 +222,13 @@ export default function FlipCard({
     </>
   );
 
+  const toggleCard = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setRotation(flipped ? 0 : 180);
+    onCardClick?.();
+  };
+
   return (
     <div
       ref={cardRef}
@@ -243,22 +252,22 @@ export default function FlipCard({
         }
       }}
       onPointerUp={(e) => {
-        if (wasDragged.current || !pointerStart.current) return;
+        if (isAnimating || wasDragged.current || !pointerStart.current) return;
         // Don't flip when tapping interactive children (links, buttons)
         if ((e.target as HTMLElement).closest("a, button, input")) return;
-        setIsAnimating(true);
-        setRotation(flipped ? 0 : 180);
-        onCardClick?.();
+        toggleCard();
       }}
-      onKeyDown={(e) => {
-        if (e.key === " " || e.key === "Enter") {
-          setIsAnimating(true);
-          setRotation(flipped ? 0 : 180);
-          onCardClick?.();
-        }
-      }}
-      tabIndex={0}
     >
+      {/* A real button supplies native Tab, Enter, and Space behavior. Pointer
+          events pass through it so dragging on a card can still pan the canvas. */}
+      <button
+        type="button"
+        className="hero-card-toggle pointer-events-none absolute inset-0 z-[70] rounded-2xl"
+        aria-expanded={flipped}
+        aria-label={`${flipped ? "Hide" : "Show"} ${card.front} details`}
+        onClick={toggleCard}
+      />
+
       {/* 3D flip container — always mounted so rotateY state is preserved */}
       <motion.div
         className="absolute inset-0"
@@ -325,6 +334,8 @@ export default function FlipCard({
         {/* Back */}
         <div
           className={backFaceClass}
+          aria-hidden="true"
+          inert
           style={{
             ...sharedBg,
             transform: "rotateY(180deg) translateZ(1px)",
@@ -332,13 +343,18 @@ export default function FlipCard({
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {backContent}
+          {isAnimating ? backContent : null}
         </div>
       </motion.div>
 
       {/* Settled overlay: plain div on top, no 3D — renders at native zoom resolution */}
       {settled && (
-        <div className={backFaceClass} style={sharedBg}>
+        <div
+          className={backFaceClass}
+          role="region"
+          aria-label={`${card.front} details`}
+          style={sharedBg}
+        >
           {backContent}
           {renderActiveGlow()}
           {renderBorderOverlays()}

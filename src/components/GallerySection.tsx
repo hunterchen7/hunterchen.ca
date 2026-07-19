@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { Camera, Aperture, ImageIcon, Telescope } from "lucide-react";
 import { fetchExifFromUrl, type ExifData } from "../utils/exif";
 import { AnimatedLink } from "./AnimatedLink";
+import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 
 interface GallerySectionProps {
   offset: SectionCoordinates;
@@ -200,23 +201,38 @@ const PolaroidCard = ({
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const openImage = () => {
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       onImageClick(rect);
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    openImage();
+  };
+
   return (
-    <Draggable>
+    <Draggable tabIndex={-1}>
       <motion.div
         ref={cardRef}
-        className={`relative h-[300px] w-[260px] cursor-grab transition-all ${className} active:cursor-grabbing`}
+        tabIndex={-1}
+        className={`gallery-polaroid relative h-[300px] w-[260px] cursor-grab transition-all ${className} active:cursor-grabbing`}
         style={{ perspective: 900, rotate: rotation }}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
+        <button
+          type="button"
+          className="gallery-photo-button pointer-events-none absolute inset-0 z-20 border-0 bg-transparent"
+          aria-haspopup="dialog"
+          aria-label={`Open photo from ${caption}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            openImage();
+          }}
+        />
         <PolaroidCardContent
           caption={caption}
           thumbnailUrl={thumbnailUrl}
@@ -367,6 +383,9 @@ const ExpandedPolaroid = ({
 
   return createPortal(
     <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Photo from ${photo.caption}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -448,7 +467,11 @@ export default function GallerySection({ offset }: GallerySectionProps) {
   return (
     <>
       <CanvasComponent offset={offset}>
-        <div className="flex h-full w-full items-center justify-center pb-8 sm:pb-0 sm:pt-4">
+        <AccessibleCanvasSection
+          sectionId="gallery"
+          label="Gallery"
+          className="flex h-full w-full items-center justify-center pb-8 sm:pb-0 sm:pt-4"
+        >
           <div className="mx-auto flex items-center gap-16">
             {/* Left 2 polaroids */}
             <div className="flex flex-col gap-12">
@@ -533,7 +556,7 @@ export default function GallerySection({ offset }: GallerySectionProps) {
               </div>
             </div>
           </div>
-        </div>
+        </AccessibleCanvasSection>
       </CanvasComponent>
 
       <AnimatePresence>

@@ -95,6 +95,7 @@ export default function DraggableWindow({
 
   return (
     <Draggable
+      tabIndex={-1}
       initialPos={initialPos ?? { x: 0, y: 0 }}
       dragListener={false}
       dragControls={dragControls}
@@ -112,11 +113,13 @@ export default function DraggableWindow({
       )}
 
       <motion.div
+        role="dialog"
+        aria-label={title}
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.85 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="site-window-surface relative flex flex-col overflow-hidden rounded-xl border-[1.5px] border-fuchsia-400/30 backdrop-blur-xl"
+        className="project-window site-window-surface relative flex flex-col overflow-hidden rounded-xl border-[1.5px] border-fuchsia-400/30 backdrop-blur-xl"
         ref={windowRef}
         style={{
           width: size.w,
@@ -136,6 +139,8 @@ export default function DraggableWindow({
         >
           <h3 className="text-sm font-medium text-fuchsia-100/90">{title}</h3>
           <button
+            type="button"
+            aria-label={`Close ${title}`}
             onClick={onClose}
             onPointerDown={(e) => e.stopPropagation()}
             className="p-1 rounded-full text-neutral-100 hover:bg-fuchsia-400/10 hover:text-fuchsia-200/70 transition-colors"

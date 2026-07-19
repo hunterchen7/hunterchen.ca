@@ -2,7 +2,11 @@ import { featuredProjects, otherProjects } from "./projects/projects";
 
 export default function ReaderContent() {
   return (
-    <div className="absolute inset-0 z-[-1] overflow-auto pointer-events-none text-transparent">
+    <div
+      className="absolute inset-0 z-[-1] overflow-auto pointer-events-none text-transparent"
+      aria-hidden="true"
+      inert
+    >
       <article className="content">
         <header>
           <h1>Hunter Chen</h1>

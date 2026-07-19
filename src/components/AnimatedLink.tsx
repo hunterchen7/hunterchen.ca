@@ -23,27 +23,43 @@ export function AnimatedLink({
     }
   };
 
+  const content = (
+    <span
+      className={`animated-underline ${textClassName ?? "text-[color:var(--hero-accent)]"} group-hover:text-[color:var(--hero-light)]`}
+      style={{
+        backgroundImage: "linear-gradient(currentColor, currentColor)",
+        backgroundPosition: "0 100%",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "0% 1px",
+        paddingBottom: 1,
+        transition: "background-size 0.2s ease, color 0.2s",
+      }}
+    >
+      {children}
+    </span>
+  );
+
+  if (!href && onClick) {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        className={`animated-link group inline cursor-pointer border-0 bg-transparent p-0 text-left [font:inherit] ${className}`}
+      >
+        {content}
+      </button>
+    );
+  }
+
   return (
     <a
       href={href}
       target={href ? "_blank" : undefined}
       rel={href ? "noopener noreferrer" : undefined}
       onClick={handleClick}
-      className={`group inline ${className}`}
+      className={`animated-link group inline ${className}`}
     >
-      <span
-        className={`animated-underline ${textClassName ?? "text-[color:var(--hero-accent)]"} group-hover:text-[color:var(--hero-light)]`}
-        style={{
-          backgroundImage: "linear-gradient(currentColor, currentColor)",
-          backgroundPosition: "0 100%",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "0% 1px",
-          paddingBottom: 1,
-          transition: "background-size 0.2s ease, color 0.2s",
-        }}
-      >
-        {children}
-      </span>
+      {content}
     </a>
   );
 }

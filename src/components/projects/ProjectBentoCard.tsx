@@ -140,9 +140,20 @@ export default function ProjectBentoCard({
           if (wasDragged.current) return;
           onClick();
         }}
-        className="site-panel-depth site-panel-interactive touch-stable group relative h-full w-full cursor-pointer overflow-hidden rounded-2xl transition-all duration-200 ease-out hover:scale-[1.01] hover:brightness-105"
+        className="project-bento-card site-panel-depth site-panel-interactive touch-stable group relative h-full w-full cursor-pointer overflow-hidden rounded-2xl transition-all duration-200 ease-out hover:scale-[1.01] hover:brightness-105"
         style={sharedBg}
       >
+        <button
+          type="button"
+          className="project-tile-button pointer-events-none absolute inset-0 z-40 rounded-2xl"
+          aria-haspopup="dialog"
+          aria-label={`Open ${project.title} project details`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick();
+          }}
+        />
+
         {/* Glow overlay */}
         <div
           className="absolute inset-0 transition-opacity duration-500 pointer-events-none z-10"
@@ -201,7 +212,7 @@ export default function ProjectBentoCard({
         </div>
 
         {/* Hover overview */}
-        <div className="absolute left-0 right-0 bottom-0 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-black/80 pointer-events-none z-30">
+        <div className="project-tile-overview absolute bottom-0 left-0 right-0 z-30 translate-y-full transform bg-black/80 transition-transform duration-300 pointer-events-none group-hover:translate-y-0">
           <p className="text-fuchsia-200/90 text-[10px] leading-tight p-2">
             {project.overview}
           </p>

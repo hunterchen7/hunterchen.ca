@@ -13,6 +13,7 @@ import { HeroModelAnimationProvider } from "./hero/modelAnimationContext";
 import { preloadHeroModels } from "./hero/deferredHeroModels";
 import HintSvg, { HINT_TOTAL_DURATION } from "./HintSvg";
 import { afterFirstContentfulPaint } from "../utils/afterFirstContentfulPaint";
+import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 
 interface HeroSectionProps {
   offset: SectionCoordinates;
@@ -237,7 +238,11 @@ export default function HeroSection({ offset }: HeroSectionProps) {
 
   return (
     <CanvasComponent offset={offset}>
-      <div className="relative h-full w-full flex items-center justify-center p-8">
+      <AccessibleCanvasSection
+        sectionId="hero"
+        label="Home"
+        className="relative flex h-full w-full items-center justify-center p-8"
+      >
         <div className="hero-composition w-[95vw] md:w-[700px] lg:w-[1000px] -mt-32 md:-mt-24 md:h-[1000px] flex flex-col">
           <HeroModelAnimationProvider ready={modelAnimationsActive}>
             <div
@@ -335,7 +340,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
             </div>
           </HeroModelAnimationProvider>
         </div>
-      </div>
+      </AccessibleCanvasSection>
     </CanvasComponent>
   );
 }

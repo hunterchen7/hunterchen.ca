@@ -91,30 +91,100 @@ html {
     filter 120ms ease-out;
 }
 
-.hero-flip-card:focus-visible {
+.hero-card-toggle {
+  border: 0;
+  background: transparent;
+}
+
+.hero-card-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hero-light) 82%, transparent);
+  outline-offset: 3px;
+}
+
+.site-navbar button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hero-light) 88%, transparent);
+  outline-offset: 3px;
+}
+
+.canvas-focus-section:focus {
   outline: none;
 }
 
-.hero-flip-card[data-card-state="front"]:focus-visible {
+.project-tile-button {
+  border: 0;
+  background: transparent;
+}
+
+.project-tile-button:focus-visible,
+.project-list-button:focus-visible,
+.project-window :is(a, button):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hero-light) 88%, transparent);
+  outline-offset: -3px;
+}
+
+.project-bento-card:has(.project-tile-button:focus-visible) {
+  scale: 1.01;
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-panel-raised);
+}
+
+.project-bento-card:has(.project-tile-button:focus-visible) .project-tile-overview {
+  transform: translateY(0);
+}
+
+.chess-square:focus-visible,
+.chess-promotion-button:focus-visible {
+  z-index: 3;
+  outline: 3px solid rgba(250, 232, 255, 0.95);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 5px rgba(192, 132, 252, 0.72);
+}
+
+.chess-square[data-selected="true"] {
+  z-index: 2;
+}
+
+.gallery-photo-button:focus-visible {
+  outline: 4px solid color-mix(in srgb, var(--hero-light) 92%, transparent);
+  outline-offset: 5px;
+}
+
+.gallery-polaroid:has(.gallery-photo-button:focus-visible) {
+  scale: 1.02;
+  filter: drop-shadow(0 16px 20px rgba(76, 29, 109, 0.42));
+}
+
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) {
   scale: 1.01;
   box-shadow:
     0 21px 48px rgba(4, 2, 8, 0.48),
     0 0 38px rgba(112, 65, 151, 0.105);
 }
 
-.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-active-glow,
-.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-active-border,
-.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-focus-border,
-.hero-flip-card[data-card-state="back"]:focus-visible .hero-card-active-glow,
-.hero-flip-card[data-card-state="back"]:focus-visible .hero-card-active-border,
-.hero-flip-card[data-card-state="back"]:focus-visible .hero-card-focus-border {
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-active-glow,
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-active-border,
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-focus-border,
+.hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-active-glow,
+.hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-active-border,
+.hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-focus-border {
   opacity: 1;
 }
 
-.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-label {
+.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-label {
   scale: 1.05;
   color: var(--hero-light);
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--hero-accent) 55%, transparent));
+}
+
+.hero-card-back-content :is(a, button.animated-link):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hero-light) 88%, transparent);
+  outline-offset: 3px;
+  color: var(--hero-light);
+}
+
+.hero-card-back-content :is(a, button.animated-link):focus-visible .animated-underline {
+  background-size: 100% 1px !important;
+  color: var(--hero-light);
 }
 
 .site-window-surface {
