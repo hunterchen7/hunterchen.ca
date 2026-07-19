@@ -47,26 +47,29 @@ const CARD_STAGGER = IS_REVISIT ? 0.22 : 0.267;
 const CARD_SPRING_SETTLE = IS_REVISIT ? 0.55 : 0.6;
 const ARTWORK_STAGGER = IS_REVISIT ? 0.2 : 0.25;
 const ARTWORK_REVEAL_DURATION = IS_REVISIT ? 1.15 : 1.25;
+const WAVE_AFTER_BOXES =
+  (cards.length - 1) * CARD_STAGGER + (IS_REVISIT ? 0.25 : 0.3);
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
-const HERO_CLICKME_DELAY = 0;
 const ARTWORK_REVEAL_START = CARDS_FINISH;
 const ARTWORKS_FINISH =
   ARTWORK_REVEAL_START +
   (cards.length - 1) * ARTWORK_STAGGER +
   ARTWORK_REVEAL_DURATION;
-const HERO_VISUALS_FINISH = Math.max(
-  ARTWORKS_FINISH,
-  HERO_CLICKME_DELAY + HINT_TOTAL_DURATION,
-);
+const HINT_SEQUENCE_GAP = 0.2;
+const HERO_CLICKME_DELAY = ARTWORKS_FINISH + HINT_SEQUENCE_GAP;
 const HERO_MODEL_MOTION_DELAY = IS_REVISIT
   ? ARTWORKS_FINISH + 0.12
-  : HERO_VISUALS_FINISH + HINT_TOTAL_DURATION;
+  : ARTWORKS_FINISH + HINT_TOTAL_DURATION;
+const INTRO_FINISH = IS_REVISIT
+  ? 0
+  : (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000;
 
-/** Seconds from page load until the final hero intro visual finishes */
-export const HERO_SEQUENCE_END = IS_REVISIT
-  ? HERO_VISUALS_FINISH
-  : (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000 +
-    HERO_VISUALS_FINISH;
+/** Seconds from page load until the navbar hint should begin */
+export const HERO_NAV_HINT_DELAY =
+  INTRO_FINISH +
+  HERO_CLICKME_DELAY +
+  HINT_TOTAL_DURATION +
+  HINT_SEQUENCE_GAP;
 
 export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
@@ -166,7 +169,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
 
     const timer = window.setTimeout(
       () => setWaveAnimationReady(true),
-      CARDS_FINISH * 1_000,
+      WAVE_AFTER_BOXES * 1_000,
     );
     return () => window.clearTimeout(timer);
   }, [showContent]);

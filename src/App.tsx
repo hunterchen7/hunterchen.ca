@@ -17,10 +17,11 @@ import {
   ScreenSizeEnum,
 } from "@hunterchen/canvas";
 import { coordinates, navItems } from "./constants/coordinates";
-import HeroSection from "./components/HeroSection";
+import HeroSection, {
+  HERO_NAV_HINT_DELAY,
+} from "./components/HeroSection";
 import HintSvg from "./components/HintSvg";
 import ReaderContent from "./components/ReaderContent";
-import { HERO_SEQUENCE_END } from "./components/HeroSection";
 import {
   HERO_COLORS,
   HERO_THEME_STYLE,
@@ -142,7 +143,7 @@ export default function App() {
         <HintSvg
           variant="nav"
           show={showClickMe}
-          enterDelay={Math.max(0, HERO_SEQUENCE_END - 0.45)}
+          enterDelay={HERO_NAV_HINT_DELAY}
           className="pointer-events-none fixed bottom-[49px] left-[53%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
         />
         <Canvas
