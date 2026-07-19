@@ -108,7 +108,15 @@ async function main() {
         });
         const page = await context.newPage();
         const cdp = await context.newCDPSession(page);
-        await page.goto(options.url, { waitUntil: "load" });
+        // Mobile rows measure the SIMPLIFIED variants. Tier detection is
+        // capability-based (assume-good), so a fast host machine reads as
+        // "high" at any viewport — force the low tier via the library's
+        // ?canvasPerf override for these runs.
+        const url =
+          viewportName === "mobile"
+            ? `${options.url}${options.url.includes("?") ? "&" : "?"}canvasPerf=low`
+            : options.url;
+        await page.goto(url, { waitUntil: "load" });
         await cdp.send("Emulation.setCPUThrottlingRate", { rate });
         await waitForModelsAnimating(page);
 

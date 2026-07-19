@@ -117,9 +117,20 @@ async function main() {
     : await chromium.launch({ executablePath: CHROME, headless: true });
   try {
     let page;
+    let ownsPage = false;
     if (options.cdp) {
       const context = browser.contexts()[0];
-      page = context.pages()[0] ?? (await context.waitForEvent("page"));
+      // NEVER navigate an existing tab — on a real phone that's the user's
+      // browsing session. Open our own tab and close it afterwards; fall back
+      // to an existing about:blank tab only.
+      try {
+        page = await context.newPage();
+        ownsPage = true;
+      } catch {
+        const blank = context.pages().find((p) => p.url() === "about:blank");
+        if (!blank) throw new Error("Could not open a new tab and no about:blank tab to reuse.");
+        page = blank;
+      }
       await page.goto(options.url, { waitUntil: "load", timeout: 120_000 });
       await page.evaluate(`sessionStorage.setItem("hero-intro-seen", "true")`);
       await page.reload({ waitUntil: "load", timeout: 120_000 });
@@ -140,13 +151,41 @@ async function main() {
         sessionStorage.setItem("hero-intro-seen", "true");
       });
       page = await context.newPage();
-      await page.goto(options.url, { waitUntil: "load" });
+      // The will-change hint path only exists on non-"high" tiers; tier
+      // detection is capability-based (assume-good), so force the low tier
+      // for the mobile-emulated repro run.
+      const localUrl = options.desktop
+        ? options.url
+        : `${options.url}${options.url.includes("?") ? "&" : "?"}canvasPerf=low`;
+      await page.goto(localUrl, { waitUntil: "load" });
     }
 
     // Let the intro finish and models settle so baseline motion is small.
     await page.waitForSelector('[data-model="work-laptop"]', { timeout: 120_000 });
     await sleep(5000);
     await page.bringToFront();
+
+    // Capability signals — data for device-tier detection design.
+    const signals = await page.evaluate(`(() => {
+      let gpu = "?";
+      try {
+        const gl = document.createElement("canvas").getContext("webgl");
+        const ext = gl && gl.getExtension("WEBGL_debug_renderer_info");
+        if (gl && ext) gpu = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+      } catch {}
+      return JSON.stringify({
+        deviceMemory: navigator.deviceMemory ?? null,
+        cores: navigator.hardwareConcurrency ?? null,
+        dpr: devicePixelRatio,
+        viewport: innerWidth + "x" + innerHeight,
+        colorGamutP3: matchMedia("(color-gamut: p3)").matches,
+        dynamicRangeHigh: matchMedia("(dynamic-range: high)").matches,
+        pointerCoarse: matchMedia("(pointer: coarse)").matches,
+        gpu,
+        ua: navigator.userAgent.slice(0, 80),
+      });
+    })()`);
+    console.log(`device signals: ${signals}`);
 
     const cdp = await page.context().newCDPSession(page);
 
@@ -326,7 +365,20 @@ async function main() {
       }),
     );
   } finally {
-    await browser.close();
+    if (options.cdp) {
+      // Close only the tab we opened; leave the user's browser alone.
+      try {
+        const context = browser.contexts()[0];
+        const ours = context.pages().find((p) => p.url().includes(new URL(options.url).host));
+        if (ours) await ours.close();
+      } catch {
+        /* best effort */
+      }
+      // Disconnect (does not kill the remote browser).
+      await browser.close();
+    } else {
+      await browser.close();
+    }
     await analyzerBrowser.close();
   }
 }
