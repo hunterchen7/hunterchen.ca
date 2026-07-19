@@ -111,7 +111,7 @@ export const cards: Card[] = [
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
         <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
-          <p>currently funemployment maxxing</p>
+          <p>currently enjoying funemployment</p>
           <p>
             I&apos;ve previously built fullstack mobile & web apps for{" "}
             <AnimatedLink href="https://geneial.com">geneial</AnimatedLink>,{" "}
@@ -163,19 +163,19 @@ export const cards: Card[] = [
     back: (
       <div className="h-full w-full flex flex-col gap-3 md:gap-4">
         <div className="text-[10.5px] md:text-sm leading-relaxed text-left text-balance">
-          Avid hackathon attendee and former organizer. I helped build web for{" "}
+          led dev team to build web experiences for 3000+ students @{" "}
           <AnimatedLink href="https://2024.hackwestern.com">
-            Hack Western 2024
+            hack western 2024
           </AnimatedLink>{" "}
-          and led the dev team for{" "}
+          and{" "}
           <AnimatedLink href="https://2025.hackwestern.com">
-            Hack Western 2025
+            hack western 2025
           </AnimatedLink>
           ,{" "}
           <AnimatedLink href="https://www.uwo.ca">
-            Western University
+            western university
           </AnimatedLink>
-          's largest hackathon.
+          's flagship hackathon.
         </div>
         <div className="relative min-h-[130px] md:min-h-[170px] flex-1 overflow-hidden rounded-lg border border-[color:var(--hero-border)] shadow-[0_12px_26px_rgba(0,0,0,0.22)]">
           <motion.img
