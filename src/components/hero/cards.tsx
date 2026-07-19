@@ -14,8 +14,7 @@ import ProjectsCard from "./ProjectsCard";
 import type { Card } from "./FlipCard";
 import { heroRgba } from "./heroPalette";
 
-export const SHARED_GRADIENT =
-  "var(--surface-panel)";
+export const SHARED_GRADIENT = "var(--surface-panel)";
 
 const pillLinkClass =
   "relative inline-flex items-center rounded-full border border-[color:var(--hero-border)] bg-[color:var(--hero-surface)] px-1.5 py-0.5 text-[8px] md:text-xs md:px-2.5 md:py-1 text-[color:var(--hero-accent)] overflow-hidden transition-colors hover:text-[color:var(--hero-light)]";
@@ -87,13 +86,10 @@ export const cards: Card[] = [
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
         <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
+          <p>currently funemployment maxxing</p>
           <p>
-            I&apos;m currently building frontend & mobile with React and React
-            Native at{" "}
-            <AnimatedLink href="https://geneial.com">geneial</AnimatedLink>.
-          </p>
-          <p>
-            I&apos;ve also built fullstack web apps for{" "}
+            I&apos;ve previously built fullstack mobile & web apps for{" "}
+            <AnimatedLink href="https://geneial.com">geneial</AnimatedLink>,{" "}
             <AnimatedLink href="https://mora.do">mora.do</AnimatedLink> and{" "}
             <AnimatedLink href="https://aramid.finance">aramid</AnimatedLink>.
           </p>

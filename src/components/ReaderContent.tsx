@@ -20,9 +20,8 @@ export default function ReaderContent() {
         <section>
           <h2>About Me</h2>
           <p>
-            I&apos;m currently building frontend and mobile applications with
-            React and React Native at <a href="https://geneial.com">Geneial</a>.
-            Before that, I built fullstack web apps for{" "}
+            I've built fullstack web & mobile apps for{" "}
+            <a href="https://geneial.com">Geneial</a>,{" "}
             <a href="https://mora.do">mora.do</a> and{" "}
             <a href="https://aramid.finance">Aramid</a>.
           </p>
