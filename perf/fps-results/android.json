@@ -1,0 +1,46 @@
+[
+  {
+    "run": "Pixel_9_Pro_XL emulator, stock (4 cores, host GPU, windowed)",
+    "avd": "Pixel_9_Pro_XL",
+    "model": "sdk_gphone64_arm64",
+    "cores": "4",
+    "viewport": "448x867",
+    "frames": 155,
+    "fps": 23.71989104153277,
+    "meanMs": 42.158709677419345,
+    "p95Ms": 116.66499999999996,
+    "worstMs": 367.9349999999986,
+    "over20msPct": 67.0967741935484,
+    "over34msPct": 31.61290322580645,
+    "updatesPerSec": {
+      "work-laptop": 10.25,
+      "projects-chessboard": 20,
+      "hobbies-zdog-reference-camera": 20,
+      "hackathons-rocket": 20,
+      "hello-dots": 0
+    },
+    "variant": { "lidPhase": "open", "embers": 0 }
+  },
+  {
+    "run": "Pixel_9_Pro_XL emulator, gimped (-cores 2 -gpu swiftshader_indirect)",
+    "avd": "Pixel_9_Pro_XL",
+    "model": "sdk_gphone64_arm64",
+    "cores": "2",
+    "viewport": "448x888",
+    "frames": 59,
+    "fps": 6.518011807544104,
+    "meanMs": 153.4210169491525,
+    "p95Ms": 266.6700000000001,
+    "worstMs": 350,
+    "over20msPct": 100,
+    "over34msPct": 100,
+    "updatesPerSec": {
+      "work-laptop": 3.7,
+      "projects-chessboard": 5.9,
+      "hobbies-zdog-reference-camera": 5.9,
+      "hackathons-rocket": 5.9,
+      "hello-dots": 0
+    },
+    "variant": { "lidPhase": "open", "embers": 0 }
+  }
+]

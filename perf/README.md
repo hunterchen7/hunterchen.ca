@@ -54,6 +54,77 @@ npm run perf:lighthouse -- --desktop
 - **Production build only.** The dev server has no minification/splitting; its numbers are
   meaningless for perf.
 
+### 3. `fps-bench.mjs` — model animation under CPU throttling
+
+Validates the "always 60fps, simplify effects instead of dropping frame rate" policy. Loads the
+production build in headless Chrome (playwright resolved from this repo or `../canvas`), applies
+DevTools CPU throttling (`Emulation.setCPUThrottlingRate` — 4x is Lighthouse's mobile default,
+6–10x approximates genuinely slow phones), and measures achieved rAF fps, mean/p95/worst frame
+times, jank percentages, and per-model DOM update rates at desktop and mobile viewports (mobile
+widths load the simplified model variants).
+
+```bash
+node perf/fps-bench.mjs                                  # 1,4,6,10x @ desktop+mobile
+node perf/fps-bench.mjs --throttle 1,6 --viewports mobile --seconds 6
+node perf/fps-bench.mjs --json perf/fps-results/local.json
+```
+
+Reference results (M-series Mac, 120Hz, headless software raster — relative numbers are the point):
+
+| Throttle | Desktop (full detail) | Mobile (simplified) |
+| --- | --- | --- |
+| 1x | 120 rAF / models 60/s | 120 / 60 |
+| 4x | 112 / 60 | 120 / 60 |
+| 6x | 54 fps, 33% janky | **108 / 59 — still smooth** |
+| 10x | 27 fps | 44 fps |
+
+The simplified variants hold 60 updates/s at 6x throttle where full detail collapses — the
+"simplify, don't cap" trade is measured, not assumed.
+
+### 4. `fps-bench-android.mjs` — the same probe inside an Android emulator
+
+Boots an AVD headless, bridges its Chrome to the host preview server (`adb reverse`), attaches
+over CDP, and runs the same collector. The device viewport is a phone, so this measures the real
+simplified-variant path end to end. A deliberately low-spec AVD (`gimped_low`: 2 cores, 1.5 GB
+RAM, SwiftShader software GPU) simulates a bad phone.
+
+```bash
+npm run preview &                                        # host serves dist on 4173
+node perf/fps-bench-android.mjs --avd Pixel_9_Pro_XL
+# "bad phone": gimp a known-good AVD at launch instead of making a low-spec AVD
+# (a fresh AVD re-runs Chrome first-run + Play setup every boot and gets
+# frozen/killed before DevTools appears)
+node perf/fps-bench-android.mjs --avd Pixel_9_Pro_XL --cores 2 --gpu swiftshader_indirect
+```
+
+Reference results (`perf/fps-results/android.json`; simplified variants active in both):
+
+| Run | rAF fps | model updates/s |
+| --- | --- | --- |
+| Pixel 9 Pro XL emulator, stock (4 cores, host GPU) | 23.7 | ~20 |
+| Same, gimped (2 cores, software GPU) | 6.5 | ~6 |
+
+Read these as a *degradation shape*, not device predictions — the emulator's translated
+CPU/graphics stack is far slower than real hardware. The takeaway matches the throttle matrix:
+with no fps caps, the models track whatever the device can do (60 → 44 → 20 → 6) instead of
+enforcing a fixed choppy cadence, and nothing breaks at the bottom.
+
+Requires the Android SDK at `~/Library/Android/sdk` and a Play-Store system image (Chrome must be
+on the device). Chrome's first-run screen is dismissed automatically via input taps when present.
+
+Hard-won operational notes:
+- **The emulator must run windowed.** With `-no-window`, Chrome's compositor treats the surface as
+  occluded and produces no frames at all — rAF fires ~once per 10 s while `document.visibilityState`
+  still reads `"visible"`. Neither host GPU nor swiftshader helps. The script boots windowed by
+  default (`--headless` exists but measures nothing).
+- The script wakes the screen / dismisses the keyguard after boot and hard-fails rather than
+  reporting garbage if the page never reaches `visible`.
+- Emulated numbers are a *bad-phone proxy*, not real-device numbers: the translated graphics stack
+  is far slower than actual Pixel hardware.
+- Don't starve the AVD below 2 GB RAM: Android + Play services thrash and Chrome gets OOM-killed
+  before its DevTools socket ever opens. Gimp CPU (`hw.cpu.ncore`) and GPU
+  (`hw.gpu.mode=swiftshader_indirect`) instead.
+
 ## Planned: artificial constructions (isolated component harnesses)
 
 Next addition: standalone routes/entries that mount a single subsystem (e.g. just the chessboard,
