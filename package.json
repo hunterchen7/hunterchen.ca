@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "vite --port 7700",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "perf": "node perf/analyze.mjs",
+    "perf:baseline": "node perf/analyze.mjs --write-baseline",
+    "perf:lighthouse": "node perf/lighthouse.mjs"
   },
   "dependencies": {
     "@hunterchen/canvas": "^0.12.1",

@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "html": {
+    "raw": 1316,
+    "gzip": 579,
+    "brotli": 407
+  },
+  "initialJs": {
+    "raw": 985765,
+    "gzip": 288867,
+    "brotli": 237562
+  },
+  "asyncJs": {
+    "raw": 673350,
+    "gzip": 201557,
+    "brotli": 171279,
+    "count": 8
+  },
+  "css": {
+    "raw": 53343,
+    "gzip": 10731,
+    "brotli": 9209
+  },
+  "totalJs": {
+    "raw": 1659115,
+    "gzip": 490424,
+    "chunkCount": 9
+  },
+  "criticalPathBrotli": 247178,
+  "preloadMedia": [
+    {
+      "name": "hero/rocks.webp",
+      "raw": 135964
+    },
+    {
+      "name": "hero/team.webp",
+      "raw": 121626
+    }
+  ],
+  "chunks": [
+    {
+      "name": "index-fMM9KgHL.js",
+      "raw": 985765,
+      "gzip": 288867,
+      "brotli": 237562,
+      "initial": true
+    },
+    {
+      "name": "worker-BABBt6h3.js",
+      "raw": 414837,
+      "gzip": 115152,
+      "brotli": 95525,
+      "initial": false
+    },
+    {
+      "name": "DeferredCanvasSections-CQmWJ7yl.js",
+      "raw": 209767,
+      "gzip": 68026,
+      "brotli": 59260,
+      "initial": false
+    },
+    {
+      "name": "index-DsqPkceA.css",
+      "raw": 53343,
+      "gzip": 10731,
+      "brotli": 9209,
+      "initial": false
+    },
+    {
+      "name": "ChessboardWatermark-X8bPc0RB.js",
+      "raw": 21880,
+      "gzip": 7004,
+      "brotli": 6245,
+      "initial": false
+    },
+    {
+      "name": "LaptopWatermark-BPkgiSXD.js",
+      "raw": 13028,
+      "gzip": 5611,
+      "brotli": 5008,
+      "initial": false
+    },
+    {
+      "name": "ZdogReferenceCameraWatermark-CUjuaq1d.js",
+      "raw": 7808,
+      "gzip": 3064,
+      "brotli": 2788,
+      "initial": false
+    },
+    {
+      "name": "RocketWatermark-DLaiIYJn.js",
+      "raw": 5485,
+      "gzip": 2329,
+      "brotli": 2126,
+      "initial": false
+    },
+    {
+      "name": "modelMotion-CFvHPwiu.js",
+      "raw": 544,
+      "gzip": 350,
+      "brotli": 322,
+      "initial": false
+    },
+    {
+      "name": "onnx-runtime-l0sNRNKZ.js",
+      "raw": 1,
+      "gzip": 21,
+      "brotli": 5,
+      "initial": false
+    }
+  ]
+}
