@@ -73,6 +73,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
   const [charCount, setCharCount] = useState(0);
   const [showContent, setShowContent] = useState(IS_REVISIT);
   const [showArtwork, setShowArtwork] = useState(false);
+  const [waveAnimationReady, setWaveAnimationReady] = useState(false);
   const [modelAnimationsReady, setModelAnimationsReady] = useState(false);
   const [isHeroVisible, setIsHeroVisible] = useState(true);
   const [isDocumentVisible, setIsDocumentVisible] = useState(
@@ -156,6 +157,19 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     const timer = setTimeout(() => setShowContent(true), POST_TYPING_DELAY_MS);
     return () => clearTimeout(timer);
   }, [typingDone]);
+
+  useEffect(() => {
+    if (!showContent) {
+      setWaveAnimationReady(false);
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => setWaveAnimationReady(true),
+      CARDS_FINISH * 1_000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [showContent]);
 
   // Mark intro as seen for future visits
   useEffect(() => {
@@ -290,7 +304,11 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   {!typingDone && <span className="animate-pulse">|</span>}
                   {waveTyped ? (
                     <span
-                      className="inline-block ml-1 animate-wave"
+                      className={
+                        waveAnimationReady
+                          ? "inline-block ml-1 animate-wave"
+                          : "inline-block ml-1"
+                      }
                       style={{
                         WebkitTextFillColor: "initial",
                         animationDelay: "-200ms",
