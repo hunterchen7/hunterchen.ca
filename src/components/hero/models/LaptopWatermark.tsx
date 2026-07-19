@@ -64,11 +64,11 @@ const CAMERA_DISTANCE = 6.2;
 const PROJECTION_SCALE = 27.5;
 const MODEL_CENTER_Y = 0.82;
 const FRONT_ANGLE_DEGREES = 0;
-const RECORDED_DURATION_MS = 9_051;
-const RECORDED_TYPING_END_MS = 7_377.5;
-const RECORDED_SELECT_ALL_MS = 8_666.6;
-const RECORDED_CLEAR_MS = 8_983.8;
-const RECORDED_WPM = 82.2;
+const RECORDED_DURATION_MS = 8_352.9;
+const RECORDED_TYPING_END_MS = 6_737.3;
+const RECORDED_SELECT_ALL_MS = 7_721.9;
+const RECORDED_CLEAR_MS = 8_297.3;
+const RECORDED_WPM = 115.8;
 const CLOSED_HOLD_MS = 0;
 const LID_OPEN_MS = 1_050;
 const OPEN_SETTLE_MS = 420;
@@ -79,90 +79,89 @@ const CLOSED_LID_ANGLE_DEGREES = -90;
 const OPEN_LID_ANGLE_DEGREES = 12;
 const MIN_KEY_VISUAL_HOLD_MS = 90;
 const INTRO_LINES = [
-  "hey, i'm hunter.",
-  "i build polished,",
-  "playful things",
-  "for the web.",
+  "hi claude",
+  "pls make app to make",
+  "100 billion dollar",
+  "make no mistake",
 ] as const;
 const COMMAND_KEY_ID = "key-4-3";
 const DELETE_KEY_ID = "key-0-13";
 const ENTER_KEY_ID = "key-2-12";
 const SPACE_KEY_ID = "key-4-4";
 
-// Hunter's recorded 82.2 WPM take. Each tuple preserves the physical key,
+// Hunter's recorded 115.8 WPM take. Each tuple preserves the physical key,
 // keydown, keyup, input commit, and (where needed) editing behavior in ms.
-const RECORDED_KEYSTROKES = [
-  ["KeyH", 0, 66.3, 0.6],
-  ["KeyE", 83.1, 151, 83.4],
-  ["KeyY", 166.6, 236.1, 167],
-  ["Comma", 353.3, 458.9, 354.3],
-  ["Space", 441.7, 520.5, 442.2],
-  ["KeyI", 553, 599.7, 553.7],
-  ["Quote", 669.7, 796.4, 670.2],
-  ["KeyM", 764.8, 824.6, 765.6],
-  ["Space", 808.2, 886, 808.5],
-  ["KeyH", 942.5, 1_008.1, 943],
-  ["KeyU", 1_041.8, 1_138.9, 1_042.6],
-  ["KeyN", 1_110.8, 1_187.3, 1_111.3],
-  ["KeyT", 1_168.9, 1_216.3, 1_169.3],
-  ["KeyE", 1_274.8, 1_341.6, 1_275.3],
-  ["KeyR", 1_325.6, 1_391.4, 1_326.1],
-  ["Period", 1_358.5, 1_443.2, 1_359.1],
-  ["Enter", 1_558.3, 1_607.9, 1_558.8],
-  ["KeyI", 1_787.6, 1_900.9, 1_788.1],
-  ["Space", 1_884.4, 1_975.3, 1_884.7],
-  ["KeyB", 2_177.4, 2_235.8, 2_177.9],
-  ["KeyU", 2_252.7, 2_328.8, 2_253],
-  ["KeyI", 2_311, 2_374.5, 2_312],
-  ["KeyL", 2_416.4, 2_500.1, 2_416.7],
-  ["KeyD", 2_525.3, 2_566.2, 2_525.9],
-  ["Space", 2_550.9, 2_612.4, 2_551.6],
-  ["KeyP", 2_630.8, 2_692.7, 2_631.2],
-  ["KeyO", 2_783.7, 2_826.5, 2_784.2],
-  ["KeyL", 2_918.2, 2_983.6, 2_918.6],
-  ["KeyS", 3_054.1, 3_124.7, 3_054.4],
-  ["KeyI", 3_109.7, 3_175.8, 3_110.1],
-  ["KeyH", 3_213.7, 3_291.3, 3_214.1],
-  ["KeyE", 3_416.4, 3_472.3, 3_416.9],
-  ["KeyD", 3_579.9, 3_624.7, 3_580.7],
-  ["Comma", 3_683.6, 3_759.9, 3_683.9],
-  ["Enter", 3_908.2, 3_966.5, 3_908.7],
-  ["KeyP", 4_112.3, 4_171, 4_113],
-  ["KeyL", 4_259, 4_362.3, 4_260.1],
-  ["KeyA", 4_379, 4_447, 4_379.4],
-  ["KeyY", 4_467.8, 4_534.8, 4_468.4],
-  ["KeyF", 4_568.9, 4_641.5, 4_569.4],
-  ["KeyU", 4_654.2, 4_723.2, 4_655],
-  ["KeyL", 4_798.1, 4_874.7, 4_798.6],
-  ["Space", 4_861.7, 4_941.5, 4_862.3],
-  ["KeyT", 4_933.4, 5_002.7, 4_933.9],
-  ["KeyH", 4_994.1, 5_037.8, 4_994.6],
-  ["KeyI", 5_060.4, 5_183, 5_061.1],
-  ["KeyN", 5_142.9, 5_220.5, 5_143.5],
-  ["KeyG", 5_167.1, 5_220.5, 5_167.7],
-  ["KeyS", 5_297.7, 5_373.7, 5_298.3],
-  ["Space", 5_729.6, 5_809.9, 5_730],
-  ["Backspace", 6_047.2, 6_102.9, 6_048.1, "backspace"],
-  ["Enter", 6_254.1, 6_314.4, 6_254.6],
-  ["KeyF", 6_351.7, 6_413, 6_352.3],
-  ["KeyO", 6_456.5, 6_504.9, 6_457],
-  ["KeyR", 6_533.3, 6_571.8, 6_534],
-  ["Space", 6_591.1, 6_662, 6_592],
-  ["KeyT", 6_659.8, 6_717.8, 6_660.6],
-  ["KeyH", 6_743.7, 6_788.3, 6_744.2],
-  ["KeyE", 6_787.7, 6_849.6, 6_788.1],
-  ["Space", 6_837.5, 6_919.4, 6_838.1],
-  ["KeyW", 6_904.8, 6_983.2, 6_905.4],
-  ["KeyE", 6_964, 7_012.1, 6_964.4],
-  ["KeyB", 7_083, 7_152.2, 7_083.4],
-  ["Period", 7_258.1, 7_332.8, 7_258.4],
-  ["Space", 7_316.4, 7_377.5, 7_316.7],
-  ["MetaLeft", 7_724.5, 7_841.2],
-  ["KeyS", 7_766.4, 7_832.9],
-  ["MetaLeft", 8_562.1, 8_784.4],
-  ["KeyA", 8_666.6, 8_767.4],
-  ["Backspace", 8_983.3, 9_051, 8_983.8, "clear"],
-] as const satisfies readonly RecordedKeystroke[];
+const RECORDED_KEYSTROKES: readonly RecordedKeystroke[] = [
+  ["KeyH", 0, 116.3, 0.6],
+  ["KeyI", 68.4, 191.3, 68.9],
+  ["Space", 166.4, 259.2, 166.8],
+  ["KeyC", 274.8, 326.2, 275.1],
+  ["KeyL", 368.7, 435.5, 369.3],
+  ["KeyA", 419.2, 493.2, 419.8],
+  ["KeyU", 551.3, 610.9, 551.7],
+  ["KeyD", 624.8, 676.5, 625.2],
+  ["KeyE", 771.2, 825.8, 772.2],
+  ["Enter", 1_189.1, 1_269.2, 1_190.2],
+  ["KeyP", 1_493.2, 1_578.1, 1_493.7],
+  ["KeyL", 1_656, 1_752.1, 1_656.9],
+  ["KeyS", 1_784.8, 1_843.3, 1_785.2],
+  ["Space", 1_871.9, 1_936.2, 1_873],
+  ["KeyM", 2_012, 2_099.6, 2_013.2],
+  ["KeyA", 2_084.9, 2_159.8, 2_085.7],
+  ["KeyK", 2_174.8, 2_236.3, 2_175.2],
+  ["KeyE", 2_259.9, 2_320.9, 2_260.7],
+  ["Space", 2_301.5, 2_393.4, 2_302.5],
+  ["KeyA", 2_399.7, 2_485.1, 2_400.1],
+  ["KeyP", 2_517.9, 2_576.2, 2_518.5],
+  ["KeyP", 2_635.1, 2_741.3, 2_635.8],
+  ["Space", 2_727.3, 2_801.4, 2_728],
+  ["KeyT", 2_835, 2_917.8, 2_836],
+  ["KeyO", 2_893.8, 2_961.7, 2_894.3],
+  ["Space", 2_933.1, 3_010.1, 2_933.5],
+  ["KeyM", 3_002, 3_082.9, 3_002.5],
+  ["KeyA", 3_068.5, 3_134.6, 3_069],
+  ["KeyK", 3_152.1, 3_228.2, 3_153],
+  ["KeyE", 3_227.3, 3_288.1, 3_228],
+  ["Enter", 3_334.8, 3_400.7, 3_335.3],
+  ["Digit1", 3_472.9, 3_526.9, 3_474.3],
+  ["Digit0", 3_553, 3_610, 3_553.6],
+  ["Digit0", 3_661.1, 3_743.1, 3_661.8],
+  ["Space", 3_749.7, 3_817.9, 3_750.2],
+  ["KeyB", 3_833.1, 3_901.4, 3_833.6],
+  ["KeyI", 3_922.9, 3_976.4, 3_923.4],
+  ["KeyL", 4_069.9, 4_143.3, 4_070.4],
+  ["KeyL", 4_193.3, 4_243, 4_193.7],
+  ["KeyI", 4_310.5, 4_441.3, 4_311],
+  ["KeyO", 4_385.1, 4_484.8, 4_385.9],
+  ["KeyN", 4_427, 4_529.6, 4_427.6],
+  ["Space", 4_491.4, 4_561.7, 4_491.9],
+  ["KeyD", 4_543.4, 4_605.9, 4_543.8],
+  ["KeyO", 4_643.4, 4_713.1, 4_644.1],
+  ["KeyL", 4_803.8, 4_985, 4_804.2],
+  ["KeyL", 5_028, 5_136.3, 5_029],
+  ["KeyA", 5_201.9, 5_301.4, 5_202.4],
+  ["KeyR", 5_255.9, 5_334.3, 5_256.9],
+  ["Enter", 5_376, 5_436.9, 5_376.7],
+  ["KeyM", 5_596.9, 5_653.1, 5_597.5],
+  ["KeyA", 5_693.4, 5_751.7, 5_693.9],
+  ["KeyK", 5_785.8, 5_830.1, 5_786.7],
+  ["KeyE", 5_845.8, 5_919.1, 5_846.6],
+  ["Space", 5_911.3, 5_988.6, 5_911.9],
+  ["KeyN", 5_968, 6_072.7, 5_968.6],
+  ["KeyO", 6_045, 6_143.1, 6_045.9],
+  ["Space", 6_118.7, 6_201.5, 6_119.3],
+  ["KeyM", 6_263.9, 6_380, 6_264.8],
+  ["KeyI", 6_327.2, 6_419.5, 6_327.9],
+  ["KeyS", 6_433.1, 6_457.9, 6_433.6],
+  ["KeyT", 6_510, 6_582.9, 6_511.2],
+  ["KeyA", 6_569.8, 6_627.1, 6_570.6],
+  ["KeyK", 6_641.4, 6_709.8, 6_641.9],
+  ["KeyE", 6_736.3, 6_796, 6_737.3],
+  ["MetaLeft", 7_035.3, 7_310.7],
+  ["MetaLeft", 7_543, 7_829.8],
+  ["KeyA", 7_721.9, 7_721.9],
+  ["Backspace", 8_296.7, 8_352.9, 8_297.3, "clear"],
+];
 
 const LIGHT_DIRECTION = normalize({ x: -0.45, y: 0.7, z: 0.72 });
 
@@ -334,6 +333,12 @@ function keyIdForCode(code: string): string {
   if (code.startsWith("Key")) {
     return keyIdForCharacter(code.slice(3).toLowerCase());
   }
+  if (code.startsWith("Digit")) {
+    // Number row (row 0) laid out `~ 1 2 3 4 5 6 7 8 9 0 - =`, so Digit1..9
+    // map to columns 1..9 and Digit0 to column 10.
+    const digit = Number(code.slice(5));
+    return `key-0-${digit === 0 ? 10 : digit}`;
+  }
 
   switch (code) {
     case "Backspace":
@@ -357,6 +362,7 @@ function keyIdForCode(code: string): string {
 
 function insertedCharacterForCode(code: string): string | null {
   if (code.startsWith("Key")) return code.slice(3).toLowerCase();
+  if (code.startsWith("Digit")) return code.slice(5);
 
   switch (code) {
     case "Comma":
