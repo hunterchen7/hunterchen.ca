@@ -128,6 +128,15 @@ export default function FlipCard({
     ? `radial-gradient(600px circle at calc(var(--hero-glow-x, 0px) - ${bounds.offsetLeft}px) calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px), ${heroRgba("light", 0.022)}, transparent 40%)`
     : `radial-gradient(600px circle at 50% 50%, ${heroRgba("light", 0.022)}, transparent 40%)`;
 
+  const localGlowX = bounds
+    ? `calc(var(--hero-glow-x, 0px) - ${bounds.offsetLeft}px)`
+    : "50%";
+  const localGlowY = bounds
+    ? `calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px)`
+    : "50%";
+  const activeRadialGlow = `radial-gradient(230px circle at ${localGlowX} ${localGlowY}, ${heroRgba("accent", 0.09)}, transparent 68%)`;
+  const activeBorderMask = `radial-gradient(240px circle at ${localGlowX} ${localGlowY}, black 18%, transparent 72%)`;
+
   const frontAnchorClass = {
     center:
       "absolute inset-0 flex items-center justify-center text-center px-8",
@@ -141,6 +150,15 @@ export default function FlipCard({
       "absolute bottom-5 right-5 md:bottom-6 md:right-6 text-right max-w-[70%]",
     "top-center":
       "absolute top-5 left-1/2 -translate-x-1/2 md:top-6 text-center max-w-[80%]",
+  }[frontAnchor];
+
+  const frontLabelOrigin = {
+    center: "center",
+    "top-left": "top left",
+    "top-right": "top right",
+    "bottom-left": "bottom left",
+    "bottom-right": "bottom right",
+    "top-center": "top center",
   }[frontAnchor];
 
   const backContentClass =
@@ -162,21 +180,52 @@ export default function FlipCard({
     </div>
   );
 
-  const glowOverlay = (
+  const renderBorderOverlays = () => (
+    <>
+      <div
+        className="hero-card-active-border pointer-events-none absolute inset-0 z-[62] rounded-[inherit]"
+        style={{
+          mask: activeBorderMask,
+          WebkitMask: activeBorderMask,
+          boxShadow: `inset 0 0 0 1.5px ${heroRgba("accent", 0.72)}, inset 0 0 20px ${heroRgba("accent", 0.045)}`,
+        }}
+      />
+      <div
+        className="hero-card-focus-border pointer-events-none absolute inset-0 z-[63] rounded-[inherit]"
+        style={{
+          boxShadow: `inset 0 0 0 1.5px ${heroRgba("accent", 0.56)}`,
+        }}
+      />
+    </>
+  );
+
+  const renderActiveGlow = () => (
     <div
-      className="pointer-events-none absolute inset-0 z-[60] overflow-hidden rounded-2xl transition-opacity duration-500"
-      style={{
-        opacity: "var(--hero-glow-opacity, 0)",
-        background: radialGlow,
-      }}
+      className="hero-card-active-glow pointer-events-none absolute inset-0 z-[61] overflow-hidden rounded-[inherit]"
+      style={{ background: activeRadialGlow }}
     />
+  );
+
+  const glowOverlay = (
+    <>
+      <div
+        className="pointer-events-none absolute inset-0 z-[60] overflow-hidden rounded-2xl transition-opacity duration-500"
+        style={{
+          opacity: "var(--hero-glow-opacity, 0)",
+          background: radialGlow,
+        }}
+      />
+      {renderActiveGlow()}
+      {renderBorderOverlays()}
+    </>
   );
 
   return (
     <div
       ref={cardRef}
-      className="site-panel-depth relative h-full w-full cursor-pointer rounded-2xl"
+      className="site-panel-depth hero-flip-card relative h-full w-full cursor-pointer rounded-2xl"
       data-flip-card={card.id}
+      data-card-state={isAnimating ? "animating" : flipped ? "back" : "front"}
       style={{
         perspective: 1200,
         zIndex: flipped ? 50 : 1,
@@ -265,10 +314,12 @@ export default function FlipCard({
             </div>
           ) : null}
           <h3
-            className={`${frontAnchorClass} text-sm md:text-base text-[color:var(--hero-accent)] leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
+            className={`${frontAnchorClass} hero-card-label text-sm md:text-base text-[color:var(--hero-accent)] leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
+            style={{ transformOrigin: frontLabelOrigin }}
           >
             {card.front}
           </h3>
+          {glowOverlay}
         </div>
 
         {/* Back */}
@@ -289,9 +340,10 @@ export default function FlipCard({
       {settled && (
         <div className={backFaceClass} style={sharedBg}>
           {backContent}
+          {renderActiveGlow()}
+          {renderBorderOverlays()}
         </div>
       )}
-      {glowOverlay}
     </div>
   );
 }

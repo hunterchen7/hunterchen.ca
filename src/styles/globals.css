@@ -71,6 +71,52 @@ html {
   transition-property: box-shadow, filter, transform;
 }
 
+.hero-card-active-glow,
+.hero-card-active-border,
+.hero-card-focus-border {
+  opacity: 0;
+  transition: opacity 130ms ease-out;
+}
+
+.hero-flip-card {
+  transition:
+    box-shadow 170ms ease-out,
+    scale 280ms cubic-bezier(0.16, 1.2, 0.3, 1);
+}
+
+.hero-card-label {
+  transition:
+    scale 280ms cubic-bezier(0.16, 1.35, 0.3, 1),
+    color 95ms linear,
+    filter 120ms ease-out;
+}
+
+.hero-flip-card:focus-visible {
+  outline: none;
+}
+
+.hero-flip-card[data-card-state="front"]:focus-visible {
+  scale: 1.01;
+  box-shadow:
+    0 21px 48px rgba(4, 2, 8, 0.48),
+    0 0 38px rgba(112, 65, 151, 0.105);
+}
+
+.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-active-glow,
+.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-active-border,
+.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-focus-border,
+.hero-flip-card[data-card-state="back"]:focus-visible .hero-card-active-glow,
+.hero-flip-card[data-card-state="back"]:focus-visible .hero-card-active-border,
+.hero-flip-card[data-card-state="back"]:focus-visible .hero-card-focus-border {
+  opacity: 1;
+}
+
+.hero-flip-card[data-card-state="front"]:focus-visible .hero-card-label {
+  scale: 1.05;
+  color: var(--hero-light);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--hero-accent) 55%, transparent));
+}
+
 .site-window-surface {
   background: var(--surface-window);
   box-shadow: var(--shadow-panel-raised);
@@ -92,6 +138,34 @@ html {
   .site-panel-interactive:hover {
     box-shadow: var(--shadow-panel-raised);
   }
+
+  .hero-flip-card[data-card-state="front"]:hover .hero-card-active-glow,
+  .hero-flip-card[data-card-state="front"]:hover .hero-card-active-border,
+  .hero-flip-card[data-card-state="back"]:hover .hero-card-active-glow,
+  .hero-flip-card[data-card-state="back"]:hover .hero-card-active-border {
+    opacity: 1;
+  }
+
+  .hero-flip-card[data-card-state="front"]:hover {
+    scale: 1.01;
+    box-shadow:
+      0 21px 48px rgba(4, 2, 8, 0.48),
+      0 0 38px rgba(112, 65, 151, 0.105);
+  }
+
+  .hero-flip-card[data-card-state="front"]:hover .hero-card-label {
+    scale: 1.05;
+    color: var(--hero-light);
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--hero-accent) 55%, transparent));
+  }
+}
+
+/* The affordance lives on the front face. Snap the outer shadow back to its
+   resting state while either face is rotating so no flat halo lingers behind. */
+.hero-flip-card[data-card-state="animating"] {
+  box-shadow: var(--shadow-panel);
+  scale: 1;
+  transition: scale 280ms cubic-bezier(0.16, 1.2, 0.3, 1);
 }
 
 /* ============== Canvas Library Overrides ============== */
