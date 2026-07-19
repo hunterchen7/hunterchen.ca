@@ -243,8 +243,12 @@ function buildRocketFinFaces(roll: number): RocketFinFace[] {
   });
 }
 
-function useRocketRoll(frame: number | null): { fps: number; roll: number } {
-  const { fps, frameIntervalMs, prefersReducedMotion } =
+function useRocketRoll(frame: number | null): {
+  fps: number;
+  roll: number;
+  simplified: boolean;
+} {
+  const { fps, frameIntervalMs, prefersReducedMotion, simplified } =
     useModelTiming("rocket");
   const pinnedRoll = frame === null ? null : ROLL_START + frame * Math.PI * 2;
   const [roll, setRoll] = useState(pinnedRoll ?? ROLL_START);
@@ -281,12 +285,12 @@ function useRocketRoll(frame: number | null): { fps: number; roll: number } {
     return () => window.cancelAnimationFrame(animationFrame);
   }, [frameIntervalMs, pinnedRoll, prefersReducedMotion]);
 
-  return { fps, roll };
+  return { fps, roll, simplified };
 }
 
 function RocketWatermark() {
   const frame = readPinnedModelFrame();
-  const { fps, roll } = useRocketRoll(frame);
+  const { fps, roll, simplified } = useRocketRoll(frame);
   const { backFinFaces, frontFinFaces } = useMemo(() => {
     const faces = buildRocketFinFaces(roll);
     return {
@@ -325,9 +329,11 @@ function RocketWatermark() {
         </linearGradient>
       </defs>
       <g transform="rotate(8 57 56)">
+        {/* Simplified (mobile): no hover bob/shake — the JS roll is the only
+            body motion. Desktop keeps the CSS hover animation. */}
         <g
-          className="model-rocket-hover"
-          style={hoverStyle}
+          className={simplified ? undefined : "model-rocket-hover"}
+          style={simplified ? undefined : hoverStyle}
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -401,22 +407,28 @@ function RocketWatermark() {
             />
           </g>
 
-          <circle
-            className="model-rocket-ember-one"
-            cx="50"
-            cy="100"
-            fill={heroRgba("light", 0.72)}
-            r="1.2"
-            style={emberOneStyle}
-          />
-          <circle
-            className="model-rocket-ember-two"
-            cx="64"
-            cy="98"
-            fill={heroRgba("accent", 0.68)}
-            r="0.92"
-            style={emberTwoStyle}
-          />
+          {/* Simplified (mobile): no ember particles — the pulsing flame is the
+              only exhaust effect. */}
+          {!simplified && (
+            <>
+              <circle
+                className="model-rocket-ember-one"
+                cx="50"
+                cy="100"
+                fill={heroRgba("light", 0.72)}
+                r="1.2"
+                style={emberOneStyle}
+              />
+              <circle
+                className="model-rocket-ember-two"
+                cx="64"
+                cy="98"
+                fill={heroRgba("accent", 0.68)}
+                r="0.92"
+                style={emberTwoStyle}
+              />
+            </>
+          )}
         </g>
       </g>
     </ModelSvg>

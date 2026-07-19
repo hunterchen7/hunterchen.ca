@@ -170,7 +170,12 @@ export default function ProjectBentoCard({
               ref={videoRef}
               src={videoSrc}
               className={`w-full h-full ${videoFit === "contain" ? "object-contain" : "object-cover"}`}
-              preload="metadata"
+              // preload="none": don't fetch anything until the card scrolls into
+              // view — the IntersectionObserver above calls play(), which starts
+              // the load on demand. Avoids warming metadata for every off-screen
+              // featured video (incl. the 12 MB lc0 clip) on section mount. The
+              // video file itself is untouched, so it stays full-res on zoom.
+              preload="none"
               muted
               loop
               playsInline

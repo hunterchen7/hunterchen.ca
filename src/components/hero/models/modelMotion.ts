@@ -1,31 +1,30 @@
-import {
-  usePerformanceMode,
-  type PerformanceMode,
-} from "@hunterchen/canvas";
+import { usePerformanceMode } from "@hunterchen/canvas";
 import type { CSSProperties } from "react";
 import { useHeroModelAnimationReady } from "../modelAnimationContext";
 
 export type AnimatedModel = "camera" | "chess" | "laptop" | "rocket";
 
-const MODEL_FPS: Record<
-  PerformanceMode,
-  Record<AnimatedModel, number>
-> = {
-  high: { camera: 24, chess: 60, laptop: 60, rocket: 24 },
-  medium: { camera: 20, chess: 30, laptop: 20, rocket: 20 },
-  low: { camera: 15, chess: 20, laptop: 15, rocket: 15 },
-};
+// Every model targets 60fps on every device — frame rate is never the
+// performance lever. Weaker devices get simplified geometry/effects (see
+// `simplified` below), not a lower cadence. The rAF interval gate still
+// matters on >60Hz displays, where it stops the JS update loops from running
+// at 120/144fps and doubling their CPU cost.
+const TARGET_FPS = 60;
 
-export function useModelTiming(model: AnimatedModel) {
+export function useModelTiming(_model: AnimatedModel) {
   const { mode, prefersReducedMotion } = usePerformanceMode();
   const animationReady = useHeroModelAnimationReady();
-  const fps = MODEL_FPS[mode][model];
 
   return {
     animationReady,
-    fps,
-    frameIntervalMs: 1_000 / fps,
+    fps: TARGET_FPS,
+    frameIntervalMs: 1_000 / TARGET_FPS,
     prefersReducedMotion: prefersReducedMotion || !animationReady,
+    // On non-desktop devices the models drop decorative detail (fewer SVG
+    // nodes, no secondary effects) instead of dropping frame rate. Resolved
+    // before any geometry is built, so simplified variants are constructed
+    // directly rather than stripped after the fact.
+    simplified: mode !== "high",
   };
 }
 

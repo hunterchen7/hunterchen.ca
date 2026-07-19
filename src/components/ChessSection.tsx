@@ -193,7 +193,6 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     void hasModelCached(MODEL_URL).then((isCached) => {
       if (cancelled) return;
       setHasCachedModel(isCached);
-      if (isCached) startGame();
     });
 
     return () => {
@@ -543,7 +542,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 boxShadow: "0 0 20px rgba(192, 132, 252, 0.12)",
               }}
             />
-            {!gameStarted && hasCachedModel === false && (
+            {!gameStarted && hasCachedModel !== null && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-8 text-center">
                 <div className="flex flex-col items-center gap-1.5">
                   <button
@@ -553,9 +552,11 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                   >
                     play
                   </button>
-                  <p className="rounded-sm bg-[#1b1524]/30 px-2 py-0.5 font-mono text-[10px] leading-4 text-purple-100/70 backdrop-blur-[1px]">
-                    this will incur a one-time 27 MB download
-                  </p>
+                  {hasCachedModel === false && (
+                    <p className="rounded-sm bg-[#1b1524]/30 px-2 py-0.5 font-mono text-[10px] leading-4 text-purple-100/70 backdrop-blur-[1px]">
+                      this will incur a one-time 27 MB download
+                    </p>
+                  )}
                 </div>
               </div>
             )}

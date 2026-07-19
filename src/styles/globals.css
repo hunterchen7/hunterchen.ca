@@ -2,15 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted JetBrains Mono (latin, variable weight axis), replacing the
+   render-blocking Google Fonts <link>. Same-origin — no external DNS/TLS
+   handshake on load. font-display: swap preserves the system-mono → JBM
+   swap so text paints immediately. Caveat was dropped entirely: it was only
+   a dead CSS var (the "drag me" hint is baked into SVG paths, not the font). */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("/fonts/JetBrainsMono-Variable.woff2") format("woff2");
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 @layer base {
   :root {
-    /* Fonts (loaded via Google Fonts in index.html) */
+    /* Fonts: JetBrains Mono self-hosted (see @font-face above) */
     --font-mono: "JetBrains Mono", monospace;
-    --font-caveat: "Caveat", cursive;
 
     /* Shared canvas palette */
     --canvas-bg-deep: #0e0e10;

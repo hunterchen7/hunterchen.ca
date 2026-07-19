@@ -37,3 +37,6 @@ screen-recording.webm
 
 # ONNX Runtime WASM files (copied from node_modules for dev server)
 public/ort-wasm-*
+
+# TypeScript incremental build cache
+*.tsbuildinfo
