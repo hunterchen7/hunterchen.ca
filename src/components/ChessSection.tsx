@@ -3,6 +3,7 @@ import { AnimatePresence } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { Chess, type Square } from "chess.js";
 import { Lc0Engine } from "../chess/engine/workerInterface";
+import { hasModelCached } from "../chess/engine/modelCache";
 import { MODEL_URL } from "../chess/config";
 import { uciToChessJsMove } from "../chess/utils";
 import type { EngineState } from "../chess/types";
@@ -13,6 +14,7 @@ import Confetti from "./chess/Confetti";
 import CapturedPieceSticker from "./chess/CapturedPieceSticker";
 import { AnimatedLink } from "./AnimatedLink";
 import { playSoundForMove } from "./chess/sounds";
+import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 
 interface ChessSectionProps {
   offset: SectionCoordinates;
@@ -65,6 +67,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   const [engineState, setEngineState] =
     useState<EngineState>(INITIAL_ENGINE_STATE);
   const [gameStarted, setGameStarted] = useState(false);
+  const [hasCachedModel, setHasCachedModel] = useState<boolean | null>(null);
   const [playerColor, setPlayerColor] = useState<"w" | "b">("w");
   const engineColor = playerColor === "w" ? "b" : "w";
   const [lastMoveSquares, setLastMoveSquares] = useState<{
@@ -173,6 +176,22 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
     engine.init(MODEL_URL);
   }, []);
+
+  // Cached players can enter immediately; the opt-in gate is only needed
+  // before the one-time model download.
+  useEffect(() => {
+    let cancelled = false;
+
+    void hasModelCached(MODEL_URL).then((isCached) => {
+      if (cancelled) return;
+      setHasCachedModel(isCached);
+      if (isCached) startGame();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [startGame]);
 
   // Clean up the opt-in engine worker on unmount.
   useEffect(() => {
@@ -349,6 +368,12 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   };
 
   const gameStatus = getGameStatus();
+  const canPlayerMove =
+    gameStarted &&
+    engineState.isReady &&
+    !engineState.isThinking &&
+    !game.isGameOver() &&
+    game.turn() === playerColor;
   const playerWon = game.isCheckmate() && game.turn() !== playerColor;
   const [confettiKey, setConfettiKey] = useState(0);
   const showConfetti = confettiKey > 0;
@@ -371,6 +396,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = {
       backgroundColor: "rgba(192, 132, 252, 0.5)",
+      boxShadow: "inset 0 0 0 4px rgba(240, 171, 252, 0.78)",
     };
   }
   if (draggedSquare) {
@@ -407,7 +433,11 @@ export default function ChessSection({ offset }: ChessSectionProps) {
 
   return (
     <CanvasComponent offset={offset}>
-      <div className="relative h-full w-full flex items-center justify-center p-4">
+      <AccessibleCanvasSection
+        sectionId="chess"
+        label="Chess"
+        className="relative flex h-full w-full items-center justify-center p-4"
+      >
         <div className="flex flex-col items-center gap-4 w-full">
           <h2 className="text-xl font-thin text-fuchsia-200">
             play against my chess AI
@@ -439,13 +469,10 @@ export default function ChessSection({ offset }: ChessSectionProps) {
               onPieceDrop={(from, to) => makeMove(from, to)}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
-              isDraggable={
-                gameStarted &&
-                engineState.isReady &&
-                !engineState.isThinking &&
-                !game.isGameOver() &&
-                game.turn() === playerColor
-              }
+              isDraggable={canPlayerMove}
+              isInteractive={canPlayerMove}
+              selectedSquare={selectedSquare}
+              legalMoveSquares={legalMoveSquares}
               animationDuration={200}
               squareStyles={customSquareStyles}
               orientation={playerColor}
@@ -458,7 +485,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                 boxShadow: "0 0 20px rgba(192, 132, 252, 0.12)",
               }}
             />
-            {!gameStarted && (
+            {!gameStarted && hasCachedModel === false && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-8 text-center">
                 <div className="flex flex-col items-center gap-1.5">
                   <button
@@ -547,7 +574,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
             />
           ))}
         </AnimatePresence>
-      </div>
+      </AccessibleCanvasSection>
     </CanvasComponent>
   );
 }

@@ -135,6 +135,20 @@ function PieceOnSquare({
 
 const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+const PIECE_LABELS: Record<PieceChar, string> = {
+  K: "White king",
+  Q: "White queen",
+  R: "White rook",
+  B: "White bishop",
+  N: "White knight",
+  P: "White pawn",
+  k: "Black king",
+  q: "Black queen",
+  r: "Black rook",
+  b: "Black bishop",
+  n: "Black knight",
+  p: "Black pawn",
+};
 
 export default function ChessBoard({
   position: fen,
@@ -150,12 +164,16 @@ export default function ChessBoard({
   animationDuration = 200,
   orientation = "w",
   playerColor,
+  selectedSquare,
+  legalMoveSquares = [],
+  isInteractive = false,
 }: ChessBoardProps) {
   const flipped = orientation === "b";
   const { scale } = useCanvasContext();
   const boardRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
+  const [keyboardSquare, setKeyboardSquare] = useState<string | null>(null);
   const [anim, setAnim] = useState<AnimatingPiece | null>(null);
   const skipNextAnimRef = useRef(false);
   const onDragStartRef = useRef(onDragStart);
@@ -163,6 +181,85 @@ export default function ChessBoard({
 
   const currentPosition = useMemo(() => fenToPosition(fen), [fen]);
   const prevPositionRef = useRef<BoardPosition>(currentPosition);
+
+  const isPlayersPiece = useCallback(
+    (piece: PieceChar | undefined) =>
+      Boolean(
+        piece &&
+          playerColor &&
+          ((playerColor === "w" && piece >= "A" && piece <= "Z") ||
+            (playerColor === "b" && piece >= "a" && piece <= "z")),
+      ),
+    [playerColor],
+  );
+
+  const defaultKeyboardSquare = useMemo(
+    () =>
+      Object.keys(currentPosition).find((square) =>
+        isPlayersPiece(currentPosition[square]),
+      ) ?? "a1",
+    [currentPosition, isPlayersPiece],
+  );
+
+  // Re-enter the board on one of the player's pieces after each completed
+  // move, while preserving free arrow-key exploration during the turn.
+  useEffect(() => {
+    if (!isInteractive) return;
+    if (selectedSquare) {
+      setKeyboardSquare(selectedSquare);
+      return;
+    }
+
+    if (
+      !keyboardSquare ||
+      !isPlayersPiece(currentPosition[keyboardSquare])
+    ) {
+      setKeyboardSquare(defaultKeyboardSquare);
+    }
+    // keyboardSquare is intentionally omitted so arrowing onto an empty
+    // square does not immediately snap focus back to a piece.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentPosition,
+    defaultKeyboardSquare,
+    isInteractive,
+    isPlayersPiece,
+    selectedSquare,
+  ]);
+
+  const moveKeyboardFocus = useCallback(
+    (square: string, key: string) => {
+      const grid = squareToGrid(square);
+      let visualRow = flipped ? 7 - grid.row : grid.row;
+      let visualCol = flipped ? 7 - grid.col : grid.col;
+
+      if (key === "ArrowUp") visualRow -= 1;
+      if (key === "ArrowDown") visualRow += 1;
+      if (key === "ArrowLeft") visualCol -= 1;
+      if (key === "ArrowRight") visualCol += 1;
+
+      if (
+        visualRow < 0 ||
+        visualRow > 7 ||
+        visualCol < 0 ||
+        visualCol > 7
+      ) {
+        return;
+      }
+
+      const nextRow = flipped ? 7 - visualRow : visualRow;
+      const nextCol = flipped ? 7 - visualCol : visualCol;
+      const nextSquare = gridToSquare(nextRow, nextCol);
+      setKeyboardSquare(nextSquare);
+
+      window.requestAnimationFrame(() => {
+        boardRef.current
+          ?.querySelector<HTMLButtonElement>(`[data-square="${nextSquare}"]`)
+          ?.focus();
+      });
+    },
+    [flipped],
+  );
 
   // Detect piece movement and trigger animation
   useEffect(() => {
@@ -327,6 +424,8 @@ export default function ChessBoard({
           {/* Board */}
           <div
             ref={boardRef}
+            role="group"
+            aria-label={`Chess board, ${orientation === "w" ? "White" : "Black"} orientation`}
             style={{
               position: "relative",
               display: "grid",
@@ -348,18 +447,44 @@ export default function ChessBoard({
               const customStyle = squareStyles?.[square];
               const isDragSource = dragState?.fromSquare === square;
 
-              const isPlayerPiece = piece && isDraggable && playerColor && (
-                (playerColor === "w" && piece >= "A" && piece <= "Z") ||
-                (playerColor === "b" && piece >= "a" && piece <= "z")
-              );
+              const isPlayerPiece = isDraggable && isPlayersPiece(piece);
               const isHovered = isPlayerPiece && activeHover === square;
+              const isSelected = selectedSquare === square;
+              const isLegalMove = legalMoveSquares.includes(square);
+              const squareLabel = [
+                piece ? `${PIECE_LABELS[piece]} on ${square}` : `${square}, empty`,
+                isSelected ? "selected" : null,
+                isLegalMove ? "legal move" : null,
+              ]
+                .filter(Boolean)
+                .join(", ");
+              const isEmphasized = isHovered || isSelected;
 
               return (
                 <button
                   key={square}
                   data-square={square}
+                  data-selected={isSelected ? "true" : undefined}
+                  data-legal-move={isLegalMove ? "true" : undefined}
                   type="button"
+                  className="chess-square"
+                  aria-label={squareLabel}
+                  aria-pressed={isSelected}
+                  disabled={!isInteractive}
+                  tabIndex={
+                    isInteractive &&
+                    square === (keyboardSquare ?? defaultKeyboardSquare)
+                      ? 0
+                      : -1
+                  }
                   onClick={() => onSquareClick?.(square)}
+                  onFocus={() => setKeyboardSquare(square)}
+                  onKeyDown={(event) => {
+                    if (!event.key.startsWith("Arrow")) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    moveKeyboardFocus(square, event.key);
+                  }}
                   onPointerDown={(e) => handlePointerDown(e, square, piece)}
                   onPointerEnter={() => {
                     if (isPlayerPiece) setHoveredSquare(square);
@@ -376,7 +501,6 @@ export default function ChessBoard({
                     border: "none",
                     padding: 0,
                     margin: 0,
-                    outline: "none",
                     cursor: customStyle?.cursor ?? (piece && isDraggable ? "grab" : "default"),
                   }}
                 >
@@ -387,8 +511,8 @@ export default function ChessBoard({
                       zIndex: 1,
                       width: "100%",
                       height: "100%",
-                      transform: isHovered ? "scale(1.08)" : undefined,
-                      filter: isHovered ? "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35))" : undefined,
+                      transform: isEmphasized ? "scale(1.08)" : undefined,
+                      filter: isEmphasized ? "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35))" : undefined,
                       transition: "transform 0.15s ease, filter 0.15s ease",
                     }}>
                       <PieceOnSquare

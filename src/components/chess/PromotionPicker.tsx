@@ -12,6 +12,12 @@ interface PromotionPickerProps {
 }
 
 const PROMOTION_PIECES: PromotionPiece[] = ["q", "r", "b", "n"];
+const PROMOTION_LABELS: Record<PromotionPiece, string> = {
+  q: "queen",
+  r: "rook",
+  b: "bishop",
+  n: "knight",
+};
 
 export default function PromotionPicker({
   color,
@@ -55,6 +61,8 @@ export default function PromotionPicker({
             <button
               key={p}
               type="button"
+              className="chess-promotion-button"
+              aria-label={`Promote to ${PROMOTION_LABELS[p]}`}
               onClick={() => onSelect(p)}
               style={{
                 aspectRatio: "1 / 1",
