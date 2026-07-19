@@ -45,3 +45,4 @@ public/ort-wasm-*
 perf/PinchInjector.class
 perf/pinch-dex/
 perf/fps-results/flicker-frames/
+perf/fps-results/aa/
