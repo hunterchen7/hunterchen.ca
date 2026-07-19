@@ -4,88 +4,63 @@
 
 Hunter Chen's personal website built with the `@hunterchen/canvas` library.
 
-**Framework:** Next.js 15 (Pages Router)
-**Styling:** Tailwind CSS v3
-**Canvas Library:** `@hunterchen/canvas` (linked from parent repo)
+**Framework:** Vite + React 19, with `src/main.tsx` loading `src/App.tsx`
+**Styling:** Tailwind CSS v3 (shadcn-style HSL variable tokens in `tailwind.config.ts`)
+**Canvas Library:** `@hunterchen/canvas`
 
 ## Development Workflow
 
 **IMPORTANT:**
-- Assume `npm run dev` is always running
-- **DO NOT run `npm run build`** - use hot reload instead
-- For type checking, run `npx tsc --noEmit`
-- For linting, run `npm run lint`
+- Work with the existing `npm run dev` process and Vite hot reload
+- Use hot reload for development feedback
+- Run `npx tsc --noEmit` for type checking
+- Available npm scripts are `dev`, `build`, and `preview`
 
 ## Project Structure
 
 ```
 src/
-├── components/          # Section components
-│   ├── HeroSection.tsx
-│   ├── AboutSection.tsx
-│   ├── ProjectsSection.tsx
-│   ├── GallerySection.tsx
-│   ├── ContactSection.tsx
-│   └── Modal.tsx
+├── App.tsx              # Main app: Canvas setup, gradients, navbar/toolbar styles
+├── main.tsx             # Entry point
+├── components/
+│   ├── HeroSection.tsx      # + hero/ (cards.tsx, FlipCard, FunCard, ContactCard, ProjectsCard)
+│   ├── ProjectsSection.tsx  # + projects/ (DraggableWindow, ProjectBentoCard, projects.tsx)
+│   ├── ChessSection.tsx     # + chess/ (ChessBoard, Confetti, PromotionPicker, ...)
+│   ├── GallerySection.tsx   # polaroid gallery with film-reveal/holo effects
+│   ├── Modal.tsx, AnimatedLink.tsx, HintSvg.tsx, ReaderContent.tsx
 ├── constants/
 │   └── coordinates.ts   # Canvas layout & nav items
-├── pages/
-│   ├── _app.tsx         # App wrapper with PerformanceProvider
-│   └── index.tsx        # Main page with Canvas
 └── styles/
-    └── globals.css      # Tailwind + theme variables
+    └── globals.css      # Tailwind + theme variables + canvas overrides + effect keyframes
 ```
 
-## Theming
+Canvas sections rendered in `App.tsx`: Hero, Gallery, Chess, Projects.
 
-### Current Theme: Deep Violet
+## Theming — read this before restyling
 
-The theme is configured in two places:
+The theme spans several layers. A full re-theme covers all of these:
 
-1. **globals.css** - CSS variables for navbar/toolbar:
-   - `--canvas-offwhite` - navbar/toolbar background
-   - `--canvas-highlight` - hover states
-   - `--canvas-emphasis` - active accent color
-   - `--canvas-medium` - icon color
-   - `--canvas-light` - separator color
-   - `--canvas-heavy` - text color
+1. **`src/styles/globals.css`**
+   - shadcn-style HSL tokens (`--background`, `--foreground`, `--primary`, ...) inside `@layer base`
+   - `--canvas-*` overrides for the canvas library (navbar/toolbar colors), placed at the top
+     level so they take precedence over the library defaults
+   - scrollbar, scanline/VHS, film-reveal, and holo effect styles with hardcoded rgba colors
+2. **`src/App.tsx`** — `CANVAS_GRADIENT` (main background radial), `DOT_COLOR` + `dotOpacity`,
+   and inline `toolbarConfig`/`navbarConfig` style hexes
+3. **`tailwind.config.ts`** — `neon-pulse` and holo keyframes contain hardcoded rgba glows
+4. **~17 component files** carry Tailwind color classes (historically `fuchsia-*`/`purple-*`
+   with opacity suffixes) and hex/rgba literals. Hotspots:
+   - `hero/cards.tsx` + `projects/projects.tsx` — shared card radial-gradient constants
+   - `projects/DraggableWindow.tsx` — window chrome bg/border/glow
+   - `ChessSection.tsx` + `chess/ChessBoard.tsx` — board square colors, highlight rgba values
+   - `HintSvg.tsx` — animated SVG gradient constants for handwritten hints
+   - `GallerySection.tsx`, `ContactSection.tsx`, `Modal.tsx`, `chess/Confetti.tsx`
+5. Preserve the theme-independent semantic colors (red capture/error highlights) and neutral
+   blacks/whites used for shadows, polaroid frames, and photo overlays.
 
-2. **index.tsx** - Canvas gradients:
-   - `CANVAS_GRADIENT` - main background radial gradient
-   - `INTRO_GRADIENT` - loading screen gradient
-   - `BOX_GRADIENT` - intro animation box
-   - `DOT_COLOR` - dot pattern color
-
-### Changing Themes
-
-To switch themes, update both files with the new color values. Available theme presets:
-
-- **Deep Violet** (current): `#1a1625` base, elegant purple
-- **Cosmic Purple**: `#0d0a14` base, space-inspired darker
-- **Amethyst Glow**: `#150f1d` base, warmer magenta tones
-
-## Canvas Configuration
-
-### Coordinates (coordinates.ts)
-
-Canvas is 6000x4000. Sections are positioned:
-```
-        [About]
-           \
-  [Gallery] - [Hero] - [Projects]
-                |
-            [Contact]
-```
-
-### Customizable Props
-
-- `introBackgroundGradient` - loading screen background
-- `canvasBoxGradient` - intro animation box
-- `canvasBackground` - main canvas (use DefaultCanvasBackground)
-- `wrapperBackground` - intro wrapper (use DefaultWrapperBackground)
-- `toolbarConfig` - position, style, display mode
-- `introContent` - custom loading content
-- `loadingText` - text shown during load
+Design constraint from Hunter: purple stays the site's identity. Use neutralized body text,
+controlled surface saturation, and deliberate purple accents. Maintain distinct value bands for
+the background, cards, and text so the composition retains depth and visual hierarchy.
 
 ## Section Components
 
