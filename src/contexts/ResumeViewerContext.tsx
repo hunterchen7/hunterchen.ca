@@ -121,7 +121,7 @@ function ResumeViewerDialog({
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-labelledby="resume-viewer-title"
+            aria-label="Resume viewer"
             className="flex h-[min(98vh,1080px)] w-[min(98vw,980px)] flex-col overflow-hidden rounded-xl border border-fuchsia-300/25 bg-[#17131b] shadow-[0_28px_90px_rgba(0,0,0,0.65),0_0_50px_rgba(126,76,164,0.14)]"
             initial={
               prefersReducedMotion
@@ -137,16 +137,7 @@ function ResumeViewerDialog({
             transition={transition}
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex min-h-14 items-center gap-3 border-b border-fuchsia-200/15 bg-[#211a27] px-3 py-2 sm:px-4">
-              <div className="min-w-0 flex-1">
-                <h2
-                  id="resume-viewer-title"
-                  className="truncate text-sm font-semibold text-fuchsia-50 sm:text-base"
-                >
-                  Hunter Chen - Resume
-                </h2>
-              </div>
-
+            <header className="flex min-h-12 items-center justify-end gap-3 border-b border-fuchsia-200/15 bg-[#211a27] px-3 py-2 sm:px-4">
               <a
                 href={RESUME_URL}
                 download="Hunter-Chen-Resume.pdf"
