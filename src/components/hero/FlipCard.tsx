@@ -323,7 +323,7 @@ export default function FlipCard({
             </div>
           ) : null}
           <h3
-            className={`${frontAnchorClass} hero-card-label text-sm md:text-base text-[color:var(--hero-accent)] leading-tight z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
+            className={`${frontAnchorClass} hero-card-label text-[10px] leading-3 md:text-base md:leading-normal text-[color:var(--hero-accent)] z-10 drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]`}
             style={{ transformOrigin: frontLabelOrigin }}
           >
             {card.front}

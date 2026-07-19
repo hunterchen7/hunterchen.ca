@@ -2,18 +2,18 @@
   "schemaVersion": 1,
   "html": {
     "raw": 1137,
-    "gzip": 516,
-    "brotli": 376
+    "gzip": 512,
+    "brotli": 371
   },
   "initialJs": {
-    "raw": 450019,
-    "gzip": 145307,
-    "brotli": 123308
+    "raw": 450565,
+    "gzip": 145523,
+    "brotli": 123457
   },
   "asyncJs": {
     "raw": 1193074,
-    "gzip": 325080,
-    "brotli": 272252,
+    "gzip": 325070,
+    "brotli": 272108,
     "count": 9
   },
   "css": {
@@ -22,11 +22,11 @@
     "brotli": 9233
   },
   "totalJs": {
-    "raw": 1643093,
-    "gzip": 470387,
+    "raw": 1643639,
+    "gzip": 470593,
     "chunkCount": 10
   },
-  "criticalPathBrotli": 132917,
+  "criticalPathBrotli": 133061,
   "preloadMedia": [
     {
       "name": "hero/rocks.webp",
@@ -39,17 +39,17 @@
   ],
   "chunks": [
     {
-      "name": "index-XYWkF_AI.js",
-      "raw": 450019,
-      "gzip": 145307,
-      "brotli": 123308,
+      "name": "index-CErfrijE.js",
+      "raw": 450565,
+      "gzip": 145523,
+      "brotli": 123457,
       "initial": true
     },
     {
-      "name": "lucide-react-Ba4-ZV4u.js",
+      "name": "lucide-react-LrlbBEAC.js",
       "raw": 526111,
-      "gzip": 130563,
-      "brotli": 108105,
+      "gzip": 130561,
+      "brotli": 107970,
       "initial": false
     },
     {
@@ -60,10 +60,10 @@
       "initial": false
     },
     {
-      "name": "DeferredCanvasSections-B6kemDNs.js",
+      "name": "DeferredCanvasSections-D2ALo3a_.js",
       "raw": 204372,
-      "gzip": 64628,
-      "brotli": 55876,
+      "gzip": 64626,
+      "brotli": 55910,
       "initial": false
     },
     {
@@ -74,38 +74,38 @@
       "initial": false
     },
     {
-      "name": "ChessboardWatermark-QPr3PNIk.js",
+      "name": "ChessboardWatermark-BXqvC0yD.js",
       "raw": 21984,
       "gzip": 6821,
-      "brotli": 6080,
+      "brotli": 6040,
       "initial": false
     },
     {
-      "name": "LaptopWatermark-CQFizfd1.js",
+      "name": "LaptopWatermark-D3P1Z2Vp.js",
       "raw": 12731,
       "gzip": 5316,
-      "brotli": 4747,
+      "brotli": 4748,
       "initial": false
     },
     {
-      "name": "ZdogReferenceCameraWatermark-H4aqLHD4.js",
+      "name": "ZdogReferenceCameraWatermark-BRUXeLbX.js",
       "raw": 7712,
-      "gzip": 2966,
-      "brotli": 2693,
+      "gzip": 2965,
+      "brotli": 2696,
       "initial": false
     },
     {
-      "name": "RocketWatermark-B7WgVSOL.js",
+      "name": "RocketWatermark-Ck4hS4V0.js",
       "raw": 5529,
-      "gzip": 2312,
-      "brotli": 2114,
+      "gzip": 2311,
+      "brotli": 2111,
       "initial": false
     },
     {
-      "name": "modelMotion-9_04ieMn.js",
+      "name": "modelMotion-7_AEX5uY.js",
       "raw": 409,
-      "gzip": 291,
-      "brotli": 254,
+      "gzip": 287,
+      "brotli": 250,
       "initial": false
     },
     {

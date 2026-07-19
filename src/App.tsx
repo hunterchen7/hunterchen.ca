@@ -167,6 +167,7 @@ export default function App() {
             },
           }}
           zoomConfig={{
+            maxZoom: 5,
             responsiveZoomMap: {
               [ScreenSizeEnum.SMALL_MOBILE]: 0.45,
               [ScreenSizeEnum.MOBILE]: 0.5,
