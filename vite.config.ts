@@ -75,6 +75,12 @@ export default defineConfig({
     exclude: ["onnxruntime-web"],
   },
   build: {
+    // Terser (multi-pass) squeezes the eager chunk a bit tighter than the
+    // default esbuild minifier at the cost of slower builds.
+    minify: "terser",
+    terserOptions: {
+      compress: { passes: 2 },
+    },
     rollupOptions: {
       output: {
         manualChunks: {
