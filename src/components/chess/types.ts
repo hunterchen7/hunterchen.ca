@@ -18,6 +18,7 @@ export interface ChessBoardProps {
   animationDuration?: number;
   orientation?: "w" | "b";
   playerColor?: "w" | "b";
+  keyboardEntrySquare?: string | null;
   selectedSquare?: string | null;
   legalMoveSquares?: string[];
   isInteractive?: boolean;

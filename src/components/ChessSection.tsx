@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, useCallback, useReducer } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useReducer,
+} from "react";
 import { AnimatePresence } from "framer-motion";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { Chess, type Square } from "chess.js";
@@ -374,6 +381,37 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     !engineState.isThinking &&
     !game.isGameOver() &&
     game.turn() === playerColor;
+  const boardFen = game.fen();
+  const keyboardEntrySquare = useMemo(() => {
+    if (!canPlayerMove) return null;
+
+    const legalSourceSquares = new Set(
+      game.moves({ verbose: true }).map((move) => move.from),
+    );
+
+    let closestSquare: Square | null = null;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    let closestVisualColumn = Number.POSITIVE_INFINITY;
+
+    for (const square of legalSourceSquares) {
+      const file = square.charCodeAt(0) - 97;
+      const rank = Number(square[1]) - 1;
+      const distance = (file - 3.5) ** 2 + (rank - 3.5) ** 2;
+      const visualColumn = playerColor === "b" ? 7 - file : file;
+
+      if (
+        distance < closestDistance ||
+        (distance === closestDistance &&
+          visualColumn < closestVisualColumn)
+      ) {
+        closestSquare = square;
+        closestDistance = distance;
+        closestVisualColumn = visualColumn;
+      }
+    }
+
+    return closestSquare;
+  }, [boardFen, canPlayerMove, game, playerColor]);
   const playerWon = game.isCheckmate() && game.turn() !== playerColor;
   const [confettiKey, setConfettiKey] = useState(0);
   const showConfetti = confettiKey > 0;
@@ -395,9 +433,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   }
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = {
-      backgroundColor: "rgba(217, 70, 239, 0.62)",
-      boxShadow:
-        "inset 0 0 0 4px rgba(253, 244, 255, 0.98), inset 0 0 0 9px rgba(192, 38, 211, 0.86), inset 0 0 24px rgba(88, 28, 135, 0.58)",
+      backgroundColor: "rgba(192, 132, 252, 0.5)",
+      boxShadow: "inset 0 0 0 4px rgba(240, 171, 252, 0.78)",
     };
   }
   if (draggedSquare) {
@@ -409,9 +446,8 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     const hasPiece = game.get(sq);
     customSquareStyles[sq] = {
       background: hasPiece
-        ? "radial-gradient(circle, transparent 43%, rgba(253, 244, 255, 0.92) 44% 50%, rgba(217, 70, 239, 0.8) 51% 66%, transparent 67%)"
-        : "radial-gradient(circle, rgba(253, 244, 255, 0.98) 0 10%, rgba(217, 70, 239, 0.88) 11% 32%, transparent 33%)",
-      boxShadow: "inset 0 0 0 2px rgba(240, 171, 252, 0.42)",
+        ? "radial-gradient(circle, transparent 55%, rgba(192, 132, 252, 0.4) 55%)"
+        : "radial-gradient(circle, rgba(192, 132, 252, 0.35) 25%, transparent 25%)",
       cursor: "pointer",
     };
   }
@@ -466,7 +502,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
           {/* Chessboard */}
           <div className="w-[800px] aspect-square relative">
             <ChessBoard
-              position={game.fen()}
+              position={boardFen}
               onSquareClick={onSquareClick}
               onPieceDrop={(from, to) => makeMove(from, to)}
               onDragStart={onDragStart}
@@ -479,6 +515,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
               squareStyles={customSquareStyles}
               orientation={playerColor}
               playerColor={playerColor}
+              keyboardEntrySquare={keyboardEntrySquare}
               darkSquareColor="#453260"
               lightSquareColor="#c9bdd8"
               boardStyle={{

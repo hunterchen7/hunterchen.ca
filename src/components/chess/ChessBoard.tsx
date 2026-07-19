@@ -164,6 +164,7 @@ export default function ChessBoard({
   animationDuration = 200,
   orientation = "w",
   playerColor,
+  keyboardEntrySquare,
   selectedSquare,
   legalMoveSquares = [],
   isInteractive = false,
@@ -195,12 +196,31 @@ export default function ChessBoard({
   );
 
   const defaultKeyboardSquare = useMemo(
-    () =>
-      Object.keys(currentPosition).find((square) =>
-        isPlayersPiece(currentPosition[square]),
-      ) ?? "a1",
-    [currentPosition, isPlayersPiece],
+    () => {
+      if (
+        keyboardEntrySquare &&
+        isPlayersPiece(currentPosition[keyboardEntrySquare])
+      ) {
+        return keyboardEntrySquare;
+      }
+
+      return (
+        Object.keys(currentPosition).find((square) =>
+          isPlayersPiece(currentPosition[square]),
+        ) ?? "a1"
+      );
+    },
+    [currentPosition, isPlayersPiece, keyboardEntrySquare],
   );
+
+  const previousOrientationRef = useRef(orientation);
+
+  useEffect(() => {
+    if (previousOrientationRef.current === orientation) return;
+    previousOrientationRef.current = orientation;
+    pendingKeyboardRestoreRef.current = null;
+    setKeyboardSquare(null);
+  }, [orientation]);
 
   // Choose an initial entry point once. After that, preserve the roving square
   // even when it is empty so keyboard focus never jumps after a completed move.
