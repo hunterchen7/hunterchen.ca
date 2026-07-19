@@ -125,6 +125,30 @@ Hard-won operational notes:
   before its DevTools socket ever opens. Gimp CPU (`hw.cpu.ncore`) and GPU
   (`hw.gpu.mode=swiftshader_indirect`) instead.
 
+### 5. `flicker-bench.mjs` — pan/zoom flash detector
+
+Reproduces the mobile-Chromium artifact where dragging/pinching the canvas flashes. Synthesizes
+drag + pinch gestures over CDP, captures every composited frame via `Page.startScreencast`, and
+measures inter-frame pixel deltas in a separate analyzer browser (downsampled mean absolute
+difference — a flash reads as an outlier spike vs the smooth-pan baseline). The scene's computed
+`will-change` is sampled per frame so layer promote/demote events line up with spikes.
+
+```bash
+node perf/flicker-bench.mjs                    # local Chrome, mobile emulation
+node perf/flicker-bench.mjs --desktop          # control (no will-change toggle path)
+# real repro needs a real compositor — headless local Chrome rasters synchronously
+# and can never present a checkerboard/flash frame:
+node perf/fps-bench-android.mjs --avd Pixel_9_Pro_XL --seconds 1 --keep
+node perf/flicker-bench.mjs --cdp http://127.0.0.1:9333 --dump-frames
+```
+
+Root cause (canvas library `Canvas.js`): on non-"high" performance mode the scene's
+`will-change: transform` toggles per gesture — set on drag start, dropped on drag end, and
+**dropped at pinch start** (2-pointer branch sets `isPanning(false)`), so pinches run un-promoted
+(every `scale.set()` re-rasters the full scene) and alternating gestures thrash layer
+promote/demote. Desktop mode never sets the hint (Chromium's own heuristics keep it stable);
+Firefox layerizes differently — matching "Brave/Chrome on phone only".
+
 ## Planned: artificial constructions (isolated component harnesses)
 
 Next addition: standalone routes/entries that mount a single subsystem (e.g. just the chessboard,
