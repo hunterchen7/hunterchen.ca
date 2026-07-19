@@ -89,6 +89,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     from: string;
     to: string;
   } | null>(null);
+  const boardContainerRef = useRef<HTMLDivElement>(null);
 
   const [capturedPieces, setCapturedPieces] = useState<CapturedPiece[]>([]);
   const captureIdRef = useRef(0);
@@ -312,11 +313,25 @@ export default function ChessSection({ offset }: ChessSectionProps) {
   };
 
   const cancelPromotion = () => {
+    if (!pendingPromotion) return;
+    const from = pendingPromotion.from as Square;
+    const moves = game.moves({ square: from, verbose: true });
+
     setPendingPromotion(null);
+    setSelectedSquare(from);
+    setDraggedSquare(null);
+    setLegalMoveSquares(moves.map((move) => move.to));
+
+    window.requestAnimationFrame(() => {
+      boardContainerRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-square="${from}"]`)
+        ?.focus({ preventScroll: true });
+    });
   };
 
   const onSquareClick = (square: string) => {
     if (
+      pendingPromotion ||
       !gameStarted ||
       !engineState.isReady ||
       game.turn() !== playerColor ||
@@ -381,6 +396,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
     !engineState.isThinking &&
     !game.isGameOver() &&
     game.turn() === playerColor;
+  const boardIsInteractive = canPlayerMove && pendingPromotion === null;
   const boardFen = game.fen();
   const keyboardEntrySquare = useMemo(() => {
     if (!canPlayerMove) return null;
@@ -500,15 +516,18 @@ export default function ChessSection({ offset }: ChessSectionProps) {
           </p>
 
           {/* Chessboard */}
-          <div className="w-[800px] aspect-square relative">
+          <div
+            ref={boardContainerRef}
+            className="w-[800px] aspect-square relative"
+          >
             <ChessBoard
               position={boardFen}
               onSquareClick={onSquareClick}
               onPieceDrop={(from, to) => makeMove(from, to)}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
-              isDraggable={canPlayerMove}
-              isInteractive={canPlayerMove}
+              isDraggable={boardIsInteractive}
+              isInteractive={boardIsInteractive}
               selectedSquare={selectedSquare}
               legalMoveSquares={legalMoveSquares}
               animationDuration={200}

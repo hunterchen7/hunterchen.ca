@@ -1,3 +1,4 @@
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { PIECE_MAP } from "./PieceSVGs";
 import type { PieceChar } from "./types";
 
@@ -30,6 +31,39 @@ export default function PromotionPicker({
   // Black promotes on rank 1 (visual bottom when orientation=w, top when orientation=b)
   const fromTop = color === "w" ? orientation === "w" : orientation === "b";
   const visualFile = orientation === "b" ? 7 - file : file;
+  const visualPieces = fromTop
+    ? PROMOTION_PIECES
+    : [...PROMOTION_PIECES].reverse();
+  const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const queenIndex = visualPieces.indexOf("q");
+
+  useEffect(() => {
+    buttonRefs.current[queenIndex]?.focus({ preventScroll: true });
+  }, [queenIndex]);
+
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      onCancel();
+      return;
+    }
+
+    let step = 0;
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") step = 1;
+    if (event.key === "ArrowUp" || event.key === "ArrowLeft") step = -1;
+    if (event.key === "Tab") step = event.shiftKey ? -1 : 1;
+    if (step === 0) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const nextIndex =
+      (index + step + visualPieces.length) % visualPieces.length;
+    buttonRefs.current[nextIndex]?.focus({ preventScroll: true });
+  };
 
   return (
     <>
@@ -44,6 +78,9 @@ export default function PromotionPicker({
       />
       {/* Piece buttons */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Choose promotion piece"
         style={{
           position: "absolute",
           left: `${(visualFile / 8) * 100}%`,
@@ -51,19 +88,23 @@ export default function PromotionPicker({
           ...(fromTop ? { top: 0 } : { bottom: 0 }),
           zIndex: 11,
           display: "flex",
-          flexDirection: fromTop ? "column" : "column-reverse",
+          flexDirection: "column",
         }}
       >
-        {PROMOTION_PIECES.map((p) => {
+        {visualPieces.map((p, index) => {
           const pieceChar: PieceChar = color === "w" ? (p.toUpperCase() as PieceChar) : p as PieceChar;
           const PieceComponent = PIECE_MAP[pieceChar];
           return (
             <button
               key={p}
+              ref={(node) => {
+                buttonRefs.current[index] = node;
+              }}
               type="button"
               className="chess-promotion-button"
               aria-label={`Promote to ${PROMOTION_LABELS[p]}`}
               onClick={() => onSelect(p)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
               style={{
                 aspectRatio: "1 / 1",
                 width: "100%",
