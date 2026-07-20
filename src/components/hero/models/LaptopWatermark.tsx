@@ -797,7 +797,14 @@ function buildLaptop(
     lineStart +
     (activeLine.to - lineStart) *
       (typingState.lineProgress[typingState.cursorLine] ?? 0);
-  if (!typingState.isSelected && typingState.phase !== "cleared") {
+  // Hide the caret while "waiting" (the open-but-empty hold before typing
+  // starts) so the laptop's first frame reads as a plain black screen; it
+  // appears with the first keystroke.
+  if (
+    !typingState.isSelected &&
+    typingState.phase !== "cleared" &&
+    typingState.phase !== "waiting"
+  ) {
     addDetailLine(
       "screen-cursor",
       [
