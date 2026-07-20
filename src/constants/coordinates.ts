@@ -2,7 +2,7 @@ import type { SectionCoordinates, NavItem } from "@hunterchen/canvas";
 import { ChessKnight } from "lucide-react";
 
 /**
- * Canvas Layout (6000 x 4000):
+ * Canvas Layout (7000 x 4000 — width set via CANVAS_WIDTH in App.tsx):
  *
  *              [About]
  *
@@ -20,7 +20,7 @@ const SECTION_HEIGHT = 700;
 // All sections are shifted +700 to the right of their original x so the default
 // (hero-centered) viewport keeps enough virtual canvas to its left and no longer
 // reveals the off-canvas area on wide screens. Rightmost edge (chess) is 4300 +
-// 1200 = 5500, still within the 6000-wide canvas.
+// 1200 = 5500, leaving ~1500px of open space on the right of the 7000-wide canvas.
 export const coordinates = {
   hero: {
     x: 1900,
