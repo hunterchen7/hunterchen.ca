@@ -1,0 +1,14 @@
+# Cloudflare Pages headers. Vite copies public/ to the build output root, so
+# this ends up at dist/_headers where Pages picks it up.
+#
+# Cross-origin isolation is required for SharedArrayBuffer, which onnxruntime-web
+# needs to run the chess engine on threaded wasm (ort-wasm-simd-threaded). Without
+# these headers it silently falls back to single-threaded and the engine is slower.
+# Mirrors the dev/preview server headers in vite.config.ts.
+#
+# COEP is `credentialless` (not `require-corp`) so cross-origin subresources —
+# the gallery photos on photos.hunterchen.ca — keep loading without needing CORP
+# headers; they are simply fetched without credentials.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless

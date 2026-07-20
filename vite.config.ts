@@ -95,6 +95,19 @@ export default defineConfig({
       "Cross-Origin-Embedder-Policy": "credentialless",
     },
   },
+  preview: {
+    // Serving the production build through a cloudflared quick tunnel (phone
+    // testing) needs the tunnel host allowlisted.
+    allowedHosts: [".trycloudflare.com"],
+    // Same cross-origin isolation as the dev server and production
+    // (public/_headers). Without it the preview build loses SharedArrayBuffer
+    // and onnxruntime silently falls back to single-threaded wasm, so the
+    // chess engine behaves differently than it does in production.
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "credentialless",
+    },
+  },
   worker: {
     format: "es",
   },
