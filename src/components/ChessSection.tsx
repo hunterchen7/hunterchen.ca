@@ -11,7 +11,11 @@ import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { Chess, type Square } from "chess.js";
 import { Lc0Engine } from "../chess/engine/workerInterface";
 import { hasModelCached } from "../chess/engine/modelCache";
-import { MODEL_URL } from "../chess/config";
+import { MODEL_URL, totalDownloadBytes } from "../chess/config";
+
+// One-time download for THIS browser: without WebGPU we pull the smaller
+// CPU-only ORT build, so the advertised size differs.
+const downloadSizeLabel = `${Math.round(totalDownloadBytes() / 1_000_000)} MB`;
 import { uciToChessJsMove } from "../chess/utils";
 import type { EngineState } from "../chess/types";
 import type { CapturedPiece, PieceChar } from "./chess/types";
@@ -554,7 +558,7 @@ export default function ChessSection({ offset }: ChessSectionProps) {
                   </button>
                   {hasCachedModel === false && (
                     <p className="rounded-sm bg-[#1b1524]/30 px-2 py-0.5 font-mono text-[10px] leading-4 text-purple-100/70 backdrop-blur-[1px]">
-                      this will incur a one-time 27 MB download
+                      this will incur a one-time {downloadSizeLabel} download
                     </p>
                   )}
                 </div>

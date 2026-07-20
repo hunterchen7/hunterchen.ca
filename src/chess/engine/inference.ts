@@ -1,6 +1,26 @@
-import * as ort from "onnxruntime-web";
+import type * as Ort from "onnxruntime-web";
+import { supportsWebGpu } from "../config";
 
-let session: ort.InferenceSession | null = null;
+type OrtModule = typeof import("onnxruntime-web");
+
+let ortModule: OrtModule | null = null;
+
+/**
+ * Load the ORT entry bundle that matches the wasm binary the worker downloaded
+ * (see `selectOrtRuntime`). The default entry ships the JSEP/WebGPU glue and
+ * only accepts the `.jsep` binary; `onnxruntime-web/wasm` is the CPU-only build
+ * that pairs with the plain binary. Importing the wrong one fails at session
+ * creation, so this must use the same predicate as the download.
+ */
+async function loadOrt(): Promise<OrtModule> {
+  if (ortModule) return ortModule;
+  ortModule = supportsWebGpu()
+    ? await import("onnxruntime-web")
+    : ((await import("onnxruntime-web/wasm")) as unknown as OrtModule);
+  return ortModule;
+}
+
+let session: Ort.InferenceSession | null = null;
 let inputName = "/input/planes";
 let outputNames: string[] = [];
 
@@ -8,6 +28,8 @@ export async function initModel(
   modelData: ArrayBuffer,
   runtimeBinary: ArrayBuffer,
 ): Promise<void> {
+  const ort = await loadOrt();
+
   // Keep WASM configured as the universal fallback for browsers without WebGPU.
   ort.env.wasm.wasmPaths = "/";
   ort.env.wasm.wasmBinary = runtimeBinary;
@@ -15,8 +37,8 @@ export async function initModel(
 
   // A single ordered provider list lets ONNX Runtime partition unsupported
   // WebGPU operators onto WASM without trying to initialize the runtime twice.
-  const providers: ort.InferenceSession.ExecutionProviderConfig[] =
-    "gpu" in navigator ? ["webgpu", "wasm"] : ["wasm"];
+  const providers: Ort.InferenceSession.ExecutionProviderConfig[] =
+    supportsWebGpu() ? ["webgpu", "wasm"] : ["wasm"];
 
   session = await ort.InferenceSession.create(new Uint8Array(modelData), {
     executionProviders: providers,
@@ -36,10 +58,10 @@ export interface InferenceResult {
 export async function runInference(
   inputTensor: Float32Array,
 ): Promise<InferenceResult> {
-  if (!session) throw new Error("Model not initialized");
+  if (!session || !ortModule) throw new Error("Model not initialized");
 
-  const feeds: Record<string, ort.Tensor> = {
-    [inputName]: new ort.Tensor("float32", inputTensor, [1, 112, 8, 8]),
+  const feeds: Record<string, Ort.Tensor> = {
+    [inputName]: new ortModule.Tensor("float32", inputTensor, [1, 112, 8, 8]),
   };
 
   const results = await session.run(feeds);

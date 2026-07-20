@@ -5,10 +5,12 @@ import { initModel, runInference } from "./inference";
 import { getCachedModel, cacheModel, decompressGzip } from "./modelCache";
 import { mctsSearch } from "./mcts";
 import { Chess } from "chess.js";
-import { RUNTIME_URL } from "../config";
+import { MODEL_DOWNLOAD_BYTES, selectOrtRuntime } from "../config";
 
-const MODEL_DOWNLOAD_BYTES = 2_300_000;
-const RUNTIME_DOWNLOAD_BYTES = 24_925_138;
+// Which ORT build we fetch depends on WebGPU support, so the runtime size — and
+// therefore the total — is resolved per session rather than hardcoded.
+const ORT_RUNTIME = selectOrtRuntime();
+const RUNTIME_DOWNLOAD_BYTES = ORT_RUNTIME.bytes;
 const TOTAL_DOWNLOAD_BYTES = MODEL_DOWNLOAD_BYTES + RUNTIME_DOWNLOAD_BYTES;
 
 function post(msg: WorkerResponse) {
@@ -61,7 +63,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
     case "init": {
       try {
         const runtimeBinary = await downloadBuffer(
-          RUNTIME_URL,
+          ORT_RUNTIME.url,
           RUNTIME_DOWNLOAD_BYTES,
           (progress) =>
             post({
