@@ -42,13 +42,12 @@ const photos: Photo[] = [
     url: "https://photos.hunterchen.ca/HC_02986.jpg",
     thumbnailUrl: "https://photos.hunterchen.ca/HC_02986-thumb.webp",
   },
-  // raven
+  // raccoon in a tree hollow
   {
-    caption: "2024/08/23",
+    caption: "2026/05/24",
     rotation: "-2deg",
-    url: "https://photos.hunterchen.ca/HC_01728-Enhanced-NR.jpg",
-    thumbnailUrl:
-      "https://photos.hunterchen.ca/HC_01728-Enhanced-NR-thumb.webp",
+    url: "https://photos.hunterchen.ca/HCA09070-crop.jpg",
+    thumbnailUrl: "https://photos.hunterchen.ca/HCA09070-crop-thumb.webp",
   },
   // deer
   {
