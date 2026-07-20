@@ -156,9 +156,11 @@ const RESET_WAVE_INTERVAL_MS = 110;
 const RESET_PIECE_MS = 680;
 const RESET_SCATTER_MS = 1_400;
 const RESET_EMPTY_HOLD_MS = 900;
-// Chess enters a beat after the other hero models: once animation is ready it
-// holds the opening board for this long before the game begins to play out.
-const CHESS_LEAD_IN_MS = 650;
+// Chess is staggered behind the other hero models: they all start on the same
+// animation-ready gate (the laptop begins at t=0 of it), so this offset is how
+// far chess trails the laptop — it holds the opening board this long before the
+// game plays out.
+const CHESS_LEAD_IN_MS = 1_000;
 const PLAYBACK_RATE = 1.15;
 const LOOP_DURATION_MS =
   SETUP_DURATION_MS +
