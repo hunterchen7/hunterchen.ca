@@ -12,7 +12,6 @@ import {
 import {
   Canvas,
   DefaultCanvasBackground,
-  canvasWidth,
   canvasHeight,
   ScreenSizeEnum,
 } from "@hunterchen/canvas";
@@ -35,8 +34,12 @@ import {
 } from "./contexts/SectionFocusContext";
 import { ResumeViewerProvider } from "./contexts/ResumeViewerContext";
 
+// Virtual canvas width — wider than the library default (6000) to give extra
+// pannable room to the right of the sections. Height keeps the library default.
+const CANVAS_WIDTH = 7000;
+
 // Canvas spotlight - circular bloom at canvas center, falling off outward
-const CANVAS_GRADIENT = `radial-gradient(circle ${canvasWidth / 2}px at ${canvasWidth / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
+const CANVAS_GRADIENT = `radial-gradient(circle ${CANVAS_WIDTH / 2}px at ${CANVAS_WIDTH / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
 
 // Dot color (warm purple highlight)
 const DOT_COLOR = "var(--canvas-dot)";
@@ -148,6 +151,7 @@ export default function App() {
         />
         <Canvas
           homeCoordinates={coordinates.hero}
+          canvasWidth={CANVAS_WIDTH}
           navItems={navItems}
           skipIntro
           canvasBackground={

@@ -51,8 +51,11 @@ html {
     /* ============== Amethyst Glow Theme ============== */
     /* Warmer purple tones with subtle magenta undertones */
 
-    /* Base colors */
-    --background: 270 30% 7%;
+    /* Base colors. Background is a near-neutral grey matched to the canvas's
+       deep edge (--canvas-bg-deep #0e0e10) so any area outside the canvas
+       (e.g. the left of the default viewport) reads as a seamless grey stage
+       rather than a purple sliver. */
+    --background: 240 7% 6%;
     --foreground: 270 15% 88%;
 
     --primary: 280 45% 58%;

@@ -69,9 +69,10 @@ const RECORDED_TYPING_END_MS = 6_737.3;
 const RECORDED_SELECT_ALL_MS = 7_721.9;
 const RECORDED_CLEAR_MS = 8_297.3;
 const RECORDED_WPM = 115.8;
-const CLOSED_HOLD_MS = 0;
 const LID_OPEN_MS = 1_050;
-const OPEN_SETTLE_MS = 420;
+// The laptop starts already open on an empty screen and pauses here before the
+// typing begins.
+const OPEN_EMPTY_HOLD_MS = 1_000;
 const POST_CLEAR_HOLD_MS = 1_800;
 const LID_CLOSE_MS = 900;
 const CLOSED_LOOP_HOLD_MS = 2_400;
@@ -380,13 +381,18 @@ function insertedCharacterForCode(code: string): string | null {
   }
 }
 
-const LID_OPEN_START_MS = CLOSED_HOLD_MS;
-const LID_OPEN_END_MS = LID_OPEN_START_MS + LID_OPEN_MS;
-const TYPING_START_MS = LID_OPEN_END_MS + OPEN_SETTLE_MS;
+// Loop layout: the lid is already OPEN on an empty screen at t=0 and holds for
+// OPEN_EMPTY_HOLD_MS, then types → clears → holds → closes → holds closed →
+// swings back open at the very tail. Keeping the open swing at the end means the
+// loop point (fully open) matches the t=0 state, so the reopen reads smoothly
+// and the first thing the viewer sees is the open + empty pause.
+const TYPING_START_MS = OPEN_EMPTY_HOLD_MS;
 const LID_CLOSE_START_MS =
   TYPING_START_MS + RECORDED_DURATION_MS + POST_CLEAR_HOLD_MS;
 const LID_CLOSE_END_MS = LID_CLOSE_START_MS + LID_CLOSE_MS;
-const SCREEN_SEQUENCE_MS = LID_CLOSE_END_MS + CLOSED_LOOP_HOLD_MS;
+const LID_OPEN_START_MS = LID_CLOSE_END_MS + CLOSED_LOOP_HOLD_MS;
+const LID_OPEN_END_MS = LID_OPEN_START_MS + LID_OPEN_MS;
+const SCREEN_SEQUENCE_MS = LID_OPEN_END_MS;
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
@@ -399,17 +405,11 @@ function smoothstep(value: number): number {
 
 function lidStateAtProgress(progress: number): LidState {
   const timeMs = clamp01(progress) * SCREEN_SEQUENCE_MS;
-  let openProgress = 0;
-  let phase: LidPhase = "closed";
+  let openProgress: number;
+  let phase: LidPhase;
 
-  if (timeMs < LID_OPEN_START_MS) {
-    openProgress = 0;
-  } else if (timeMs < LID_OPEN_END_MS) {
-    openProgress = smoothstep(
-      (timeMs - LID_OPEN_START_MS) / LID_OPEN_MS,
-    );
-    phase = "opening";
-  } else if (timeMs < LID_CLOSE_START_MS) {
+  if (timeMs < LID_CLOSE_START_MS) {
+    // Open through the empty hold, the typing, and the post-clear hold.
     openProgress = 1;
     phase = "open";
   } else if (timeMs < LID_CLOSE_END_MS) {
@@ -417,6 +417,15 @@ function lidStateAtProgress(progress: number): LidState {
       1 -
       smoothstep((timeMs - LID_CLOSE_START_MS) / LID_CLOSE_MS);
     phase = "closing";
+  } else if (timeMs < LID_OPEN_START_MS) {
+    openProgress = 0;
+    phase = "closed";
+  } else {
+    // Swing back open at the tail; ends fully open so it matches the t=0 state.
+    openProgress = smoothstep(
+      (timeMs - LID_OPEN_START_MS) / LID_OPEN_MS,
+    );
+    phase = "opening";
   }
 
   return {
@@ -788,7 +797,14 @@ function buildLaptop(
     lineStart +
     (activeLine.to - lineStart) *
       (typingState.lineProgress[typingState.cursorLine] ?? 0);
-  if (!typingState.isSelected && typingState.phase !== "cleared") {
+  // Hide the caret while "waiting" (the open-but-empty hold before typing
+  // starts) so the laptop's first frame reads as a plain black screen; it
+  // appears with the first keystroke.
+  if (
+    !typingState.isSelected &&
+    typingState.phase !== "cleared" &&
+    typingState.phase !== "waiting"
+  ) {
     addDetailLine(
       "screen-cursor",
       [

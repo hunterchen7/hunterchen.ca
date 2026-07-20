@@ -156,6 +156,9 @@ const RESET_WAVE_INTERVAL_MS = 110;
 const RESET_PIECE_MS = 680;
 const RESET_SCATTER_MS = 1_400;
 const RESET_EMPTY_HOLD_MS = 900;
+// Chess enters a beat after the other hero models: once animation is ready it
+// holds the opening board for this long before the game begins to play out.
+const CHESS_LEAD_IN_MS = 650;
 const PLAYBACK_RATE = 1.15;
 const LOOP_DURATION_MS =
   SETUP_DURATION_MS +
@@ -557,10 +560,11 @@ function useTimeline(frame: number | null): {
     let lastFrame = 0;
 
     const update = (time: number) => {
-      if (startTime.current === null) startTime.current = time;
+      if (startTime.current === null) startTime.current = time + CHESS_LEAD_IN_MS;
       const frameDelta = time - lastFrame;
       if (frameDelta >= frameIntervalMs) {
-        const nextElapsed = (time - startTime.current) * PLAYBACK_RATE;
+        // Clamp to 0 during the lead-in so the opening board holds still before play.
+        const nextElapsed = Math.max(0, time - startTime.current) * PLAYBACK_RATE;
         const nextTimeline = timelineAt(nextElapsed);
         const visualFrame = [
           nextTimeline.activeMove,

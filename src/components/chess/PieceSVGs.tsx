@@ -21,14 +21,25 @@ export const PIECE_SRCS: Record<PieceChar, string> = {
   p: "/chess/bP.svg",
 };
 
+// White (uppercase) pieces are light-on-light: against light squares or when
+// they overlap other pale pieces the silhouette disappears. A thin dark outline
+// (stacked hard drop-shadows around the alpha edge) keeps them readable without
+// touching the source SVGs.
+const WHITE_OUTLINE =
+  "drop-shadow(1px 0 0 rgba(24,14,38,.6)) " +
+  "drop-shadow(-1px 0 0 rgba(24,14,38,.6)) " +
+  "drop-shadow(0 1px 0 rgba(24,14,38,.6)) " +
+  "drop-shadow(0 -1px 0 rgba(24,14,38,.6))";
+
 function makePiece(piece: PieceChar) {
+  const isWhite = piece === piece.toUpperCase();
   return memo(({ className, style }: PieceSVGProps) => (
     <img
       src={PIECE_SRCS[piece]}
       alt=""
       draggable={false}
       className={className}
-      style={style}
+      style={isWhite ? { filter: WHITE_OUTLINE, ...style } : style}
     />
   ));
 }
