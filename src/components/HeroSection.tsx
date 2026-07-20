@@ -11,7 +11,10 @@ import FlipCard from "./hero/FlipCard";
 import { cards } from "./hero/cards";
 import { HeroModelAnimationProvider } from "./hero/modelAnimationContext";
 import { preloadHeroModels } from "./hero/deferredHeroModels";
-import HintSvg, { HINT_TOTAL_DURATION } from "./HintSvg";
+import HintSvg, {
+  HINT_TOTAL_DURATION,
+  HINT_ARROW_DRAW_OFFSET,
+} from "./HintSvg";
 import { afterFirstContentfulPaint } from "../utils/afterFirstContentfulPaint";
 import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 
@@ -40,38 +43,65 @@ const TYPING_DURATION_MS = Array.from(
 ).reduce((a, b) => a + b, 0);
 const POST_TYPING_DELAY_MS = 200;
 
-// Content timing (seconds, relative to showContent becoming true)
-const TEXT_CONTAINER_DELAY = 0.2;
-const SUBTITLE_FADE_DURATION = 0.2;
-const CARD_STAGGER = IS_REVISIT ? 0.2 : 0.25;
-const CARD_SPRING_SETTLE = IS_REVISIT ? 0.5 : 0.55;
-const ARTWORK_STAGGER = IS_REVISIT ? 0.2 : 0.25;
-const ARTWORK_REVEAL_DURATION = IS_REVISIT ? 1.15 : 1.25;
+// Content timing (seconds, relative to showContent becoming true).
+//
+// The intro plays as a STAGED sequence — one thing at a time, minimal overlap:
+//   1. cards come in
+//   2. objects (card artwork) load in
+//   3. the instant the last object lands: the hero arrow starts drawing AND the
+//      objects start animating (no waiting on the second arrow)
+//   4. nav arrow draws
+// Stages 1→2→3 are seamless (boxes flow into objects flow into motion); the
+// only PHASE_GAP beat is before the nav arrow. The hero arrow and the model
+// motion are timed so the objects start animating exactly as the arrow's LINE
+// begins to draw — the moment the last object lands. INTRO_PACE scales the
+// speed *within* each stage. The steady-state model loops are unaffected.
+const INTRO_PACE = 1.0;
+const PHASE_GAP = 0.45;
+
+const TEXT_CONTAINER_DELAY = 0.2 * INTRO_PACE;
+const SUBTITLE_FADE_DURATION = 0.2 * INTRO_PACE;
+const CARD_STAGGER = (IS_REVISIT ? 0.2 : 0.25) * INTRO_PACE;
+const CARD_SPRING_SETTLE = (IS_REVISIT ? 0.65 : 0.7) * INTRO_PACE;
+const ARTWORK_STAGGER = (IS_REVISIT ? 0.2 : 0.25) * INTRO_PACE;
+const ARTWORK_REVEAL_DURATION = (IS_REVISIT ? 1.15 : 1.25) * INTRO_PACE;
 const WAVE_AFTER_BOXES =
   (cards.length - 1) * CARD_STAGGER + (IS_REVISIT ? 0.25 : 0.3);
+
+// Stage 1 — cards come in.
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
-// Begin revealing the card artwork as soon as the box entrance settles.
+// Stage 2 — objects (card artwork) load in right as the last box lands (no
+// beat here, so the boxes and their contents read as one continuous move).
 const ARTWORK_REVEAL_START = CARDS_FINISH;
-const ARTWORKS_FINISH =
+// FlipCard's pop-in brings each object to full opacity at ARTWORK_LAND_FRACTION
+// of its duration (times:[0, 0.68, …]); the remainder is just a small scale
+// settle. So the last object is visually "in" here — not at the full duration.
+const ARTWORK_LAND_FRACTION = 0.68;
+const ARTWORKS_LANDED =
   ARTWORK_REVEAL_START +
   (cards.length - 1) * ARTWORK_STAGGER +
-  ARTWORK_REVEAL_DURATION;
-const HINT_ARTWORK_OVERLAP = 0.25;
-const HINT_SEQUENCE_GAP = 0.2;
-const HERO_CLICKME_DELAY = ARTWORKS_FINISH - HINT_ARTWORK_OVERLAP;
-const HERO_MODEL_MOTION_DELAY = IS_REVISIT
-  ? ARTWORKS_FINISH + 0.12
-  : ARTWORKS_FINISH + HINT_TOTAL_DURATION;
+  ARTWORK_LAND_FRACTION * ARTWORK_REVEAL_DURATION;
+// Stage 3 — the hero arrow's LINE draws HINT_ARROW_DRAW_OFFSET into its own
+// enter (the "click me" text fades first), so start the hint that much earlier
+// and the stroke lands right as the last object arrives. The model motion then
+// trails by MODEL_MOTION_DELAY_AFTER_LAND, so each object reads as: arrives →
+// settles → comes alive (and never begins moving before the arrow is drawn).
+const HERO_CLICKME_DELAY = ARTWORKS_LANDED - HINT_ARROW_DRAW_OFFSET;
+const MODEL_MOTION_DELAY_AFTER_LAND = 0.5;
+const HERO_MODEL_MOTION_DELAY = ARTWORKS_LANDED + MODEL_MOTION_DELAY_AFTER_LAND;
+const HERO_CLICKME_FINISH = HERO_CLICKME_DELAY + HINT_TOTAL_DURATION;
+// Stage 4 — nav arrow draws after the hero arrow finishes
+// (showContent-relative; the export below adds the pre-content typing time).
+const NAV_HINT_FROM_CONTENT = HERO_CLICKME_FINISH + PHASE_GAP;
+
 const INTRO_FINISH = IS_REVISIT
   ? 0
   : (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000;
 
-/** Seconds from page load until the navbar hint should begin */
-export const HERO_NAV_HINT_DELAY =
-  INTRO_FINISH +
-  HERO_CLICKME_DELAY +
-  HINT_TOTAL_DURATION +
-  HINT_SEQUENCE_GAP;
+/** Seconds from page load until the navbar hint should begin. The nav hint
+ *  lives in App.tsx and is measured from page mount, so it includes the
+ *  pre-content typing time (0 on a revisit). */
+export const HERO_NAV_HINT_DELAY = INTRO_FINISH + NAV_HINT_FROM_CONTENT;
 
 export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
@@ -348,8 +378,10 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 transition={{
                   delay: showContent ? idx * CARD_STAGGER : 0,
                   type: "spring",
-                  stiffness: 130,
-                  damping: 17,
+                  // Gentle, essentially critically-damped spring: cards ease in
+                  // without a bounce, settling in roughly one stage-beat.
+                  stiffness: 90,
+                  damping: 19,
                 }}
                 className={`${card.gridArea} min-h-[92px] md:min-h-40`}
               >

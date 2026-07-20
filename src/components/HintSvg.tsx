@@ -24,6 +24,10 @@ const DRAW_DURATION = Math.max(
 
 /** Total time from enterDelay until the last animation completes */
 export const HINT_TOTAL_DURATION = DRAW_DURATION;
+/** Seconds from enterDelay until the arrow *line* actually starts drawing (the
+ *  "click me" text fades in first). Consumers can sync other motion to the
+ *  moment the stroke appears rather than to the hint's enter start. */
+export const HINT_ARROW_DRAW_OFFSET = ARROW_MAIN_OFFSET;
 /** @deprecated Use HINT_TOTAL_DURATION */
 export const CLICKME_TOTAL_DURATION = DRAW_DURATION;
 
