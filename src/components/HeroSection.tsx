@@ -65,8 +65,8 @@ const CARD_STAGGER = (IS_REVISIT ? 0.2 : 0.25) * INTRO_PACE;
 const CARD_SPRING_SETTLE = (IS_REVISIT ? 0.65 : 0.7) * INTRO_PACE;
 const ARTWORK_STAGGER = (IS_REVISIT ? 0.2 : 0.25) * INTRO_PACE;
 const ARTWORK_REVEAL_DURATION = (IS_REVISIT ? 1.15 : 1.25) * INTRO_PACE;
-const WAVE_AFTER_BOXES =
-  (cards.length - 1) * CARD_STAGGER + (IS_REVISIT ? 0.25 : 0.3);
+// const WAVE_AFTER_BOXES =
+//   (cards.length - 1) * CARD_STAGGER + (IS_REVISIT ? 0.25 : 0.3); // wave emoji retired
 
 // Stage 1 — cards come in.
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
@@ -108,7 +108,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
   const [charCount, setCharCount] = useState(0);
   const [showContent, setShowContent] = useState(IS_REVISIT);
   const [showArtwork, setShowArtwork] = useState(false);
-  const [waveAnimationReady, setWaveAnimationReady] = useState(false);
+  // const [waveAnimationReady, setWaveAnimationReady] = useState(false); // wave emoji retired
   const [modelAnimationsReady, setModelAnimationsReady] = useState(false);
   const [isHeroVisible, setIsHeroVisible] = useState(true);
   const [isDocumentVisible, setIsDocumentVisible] = useState(
@@ -163,7 +163,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     gridRef.current?.style.setProperty("--hero-glow-opacity", "0");
   }, []);
   const typingDone = charCount >= INTRO_SEQUENCE_LENGTH;
-  const waveTyped = charCount > INTRO_TEXT.length;
+  // const waveTyped = charCount > INTRO_TEXT.length; // wave emoji retired
 
   // Typewriter effect (skipped on revisit since typingDone is already true)
   useEffect(() => {
@@ -193,18 +193,19 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     return () => clearTimeout(timer);
   }, [typingDone]);
 
-  useEffect(() => {
-    if (!showContent) {
-      setWaveAnimationReady(false);
-      return;
-    }
-
-    const timer = window.setTimeout(
-      () => setWaveAnimationReady(true),
-      WAVE_AFTER_BOXES * 1_000,
-    );
-    return () => window.clearTimeout(timer);
-  }, [showContent]);
+  // Wave emoji retired — armed its animation once the boxes had landed.
+  // useEffect(() => {
+  //   if (!showContent) {
+  //     setWaveAnimationReady(false);
+  //     return;
+  //   }
+  //
+  //   const timer = window.setTimeout(
+  //     () => setWaveAnimationReady(true),
+  //     WAVE_AFTER_BOXES * 1_000,
+  //   );
+  //   return () => window.clearTimeout(timer);
+  // }, [showContent]);
 
   // Mark intro as seen for future visits
   useEffect(() => {
@@ -337,6 +338,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               <p className="text-[10px] leading-3 md:text-base md:leading-normal lg:text-lg bg-gradient-to-r from-[#e48dff] via-[#f09efd] to-[#c4b5fd] bg-clip-text text-transparent">
                   {INTRO_TEXT.slice(0, Math.min(charCount, INTRO_TEXT.length))}
                   {!typingDone && <span className="animate-pulse">|</span>}
+                  {/* Waving hand emoji \u2014 retired, kept for reference.
                   {waveTyped ? (
                     <span
                       className={
@@ -355,6 +357,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                       {"\u{1F44B}\uFE0F"}
                     </span>
                   ) : null}
+                  */}
                 </p>
                 <motion.p
                   initial={{ opacity: 0 }}

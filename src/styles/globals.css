@@ -361,7 +361,8 @@ html {
   background-size: 100% 1px !important;
 }
 
-/* Wave animation for emoji */
+/* Wave animation for emoji — retired with the waving hand in HeroSection,
+   kept for reference.
 @keyframes wave {
   0%, 100% { transform: rotate(0deg); }
   10% { transform: rotate(14deg); }
@@ -376,6 +377,7 @@ html {
   animation: wave 2.5s ease-in-out infinite;
   transform-origin: 70% 70%;
 }
+*/
 
 /* String sway animation for bulletin board */
 @keyframes string-sway {
