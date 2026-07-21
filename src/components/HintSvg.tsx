@@ -4,9 +4,10 @@ import { motion, type Variants } from "framer-motion";
 // Animation timing (seconds, relative to enterDelay)
 const TEXT_FADE_DURATION = 0.3;
 const ARROW_MAIN_OFFSET = 0.35;
-const ARROW_MAIN_DURATION = 0.4;
+const ARROW_DRAW_DURATION_SCALE = 0.66;
+const ARROW_MAIN_DURATION = 0.4 * ARROW_DRAW_DURATION_SCALE;
 const ARROW_TIP_OFFSET = ARROW_MAIN_OFFSET + ARROW_MAIN_DURATION + 0.067;
-const ARROW_TIP_DURATION = 0.3;
+const ARROW_TIP_DURATION = 0.3 * ARROW_DRAW_DURATION_SCALE;
 
 // Exit (undraw) timing — reverse of enter order
 const EXIT_TIP_DURATION = 0.25;

@@ -52,10 +52,10 @@ const POST_TYPING_DELAY_MS = 200;
 //   4. the nav arrow draws
 //   5. the pseudo-3D object animations begin
 // Stages 1→2→3 are seamless (boxes flow into objects flow into the first hint);
-// the only PHASE_GAP beat is before the nav arrow. INTRO_PACE scales the speed
-// within each stage. The steady-state model loops are unaffected.
+// the nav hint follows the hero hint after a tiny pause. INTRO_PACE scales the
+// speed within each stage. The steady-state model loops are unaffected.
 const INTRO_PACE = 1.0;
-const PHASE_GAP = 0.45;
+const HINT_GAP = 0.08;
 
 const TEXT_CONTAINER_DELAY = 0.2 * INTRO_PACE;
 const SUBTITLE_FADE_DURATION = 0.2 * INTRO_PACE;
@@ -84,9 +84,11 @@ const ARTWORKS_LANDED =
 // and the stroke lands right as the last object arrives.
 const HERO_CLICKME_DELAY = ARTWORKS_LANDED - HINT_ARROW_DRAW_OFFSET;
 const HERO_CLICKME_FINISH = HERO_CLICKME_DELAY + HINT_TOTAL_DURATION;
-// Stage 4 — nav arrow draws after the hero arrow finishes
-// (showContent-relative; the export below adds the pre-content typing time).
-const NAV_HINT_FROM_CONTENT = HERO_CLICKME_FINISH + PHASE_GAP;
+// Stage 4 — the nav hint's text leads in first, then its actual arrow stroke
+// begins 80ms after the hero arrow finishes (showContent-relative; the export
+// below adds the pre-content typing time).
+const NAV_HINT_FROM_CONTENT =
+  HERO_CLICKME_FINISH - HINT_ARROW_DRAW_OFFSET + HINT_GAP;
 // Stage 5 — begin the pseudo-3D loops only after the second (nav) arrow has
 // completely drawn.
 const HERO_MODEL_MOTION_DELAY = NAV_HINT_FROM_CONTENT + HINT_TOTAL_DURATION;
