@@ -48,14 +48,12 @@ const POST_TYPING_DELAY_MS = 200;
 // The intro plays as a STAGED sequence — one thing at a time, minimal overlap:
 //   1. cards come in
 //   2. objects (card artwork) load in
-//   3. the instant the last object lands: the hero arrow starts drawing AND the
-//      objects start animating (no waiting on the second arrow)
-//   4. nav arrow draws
-// Stages 1→2→3 are seamless (boxes flow into objects flow into motion); the
-// only PHASE_GAP beat is before the nav arrow. The hero arrow and the model
-// motion are timed so the objects start animating exactly as the arrow's LINE
-// begins to draw — the moment the last object lands. INTRO_PACE scales the
-// speed *within* each stage. The steady-state model loops are unaffected.
+//   3. the hero arrow draws
+//   4. the nav arrow draws
+//   5. the pseudo-3D object animations begin
+// Stages 1→2→3 are seamless (boxes flow into objects flow into the first hint);
+// the only PHASE_GAP beat is before the nav arrow. INTRO_PACE scales the speed
+// within each stage. The steady-state model loops are unaffected.
 const INTRO_PACE = 1.0;
 const PHASE_GAP = 0.45;
 
@@ -83,16 +81,15 @@ const ARTWORKS_LANDED =
   ARTWORK_LAND_FRACTION * ARTWORK_REVEAL_DURATION;
 // Stage 3 — the hero arrow's LINE draws HINT_ARROW_DRAW_OFFSET into its own
 // enter (the "click me" text fades first), so start the hint that much earlier
-// and the stroke lands right as the last object arrives. The model motion then
-// trails by MODEL_MOTION_DELAY_AFTER_LAND, so each object reads as: arrives →
-// settles → comes alive (and never begins moving before the arrow is drawn).
+// and the stroke lands right as the last object arrives.
 const HERO_CLICKME_DELAY = ARTWORKS_LANDED - HINT_ARROW_DRAW_OFFSET;
-const MODEL_MOTION_DELAY_AFTER_LAND = 0.5;
-const HERO_MODEL_MOTION_DELAY = ARTWORKS_LANDED + MODEL_MOTION_DELAY_AFTER_LAND;
 const HERO_CLICKME_FINISH = HERO_CLICKME_DELAY + HINT_TOTAL_DURATION;
 // Stage 4 — nav arrow draws after the hero arrow finishes
 // (showContent-relative; the export below adds the pre-content typing time).
 const NAV_HINT_FROM_CONTENT = HERO_CLICKME_FINISH + PHASE_GAP;
+// Stage 5 — begin the pseudo-3D loops only after the second (nav) arrow has
+// completely drawn.
+const HERO_MODEL_MOTION_DELAY = NAV_HINT_FROM_CONTENT + HINT_TOTAL_DURATION;
 
 const INTRO_FINISH = IS_REVISIT
   ? 0
