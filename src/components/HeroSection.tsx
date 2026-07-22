@@ -316,8 +316,8 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               }
             >
             <div className="pointer-events-none relative z-10 [grid-area:3/1/4/4] md:[grid-area:3/1/4/3]">
-              <div className="absolute left-0 -top-1 origin-top-left scale-[160%] md:top-1 md:scale-[300%]">
-                <div className="-translate-x-[31.4%]">
+              <div className="absolute left-0 -top-[3px] origin-top-left scale-[160%] md:-top-[7px] md:scale-[300%] lg:-top-[11px]">
+                <div className="-translate-x-[31.4%] -translate-y-[22.1%]">
                   <HintSvg
                     variant="hero"
                     show={showContent && !hasBeenClicked}
