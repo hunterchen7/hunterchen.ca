@@ -696,7 +696,8 @@ function buildLaptop(
       scale(screenFront, depth),
     );
 
-  const screenOutline = roundedRectOutline(1.48, 0, 2.03, 0.12, 4);
+  // Match the base width so the lid and chassis corners meet when closed.
+  const screenOutline = roundedRectOutline(1.5, 0, 2.03, 0.12, 4);
   const screenFrontOutline = screenOutline.map((point) =>
     screenPoint(point.x, point.y, halfThickness),
   );
@@ -731,7 +732,9 @@ function buildLaptop(
   const displayDepth = halfThickness + 0.006;
   addDetailPolygon(
     "display",
-    roundedRectOutline(1.42, 0.05, 2.01, 0.075, 3).map((point) =>
+    // Keep the open-screen bezel visually even: 0.045 on each side and 0.05
+    // across the top/bottom, with the top slightly heavier in projection.
+    roundedRectOutline(1.455, 0.05, 1.98, 0.075, 3).map((point) =>
       screenPoint(point.x, point.y, displayDepth),
     ),
     screenFront,
