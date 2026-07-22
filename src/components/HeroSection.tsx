@@ -315,6 +315,19 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 } as React.CSSProperties
               }
             >
+            <div className="pointer-events-none relative z-10 [grid-area:3/1/4/4] md:[grid-area:3/1/4/3]">
+              <div className="absolute left-0 -top-1 origin-top-left scale-[160%] md:top-1 md:scale-[300%]">
+                <div className="-translate-x-[31.4%]">
+                  <HintSvg
+                    variant="hero"
+                    show={showContent && !hasBeenClicked}
+                    enterDelay={HERO_CLICKME_DELAY}
+                    width={60}
+                    height={38}
+                  />
+                </div>
+              </div>
+            </div>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -324,15 +337,6 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               }}
               className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-[#e8e5ee]/80"
             >
-              <div className="pointer-events-none absolute left-0 -top-1 z-10 scale-[160%] md:top-1 md:scale-[300%]">
-                <HintSvg
-                  variant="hero"
-                  show={showContent && !hasBeenClicked}
-                  enterDelay={HERO_CLICKME_DELAY}
-                  width={60}
-                  height={38}
-                />
-              </div>
               <div>
               <p className="text-[10px] leading-3 md:text-base md:leading-normal lg:text-lg bg-gradient-to-r from-[#e48dff] via-[#f09efd] to-[#c4b5fd] bg-clip-text text-transparent">
                   {INTRO_TEXT.slice(0, Math.min(charCount, INTRO_TEXT.length))}
