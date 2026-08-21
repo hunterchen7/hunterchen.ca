@@ -110,12 +110,15 @@ export const cards: Card[] = [
       "absolute left-1/2 top-[42%] h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 md:h-[73%] md:w-[70%]",
     back: (
       <div className="h-full w-full flex flex-col justify-between gap-4 text-left">
-        <div className="max-w-[34ch] space-y-3 text-[10.5px] md:text-sm lg:text-base leading-relaxed">
-          <p>currently enjoying funemployment</p>
+        <div className="max-w-[34ch] space-y-3 text-[10px] leading-relaxed md:text-[13px] lg:text-[15px]">
           <p>
-            I&apos;ve previously built fullstack mobile & web apps for{" "}
+            wrangling cl*nkers at{" "}
+            <AnimatedLink href="https://mintlify.com">mintlify 🍀</AnimatedLink>
+          </p>
+          <p>
+            previously built fullstack mobile & web apps @{" "}
             <AnimatedLink href="https://geneial.com">geneial</AnimatedLink>,{" "}
-            <AnimatedLink href="https://mora.do">mora.do</AnimatedLink> and{" "}
+            <AnimatedLink href="https://mora.do">mora.do</AnimatedLink> &{" "}
             <AnimatedLink href="https://aramid.finance">aramid</AnimatedLink>.
           </p>
         </div>

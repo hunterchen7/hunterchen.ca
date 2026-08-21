@@ -165,7 +165,7 @@ export default function App() {
             position: "top-right",
             separatorGap: 8,
             style: {
-              backgroundColor: HERO_COLORS.surface,
+              backgroundColor: "var(--surface-deep)",
               borderColor: heroRgba("accent", 0.45),
               color: HERO_COLORS.light,
             },
@@ -180,18 +180,18 @@ export default function App() {
           navbarConfig={{
             className: "site-navbar",
             style: {
-              backgroundColor: HERO_COLORS.surface,
+              backgroundColor: "var(--surface-deep)",
               borderColor: heroRgba("accent", 0.45),
             },
             buttonConfig: {
-              style: { color: heroRgba("light", 0.58) },
-              hoverStyle: { backgroundColor: HERO_COLORS.raised },
-              activeStyle: { backgroundColor: HERO_COLORS.deep },
+              style: { color: HERO_COLORS.accent },
+              hoverStyle: { backgroundColor: "var(--surface-mid)" },
+              activeStyle: { backgroundColor: "var(--surface-bloom)" },
               labelStyle: { color: HERO_COLORS.accent },
             },
             tooltipConfig: {
               style: {
-                backgroundColor: HERO_COLORS.surface,
+                backgroundColor: "var(--surface-deep)",
                 color: HERO_COLORS.light,
               },
             },

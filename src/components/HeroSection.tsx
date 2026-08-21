@@ -338,7 +338,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
               className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-[#e8e5ee]/80"
             >
               <div>
-              <p className="text-[10px] leading-3 md:text-base md:leading-normal lg:text-lg bg-gradient-to-r from-[#e48dff] via-[#f09efd] to-[#c4b5fd] bg-clip-text text-transparent">
+              <p className="text-[10px] leading-3 text-[color:var(--hero-accent)] md:text-base md:leading-normal lg:text-lg">
                   {INTRO_TEXT.slice(0, Math.min(charCount, INTRO_TEXT.length))}
                   {!typingDone && <span className="animate-pulse">|</span>}
                   {/* Waving hand emoji \u2014 retired, kept for reference.
@@ -366,7 +366,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showContent ? 1 : 0 }}
                   transition={{ duration: SUBTITLE_FADE_DURATION }}
-                className="text-[10px] leading-3 md:text-base md:leading-normal mt-2 md:mt-3 bg-gradient-to-r from-[#e48dff]/80 via-[#f09efd]/80 to-[#c4b5fd]/80 bg-clip-text text-transparent"
+                className="mt-2 text-[10px] leading-3 text-[color:var(--hero-accent)] md:mt-3 md:text-base md:leading-normal"
                 >
                   welcome to my playground, have a look around
                 </motion.p>

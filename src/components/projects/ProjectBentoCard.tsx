@@ -92,7 +92,7 @@ export default function ProjectBentoCard({
         backgroundSize: `${bounds.gridWidth}px ${bounds.gridHeight}px`,
         backgroundPosition: `${-bounds.offsetLeft}px ${-bounds.offsetTop}px`,
       }
-    : { background: "#3d1a50" };
+    : { background: "var(--surface-mid)" };
 
   // Compute local mouse position for glow
   const localX = bounds && gridMouse ? gridMouse.x - bounds.offsetLeft : 0;

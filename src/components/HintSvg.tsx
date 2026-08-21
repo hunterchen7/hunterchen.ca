@@ -32,11 +32,7 @@ export const HINT_ARROW_DRAW_OFFSET = ARROW_MAIN_OFFSET;
 /** @deprecated Use HINT_TOTAL_DURATION */
 export const CLICKME_TOTAL_DURATION = DRAW_DURATION;
 
-// Keep the handwritten hints as the one expressive color moment in the UI.
-const GRADIENT_WHITE = "#e48dffff";
-const GRADIENT_FUCHSIA = "#f09efdff";
-const GRADIENT_LAVENDER = "#c4b5fd";
-const GRADIENT_CYCLE_DURATION = "3s";
+const HINT_COLOR = "var(--hero-accent)";
 
 // -- "drag me" variant path (Caveat font, fontSize 14, converted via opentype.js) --
 
@@ -162,60 +158,6 @@ const arrowTipVariants: Variants = {
   },
 };
 
-// -- Shared gradient defs --
-
-function GradientDefs({
-  id,
-  x1,
-  y1,
-  x2,
-  y2,
-}: {
-  id: string;
-  x1: string;
-  y1: string;
-  x2: string;
-  y2: string;
-}) {
-  return (
-    <defs>
-      <linearGradient
-        id={id}
-        gradientUnits="userSpaceOnUse"
-        x1={x1}
-        y1={y1}
-        x2={x2}
-        y2={y2}
-      >
-        <stop offset="0%" stopColor={GRADIENT_WHITE}>
-          <animate
-            attributeName="stop-color"
-            values={`${GRADIENT_WHITE};${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER};${GRADIENT_WHITE}`}
-            dur={GRADIENT_CYCLE_DURATION}
-            repeatCount="indefinite"
-          />
-        </stop>
-        <stop offset="50%" stopColor={GRADIENT_FUCHSIA}>
-          <animate
-            attributeName="stop-color"
-            values={`${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER};${GRADIENT_WHITE};${GRADIENT_FUCHSIA}`}
-            dur={GRADIENT_CYCLE_DURATION}
-            repeatCount="indefinite"
-          />
-        </stop>
-        <stop offset="100%" stopColor={GRADIENT_LAVENDER}>
-          <animate
-            attributeName="stop-color"
-            values={`${GRADIENT_LAVENDER};${GRADIENT_WHITE};${GRADIENT_FUCHSIA};${GRADIENT_LAVENDER}`}
-            dur={GRADIENT_CYCLE_DURATION}
-            repeatCount="indefinite"
-          />
-        </stop>
-      </linearGradient>
-    </defs>
-  );
-}
-
 // -- Shared enter/exit state hook --
 
 function useHintState(show: boolean, enterDelay: number) {
@@ -264,7 +206,7 @@ export default function HintSvg({
   className,
 }: HintSvgProps) {
   const rawId = useId();
-  const gradientId = `hint-grad${rawId.replace(/:/g, "")}`;
+  const shadowId = `hint-shadow${rawId.replace(/:/g, "")}`;
   const state = useHintState(show, enterDelay);
 
   // Drag variant — curly arrow swooping down with handwritten text
@@ -282,8 +224,7 @@ export default function HintSvg({
         initial="hidden"
         animate={state}
       >
-        <GradientDefs id={gradientId} x1="0" y1="10" x2="140" y2="40" />
-        <filter id={`${gradientId}-shadow`}>
+        <filter id={shadowId}>
           <feDropShadow
             dx="0.5"
             dy="1.5"
@@ -300,12 +241,12 @@ export default function HintSvg({
           />
         </filter>
 
-        <g filter={`url(#${gradientId}-shadow)`}>
+        <g filter={`url(#${shadowId})`}>
           {/* Text — SVG path from Caveat font */}
           <motion.g transform="translate(62, 16) scale(1.4)">
             <motion.path
               d={DRAG_TEXT_PATH}
-              fill={`url(#${gradientId})`}
+              fill={HINT_COLOR}
               variants={textVariants}
               custom={enterDelay}
             />
@@ -315,7 +256,7 @@ export default function HintSvg({
           <motion.g transform="translate(25, 42) scale(1, -1) rotate(50, 18, 28)">
             <motion.path
               d={CLICK_ARROW_MAIN}
-              stroke={`url(#${gradientId})`}
+              stroke={HINT_COLOR}
               strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"
@@ -324,7 +265,7 @@ export default function HintSvg({
             />
             <motion.path
               d={CLICK_ARROW_TIP}
-              stroke={`url(#${gradientId})`}
+              stroke={HINT_COLOR}
               strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"
@@ -353,13 +294,11 @@ export default function HintSvg({
       initial="hidden"
       animate={state}
     >
-      <GradientDefs id={gradientId} x1="-50" y1="20" x2="35" y2="50" />
-
       {/* Text */}
       <motion.g transform={CLICK_TRANSFORMS[clickVariant].text}>
         <motion.path
           d={CLICK_TEXT_PATH}
-          fill={`url(#${gradientId})`}
+          fill={HINT_COLOR}
           variants={textVariants}
           custom={enterDelay}
         />
@@ -369,7 +308,7 @@ export default function HintSvg({
       <motion.g transform={CLICK_TRANSFORMS[clickVariant].arrow}>
         <motion.path
           d={CLICK_ARROW_MAIN}
-          stroke={`url(#${gradientId})`}
+          stroke={HINT_COLOR}
           strokeLinecap="round"
           fill="none"
           variants={arrowMainVariants}
@@ -377,7 +316,7 @@ export default function HintSvg({
         />
         <motion.path
           d={CLICK_ARROW_TIP}
-          stroke={`url(#${gradientId})`}
+          stroke={HINT_COLOR}
           strokeLinecap="round"
           fill="none"
           variants={arrowTipVariants}

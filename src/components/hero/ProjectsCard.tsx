@@ -19,10 +19,10 @@ export default function ProjectsCard() {
   return (
     <div className="h-full w-full flex items-center">
       <div className="w-full text-left">
-        <p className="text-[9px] md:text-sm lg:text-base">
+        <p className="text-[9px] md:text-xs lg:text-base">
           I've made a bunch of random things:
         </p>
-        <ul className="md:mt-3 md:space-y-2 text-[9px] md:text-sm">
+        <ul className="text-[9px] md:mt-3 md:space-y-2 md:text-xs lg:text-sm">
           <ListItem>
             a cross-platform{" "}
             <AnimatedLink href="https://ti84ce.pages.dev">
