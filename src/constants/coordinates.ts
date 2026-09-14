@@ -1,16 +1,14 @@
 import type { SectionCoordinates, NavItem } from "@hunterchen/canvas";
-import { ChessKnight } from "lucide-react";
 
 /**
  * Canvas Layout (7000 x 4000 — width set via CANVAS_WIDTH in App.tsx):
  *
- *              [About]
+ *      [Home: play chess]            [About: who I am]
  *
- *              [Hero]
+ *          [Projects]                    [Gallery]
  *
- *      [Gallery]       [Projects]
- *
- * Grid layout with Hero and About centered vertically, Gallery and Projects at bottom
+ * `home` is the landing: the playable isometric board. `about` holds the card
+ * grid that used to be the landing.
  */
 
 // Layout constants
@@ -22,11 +20,11 @@ const SECTION_HEIGHT = 700;
 // reveals the off-canvas area on wide screens. Rightmost edge (chess) is 4300 +
 // 1200 = 5500, leaving ~1500px of open space on the right of the 7000-wide canvas.
 export const coordinates = {
-  hero: {
-    x: 1900,
-    y: 800,
-    width: 1000,
-    height: 900,
+  home: {
+    x: 1800,
+    y: 700,
+    width: 1200,
+    height: 1000,
   },
 
   projects: {
@@ -35,7 +33,7 @@ export const coordinates = {
     width: 1200,
     height: 1000,
   },
-  chess: {
+  about: {
     x: 4300,
     y: 700,
     width: 1200,
@@ -51,10 +49,10 @@ export const coordinates = {
 
 export const navItems: NavItem[] = [
   {
-    id: "hero",
+    id: "home",
     label: "Home",
     icon: "Home",
-    ...coordinates.hero,
+    ...coordinates.home,
     isHome: true,
   },
   {
@@ -63,7 +61,7 @@ export const navItems: NavItem[] = [
     icon: "Folders",
     ...coordinates.projects,
   },
-  { id: "chess", label: "Chess", icon: ChessKnight, ...coordinates.chess },
+  { id: "about", label: "About", icon: "Info", ...coordinates.about },
   {
     id: "gallery",
     label: "Gallery",

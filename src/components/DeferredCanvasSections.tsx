@@ -1,13 +1,13 @@
 import { coordinates } from "../constants/coordinates";
-import ChessSection from "./ChessSection";
 import GallerySection from "./GallerySection";
+import HeroSection from "./HeroSection";
 import ProjectsSection from "./ProjectsSection";
 
 export default function DeferredCanvasSections() {
   return (
     <>
       <GallerySection offset={coordinates.gallery} />
-      <ChessSection offset={coordinates.chess} />
+      <HeroSection offset={coordinates.about} />
       <ProjectsSection offset={coordinates.projects} />
     </>
   );

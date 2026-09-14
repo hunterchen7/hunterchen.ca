@@ -16,9 +16,7 @@ import {
   ScreenSizeEnum,
 } from "@hunterchen/canvas";
 import { coordinates, navItems } from "./constants/coordinates";
-import HeroSection, {
-  HERO_NAV_HINT_DELAY,
-} from "./components/HeroSection";
+import ChessLandingSection from "./components/ChessLandingSection";
 import HintSvg from "./components/HintSvg";
 import ReaderContent from "./components/ReaderContent";
 import {
@@ -41,6 +39,9 @@ const CANVAS_WIDTH = 7000;
 // Canvas spotlight - circular bloom at canvas center, falling off outward
 const CANVAS_GRADIENT = `radial-gradient(circle ${CANVAS_WIDTH / 2}px at ${CANVAS_WIDTH / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
 
+// Seconds from load before the navbar hint draws itself.
+const NAV_HINT_DELAY = 1.6;
+
 // Dot color (warm purple highlight)
 const DOT_COLOR = "var(--canvas-dot)";
 
@@ -51,7 +52,7 @@ const DeferredCanvasSections = lazy(loadDeferredCanvasSections);
 export default function App() {
   const [showClickMe, setShowClickMe] = useState(true);
   const [loadDeferredSections, setLoadDeferredSections] = useState(false);
-  const [activeSection, setActiveSection] = useState<SectionName>("hero");
+  const [activeSection, setActiveSection] = useState<SectionName>("home");
   const focusTimerRef = useRef<number | null>(null);
 
   const activateSection = useCallback(
@@ -146,11 +147,11 @@ export default function App() {
         <HintSvg
           variant="nav"
           show={showClickMe}
-          enterDelay={HERO_NAV_HINT_DELAY}
+          enterDelay={NAV_HINT_DELAY}
           className="pointer-events-none fixed bottom-[49px] left-[53%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
         />
         <Canvas
-          homeCoordinates={coordinates.hero}
+          homeCoordinates={coordinates.home}
           canvasWidth={CANVAS_WIDTH}
           navItems={navItems}
           skipIntro
@@ -198,7 +199,7 @@ export default function App() {
           }}
         >
           <CanvasSectionTracker />
-          <HeroSection offset={coordinates.hero} />
+          <ChessLandingSection offset={coordinates.home} />
           {loadDeferredSections ? (
             <Suspense fallback={null}>
               <DeferredCanvasSections />
