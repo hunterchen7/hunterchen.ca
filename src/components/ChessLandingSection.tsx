@@ -1,9 +1,18 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { ChessboardWatermark } from "./hero/deferredHeroModels";
 import IsoChessBoard from "./chess/IsoChessBoard";
 import { PieceShape, type PieceKind } from "./chess/isoPieces";
-import { STRAIGHT } from "./chess/isoGeometry";
+import {
+  DIAMOND,
+  DIAMOND_PROJECTION,
+  STRAIGHT,
+  STRAIGHT_PROJECTION,
+  blendProjections,
+  createBoardGeometry,
+  smoothstep,
+  type BoardGeometry,
+} from "./chess/isoGeometry";
 import Confetti from "./chess/Confetti";
 import { AnimatedLink } from "./AnimatedLink";
 import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
@@ -22,6 +31,86 @@ const PROMOTION_CHOICES: { kind: PieceKind; label: string }[] = [
 
 interface ChessLandingSectionProps {
   offset: SectionCoordinates;
+}
+
+/**
+ * Pressing play runs one sequence: the resting pieces tumble off, the empty
+ * board swings from the corner-on view round to head-on, then the opening
+ * position drops in. Timings are cumulative milliseconds from the press.
+ */
+const SEQUENCE = {
+  scatter: 900,
+  settle: 1_500,
+  swing: 1_000,
+} as const;
+const SWING_START = SEQUENCE.scatter;
+const SETTLE_START = SWING_START + SEQUENCE.swing;
+const SEQUENCE_MS = SETTLE_START + SEQUENCE.settle;
+
+type PlaySequence = {
+  /** 0 to 1 as the opening position drops in. */
+  entry: number;
+  geometry: BoardGeometry;
+  /** True while the resting board is still on screen, tumbling its pieces. */
+  restingBoard: boolean;
+  /** 0 to 1 as the resting pieces leave. */
+  scatter: number;
+};
+
+const RESTING_SEQUENCE: PlaySequence = {
+  entry: 0,
+  geometry: DIAMOND,
+  restingBoard: true,
+  scatter: 0,
+};
+
+function usePlaySequence(playing: boolean): PlaySequence {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!playing) {
+      setElapsed(0);
+      return;
+    }
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setElapsed(SEQUENCE_MS);
+      return;
+    }
+
+    let frame = 0;
+    let start: number | null = null;
+    const step = (now: number) => {
+      if (start === null) start = now;
+      const next = now - start;
+      setElapsed(Math.min(next, SEQUENCE_MS));
+      if (next < SEQUENCE_MS) frame = window.requestAnimationFrame(step);
+    };
+    frame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frame);
+  }, [playing]);
+
+  return useMemo(() => {
+    if (!playing) return RESTING_SEQUENCE;
+    if (elapsed >= SEQUENCE_MS) {
+      return { entry: 1, geometry: STRAIGHT, restingBoard: false, scatter: 1 };
+    }
+
+    const swing = smoothstep((elapsed - SWING_START) / SEQUENCE.swing);
+    return {
+      entry: Math.max(0, (elapsed - SETTLE_START) / SEQUENCE.settle),
+      geometry:
+        swing >= 1
+          ? STRAIGHT
+          : createBoardGeometry(
+              blendProjections(DIAMOND_PROJECTION, STRAIGHT_PROJECTION, swing),
+            ),
+      restingBoard: elapsed < SEQUENCE.scatter,
+      scatter: Math.min(1, elapsed / SEQUENCE.scatter),
+    };
+  }, [elapsed, playing]);
 }
 
 function DownloadProgress({
@@ -97,10 +186,13 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
     if (playerWon) setConfettiKey((key) => key + 1);
   }, [playerWon]);
 
-  // Before the first game the recorded Immortal Game loops behind the overlay;
-  // once you play, the live board takes over and never goes back to it.
-  const showAmbient = phase === "idle";
+  // Before the first game the recorded Immortal Game loops behind the overlay in
+  // the resting corner-on view. Pressing play hands over to the live board at
+  // once — the position resets immediately rather than waiting for the engine —
+  // and the view swings round to head-on while the engine loads.
   const overlayUp = phase === "idle";
+  const { entry, geometry, restingBoard, scatter } = usePlaySequence(!overlayUp);
+  const showAmbient = overlayUp || restingBoard;
 
   return (
     <CanvasComponent offset={offset}>
@@ -114,11 +206,14 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
             <div
               aria-hidden="true"
               className="h-full w-full"
-              style={{ filter: "blur(1.2px)", opacity: 0.9 }}
+              style={{
+                filter: overlayUp ? "blur(1.2px)" : "none",
+                opacity: 0.9,
+              }}
             >
               <Suspense fallback={null}>
                 <ChessboardWatermark
-                  geometry={STRAIGHT}
+                  dismiss={scatter}
                   prefix="landing-chessboard-piece"
                 />
               </Suspense>
@@ -126,7 +221,9 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
           ) : (
             <IsoChessBoard
               animatedMove={animatedMove}
+              entry={entry}
               fen={fen}
+              geometry={geometry}
               flipped={playerColor === "b"}
               highlights={highlights}
               interactive={boardIsInteractive}
@@ -217,7 +314,12 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
                       className="h-12 w-12 cursor-pointer rounded-lg ring-1 ring-inset ring-fuchsia-300/20 transition-colors hover:bg-fuchsia-300/10"
                     >
                       <svg className="h-full w-full" viewBox="-3.2 -6.2 6.4 7.8">
-                        <PieceShape color={playerColor} detail kind={kind} />
+                        <PieceShape
+                          color={playerColor}
+                          detail
+                          kind={kind}
+                          roundness={STRAIGHT.pieceRoundness}
+                        />
                       </svg>
                     </button>
                   ))}

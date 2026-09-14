@@ -25,6 +25,12 @@ export type ProjectionConfig = {
   /** Screen delta for +1 column (a decreasing rank). */
   column: Point;
   origin: Point;
+  /**
+   * Drawn height over width for a circle lying on the board, i.e. the sine of
+   * the camera's elevation. Piece discs and rims use it so they sit in the
+   * same perspective as the squares.
+   */
+  pieceRoundness: number;
   /** Scales the piece artwork to suit the square size. */
   pieceScale: number;
   /** Screen delta for +1 row (a decreasing file). */
@@ -68,7 +74,14 @@ export function squareAtIndices(row: number, column: number): string | null {
 export type BoardGeometry = ReturnType<typeof createBoardGeometry>;
 
 export function createBoardGeometry(config: ProjectionConfig) {
-  const { boardDepth, column: COLUMN, origin: ORIGIN, pieceScale, row: ROW } = config;
+  const {
+    boardDepth,
+    column: COLUMN,
+    origin: ORIGIN,
+    pieceRoundness,
+    pieceScale,
+    row: ROW,
+  } = config;
 
   const point = (row: number, column: number): Point => ({
     x: ORIGIN.x + column * COLUMN.x + row * ROW.x,
@@ -155,6 +168,7 @@ export function createBoardGeometry(config: ProjectionConfig) {
     center,
     gridPath,
     lightSquaresPath,
+    pieceRoundness,
     pieceScale,
     point,
     squareAtPoint,
@@ -164,32 +178,66 @@ export function createBoardGeometry(config: ProjectionConfig) {
   };
 }
 
-/** Corner-on view. Decorative; used by the projects-card watermark. */
-export const DIAMOND = createBoardGeometry({
+/** Corner-on view: the board's resting look, and the projects-card watermark. */
+export const DIAMOND_PROJECTION: ProjectionConfig = {
   boardDepth: 5.2,
   column: { x: 6.15, y: 3.075 },
   origin: { x: 60, y: 10.8 },
+  // Kept near the value this artwork was drawn at, so the projects-card
+  // watermark looks as it always has.
+  pieceRoundness: 0.34,
   pieceScale: 1.06,
   row: { x: -6.15, y: 3.075 },
-});
+};
 
 /**
  * Head-on view. Files run left to right, ranks recede straight up the screen
  * with vertical foreshortening, so squares are plain rectangles and the board
  * reads like a normal chessboard tilted back.
  */
-export const STRAIGHT = createBoardGeometry({
+export const STRAIGHT_PROJECTION: ProjectionConfig = {
   boardDepth: 4.6,
-  // Squares are 10 wide by 6.6 deep: enough foreshortening to read as tilted
-  // without flattening the board into a strip.
-  column: { x: 0, y: 6.6 },
-  origin: { x: 100, y: 17 },
+  // Squares are 11 wide by 8.6 deep. That is a fairly high camera, which is
+  // what keeps successive ranks from stacking on top of each other.
+  column: { x: 0, y: 8.6 },
+  origin: { x: 104, y: 6 },
+  // Matches the squares: a rank is 8.6 deep for every 11 of file width.
+  pieceRoundness: 0.78,
   // A diamond square spans 12.3 units across the screen and its pieces sit at
-  // about 40% of that. Matching the ratio on a 10-wide rectangle keeps the
+  // about 40% of that. Matching the ratio on an 11-wide rectangle keeps the
   // familiar proportions and stops pieces from swallowing the rank behind.
-  pieceScale: 0.98,
-  row: { x: -10, y: 0 },
+  pieceScale: 1.06,
+  row: { x: -11, y: 0 },
+};
+
+export const DIAMOND = createBoardGeometry(DIAMOND_PROJECTION);
+export const STRAIGHT = createBoardGeometry(STRAIGHT_PROJECTION);
+
+const mix = (from: number, to: number, t: number) => from + (to - from) * t;
+const mixPoint = (from: Point, to: Point, t: number): Point => ({
+  x: mix(from.x, to.x, t),
+  y: mix(from.y, to.y, t),
 });
+
+/**
+ * Blend two projections. Because both are affine bases, interpolating them
+ * reads as the camera swinging round and up from the corner-on view to the
+ * head-on one.
+ */
+export function blendProjections(
+  from: ProjectionConfig,
+  to: ProjectionConfig,
+  t: number,
+): ProjectionConfig {
+  return {
+    boardDepth: mix(from.boardDepth, to.boardDepth, t),
+    column: mixPoint(from.column, to.column, t),
+    origin: mixPoint(from.origin, to.origin, t),
+    pieceRoundness: mix(from.pieceRoundness, to.pieceRoundness, t),
+    pieceScale: mix(from.pieceScale, to.pieceScale, t),
+    row: mixPoint(from.row, to.row, t),
+  };
+}
 
 // The watermark predates the factory and uses these directly.
 export const BOARD_CENTER = DIAMOND.boardCenter;

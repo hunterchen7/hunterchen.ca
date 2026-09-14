@@ -1,6 +1,14 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { heroRgba } from "../hero/heroPalette";
-import { BOARD_SIZE, FILES, STRAIGHT, clamp, squareIndices } from "./isoGeometry";
+import {
+  BOARD_SIZE,
+  FILES,
+  STRAIGHT,
+  clamp,
+  easeOutCubic,
+  squareIndices,
+  type BoardGeometry,
+} from "./isoGeometry";
 import {
   BoardSurface,
   PieceDefinitions,
@@ -30,11 +38,11 @@ import type { AnimatedMove, BoardHighlights } from "../../hooks/useChessGame";
 const PIECE_PREFIX = "iso-chess-piece";
 
 /** Half-extents of a piece's artwork, used for its click target. */
-const PIECE_HIT = {
-  bottom: 1.1 * STRAIGHT.pieceScale,
-  halfWidth: 2.4 * STRAIGHT.pieceScale,
-  top: 5.4 * STRAIGHT.pieceScale,
-};
+const pieceHitBox = (scale: number) => ({
+  bottom: 1.1 * scale,
+  halfWidth: 2.4 * scale,
+  top: 5.4 * scale,
+});
 
 const PIECE_NAMES: Record<PieceKind, string> = {
   b: "bishop",
@@ -58,14 +66,14 @@ function indicesFor(square: string, flipped: boolean) {
     : { column, row };
 }
 
-function centerFor(square: string, flipped: boolean) {
+function centerFor(geometry: BoardGeometry, square: string, flipped: boolean) {
   const { column, row } = indicesFor(square, flipped);
-  return STRAIGHT.center(row, column);
+  return geometry.center(row, column);
 }
 
-function pointsFor(square: string, flipped: boolean) {
+function pointsFor(geometry: BoardGeometry, square: string, flipped: boolean) {
   const { column, row } = indicesFor(square, flipped);
-  return STRAIGHT.squarePoints(row, column);
+  return geometry.squarePoints(row, column);
 }
 
 /** Expand a FEN placement field into one entry per occupied square. */
@@ -101,8 +109,16 @@ function describeSquare(square: string, piece: BoardSquare | undefined): string 
 }
 
 /** A flat ellipse sits on the board plane; a circle would look upright. */
-function MoveDot({ square, flipped }: { flipped: boolean; square: string }) {
-  const { x, y } = centerFor(square, flipped);
+function MoveDot({
+  flipped,
+  geometry,
+  square,
+}: {
+  flipped: boolean;
+  geometry: BoardGeometry;
+  square: string;
+}) {
+  const { x, y } = centerFor(geometry, square, flipped);
   return (
     <ellipse
       cx={x.toFixed(2)}
@@ -114,11 +130,19 @@ function MoveDot({ square, flipped }: { flipped: boolean; square: string }) {
   );
 }
 
-function CaptureRing({ square, flipped }: { flipped: boolean; square: string }) {
+function CaptureRing({
+  flipped,
+  geometry,
+  square,
+}: {
+  flipped: boolean;
+  geometry: BoardGeometry;
+  square: string;
+}) {
   return (
     <polygon
       fill="none"
-      points={pointsFor(square, flipped)}
+      points={pointsFor(geometry, square, flipped)}
       stroke={heroRgba("light", 0.6)}
       strokeWidth="0.7"
       vectorEffect="non-scaling-stroke"
@@ -217,6 +241,13 @@ type IsoChessBoardProps = {
   blurred?: boolean;
   detail?: boolean;
   fen: string;
+  /**
+   * 0 to 1. Drops the pieces onto an empty board, staggered from the back rank
+   * forward. 1 means fully settled.
+   */
+  entry?: number;
+  /** Projection to draw in; animated while the view swings round on play. */
+  geometry?: BoardGeometry;
   flipped?: boolean;
   highlights: BoardHighlights;
   interactive?: boolean;
@@ -227,8 +258,10 @@ function IsoChessBoard({
   animatedMove = null,
   blurred = false,
   detail = true,
+  entry = 1,
   fen,
   flipped = false,
+  geometry = STRAIGHT,
   highlights,
   interactive = false,
   onSelectSquare,
@@ -243,6 +276,10 @@ function IsoChessBoard({
     return lookup;
   }, [pieces]);
 
+  const hit = pieceHitBox(geometry.pieceScale);
+  // Quantised so the piece <defs> only rebuild a handful of times while the
+  // view swings round, instead of on every frame.
+  const pieceRoundness = Math.round(geometry.pieceRoundness * 20) / 20;
   const { clock, playing } = useMoveClock(animatedMove);
   const checkPulse = useCheckPulse(highlights.checkSquare !== null);
 
@@ -253,7 +290,7 @@ function IsoChessBoard({
 
     const list = pieces.map((piece) => {
       const { column, row } = indicesFor(piece.square, flipped);
-      const at = STRAIGHT.center(row, column);
+      const at = geometry.center(row, column);
       let x = at.x;
       let y = at.y;
       let impact = 0;
@@ -270,7 +307,7 @@ function IsoChessBoard({
             : null;
 
       if (travellingFrom) {
-        const start = centerFor(travellingFrom, flipped);
+        const start = centerFor(geometry, travellingFrom, flipped);
         x = start.x + (at.x - start.x) * motion.travel;
         y = start.y + (at.y - start.y) * motion.travel;
         impact = landingImpactAt(clock.settle);
@@ -305,11 +342,11 @@ function IsoChessBoard({
       clock.capture < 1
     ) {
       const { column, row } = indicesFor(playing.capturedSquare, flipped);
-      const at = STRAIGHT.center(row, column);
+      const at = geometry.center(row, column);
       const knockback = capturedPieceMotion({
         captureProgress: clock.capture,
         fallSeed: playing.capturedSquare.charCodeAt(0),
-        moverFrom: centerFor(playing.from, flipped),
+        moverFrom: centerFor(geometry, playing.from, flipped),
         victimAt: at,
       });
 
@@ -331,7 +368,7 @@ function IsoChessBoard({
     }
 
     return list.sort((first, second) => first.depth - second.depth);
-  }, [clock.capture, clock.move, clock.settle, flipped, pieces, playing]);
+  }, [clock.capture, clock.move, clock.settle, entry, flipped, geometry, pieces, playing]);
 
   const shake = useMemo(() => {
     const mate = mateShakeAt(clock.landing, playing?.isMate ?? false);
@@ -411,19 +448,23 @@ function IsoChessBoard({
       }}
       viewBox="0 0 120 82"
     >
-      <PieceDefinitions detail={detail} prefix={PIECE_PREFIX} />
+      <PieceDefinitions
+        detail={detail}
+        prefix={PIECE_PREFIX}
+        roundness={pieceRoundness}
+      />
       <g transform={`translate(${shake.x.toFixed(3)} ${shake.y.toFixed(3)})`}>
-      <BoardSurface geometry={STRAIGHT} />
+      <BoardSurface geometry={geometry} />
 
       {highlights.lastMove ? (
         <g data-layer="last-move">
           <polygon
             fill={heroRgba("light", 0.16)}
-            points={pointsFor(highlights.lastMove.from, flipped)}
+            points={pointsFor(geometry, highlights.lastMove.from, flipped)}
           />
           <polygon
             fill={heroRgba("accent", 0.26)}
-            points={pointsFor(highlights.lastMove.to, flipped)}
+            points={pointsFor(geometry, highlights.lastMove.to, flipped)}
           />
         </g>
       ) : null}
@@ -432,11 +473,11 @@ function IsoChessBoard({
         <g data-layer="selected">
           <polygon
             fill={heroRgba("accent", 0.34)}
-            points={pointsFor(highlights.selected, flipped)}
+            points={pointsFor(geometry, highlights.selected, flipped)}
           />
           <polygon
             fill="none"
-            points={pointsFor(highlights.selected, flipped)}
+            points={pointsFor(geometry, highlights.selected, flipped)}
             stroke={heroRgba("light", 0.82)}
             strokeWidth="0.9"
             vectorEffect="non-scaling-stroke"
@@ -446,23 +487,23 @@ function IsoChessBoard({
 
       {highlights.checkSquare ? (
         <CheckHighlight
-          center={centerFor(highlights.checkSquare, flipped)}
+          center={centerFor(geometry, highlights.checkSquare, flipped)}
           intensity={1}
           mate={playing?.isMate ?? false}
-          points={pointsFor(highlights.checkSquare, flipped)}
+          points={pointsFor(geometry, highlights.checkSquare, flipped)}
           pulse={checkPulse}
         />
       ) : null}
 
       <g data-layer="legal-quiet">
         {highlights.legalQuiet.map((square) => (
-          <MoveDot flipped={flipped} key={square} square={square} />
+          <MoveDot flipped={flipped} geometry={geometry} key={square} square={square} />
         ))}
       </g>
 
       {playing ? (
         <LandingDust
-          center={centerFor(playing.to, flipped)}
+          center={centerFor(geometry, playing.to, flipped)}
           progress={clock.landing}
         />
       ) : null}
@@ -472,7 +513,8 @@ function IsoChessBoard({
           <PieceModel
             key={piece.id}
             {...piece}
-            pieceScale={STRAIGHT.pieceScale}
+            pieceScale={geometry.pieceScale}
+            roundness={pieceRoundness}
             prefix={PIECE_PREFIX}
           />
         ))}
@@ -480,7 +522,7 @@ function IsoChessBoard({
 
       {playing?.capturedSquare && playing.capturedColor ? (
         <CaptureBurst
-          center={centerFor(playing.capturedSquare, flipped)}
+          center={centerFor(geometry, playing.capturedSquare, flipped)}
           color={playing.capturedColor}
           progress={clock.capture}
         />
@@ -489,7 +531,7 @@ function IsoChessBoard({
       {/* Capture rings sit above the pieces so they read as a target. */}
       <g data-layer="legal-captures" pointerEvents="none">
         {highlights.legalCaptures.map((square) => (
-          <CaptureRing flipped={flipped} key={square} square={square} />
+          <CaptureRing flipped={flipped} geometry={geometry} key={square} square={square} />
         ))}
       </g>
 
@@ -502,7 +544,7 @@ function IsoChessBoard({
               {...hitProps(square)}
               fill="transparent"
               key={`square-${square}`}
-              points={pointsFor(square, flipped)}
+              points={pointsFor(geometry, square, flipped)}
             />
           ))}
           {/* Piece silhouettes above them, in the same depth order as the art,
@@ -512,11 +554,11 @@ function IsoChessBoard({
             <rect
               {...hitProps(piece.square)}
               fill="transparent"
-              height={PIECE_HIT.top + PIECE_HIT.bottom}
+              height={hit.top + hit.bottom}
               key={`piece-${piece.id}`}
-              width={PIECE_HIT.halfWidth * 2}
-              x={piece.x - PIECE_HIT.halfWidth}
-              y={piece.y - PIECE_HIT.top}
+              width={hit.halfWidth * 2}
+              x={piece.x - hit.halfWidth}
+              y={piece.y - hit.top}
             />
           ))}
         </g>

@@ -445,6 +445,7 @@ function useTimeline(frame: number | null): {
 function renderPiecesForTimeline(
   timeline: Timeline,
   geometry: BoardGeometry,
+  dismiss = 0,
 ): RenderPiece[] {
   const { boardCenter: BOARD_CENTER, squareCenter } = geometry;
   const pieces = GAME_STATES[timeline.stateIndex] ?? [];
@@ -577,6 +578,26 @@ function renderPiecesForTimeline(
         y,
       };
     })
+    .map((piece): RenderPiece => {
+      if (dismiss <= 0) return piece;
+      // Each piece gets its own beat and direction so the board clears as a
+      // scatter rather than everything sliding off together.
+      const seed = piece.id.charCodeAt(0) + piece.id.charCodeAt(piece.id.length - 1);
+      const delay = ((seed % 7) / 7) * 0.34;
+      const t = smoothstep((dismiss - delay) / (1 - delay));
+      if (t <= 0) return piece;
+
+      const away = piece.x < BOARD_CENTER.x ? -1 : 1;
+      return {
+        ...piece,
+        lift: piece.lift - t * 1.4,
+        opacity: piece.opacity * (1 - t),
+        rotation: piece.rotation + away * t * 74,
+        scale: piece.scale * (1 - t * 0.2),
+        x: piece.x + away * t * (3.4 + (seed % 5) * 0.7),
+        y: piece.y + t * (2.6 + (seed % 4) * 0.5),
+      };
+    })
     .sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id));
 }
 
@@ -617,9 +638,15 @@ function MoveHighlights({
 }
 
 function ChessboardWatermark({
+  dismiss = 0,
   geometry = DIAMOND,
   prefix = DEFAULT_PIECE_PREFIX,
 }: {
+  /**
+   * 0 to 1. Tumbles every piece off the board, used to clear it before the
+   * playable board takes over. The board itself stays put.
+   */
+  dismiss?: number;
   geometry?: BoardGeometry;
   prefix?: string;
 } = {}) {
@@ -628,7 +655,7 @@ function ChessboardWatermark({
   const { elapsed, fps, simplified } = useTimeline(frame);
   const timeline = timelineAt(elapsed);
   const pieces = useMemo(
-    () => renderPiecesForTimeline(timeline, geometry),
+    () => renderPiecesForTimeline(timeline, geometry, dismiss),
     [
       timeline.activeMove,
       timeline.moveProgress,
@@ -637,6 +664,7 @@ function ChessboardWatermark({
       timeline.settleProgress,
       timeline.stateIndex,
       geometry,
+      dismiss,
     ],
   );
   const activeMove =
@@ -685,7 +713,11 @@ function ChessboardWatermark({
       viewBox="0 0 120 82"
       withGlow={false}
     >
-      <PieceDefinitions detail={!simplified} prefix={prefix} />
+      <PieceDefinitions
+        detail={!simplified}
+        prefix={prefix}
+        roundness={geometry.pieceRoundness}
+      />
       <g
         data-board-shake={`${boardShake.x.toFixed(3)},${boardShake.y.toFixed(3)}`}
         data-chess-phase={timeline.phase}
@@ -722,6 +754,7 @@ function ChessboardWatermark({
               key={piece.id}
               {...piece}
               pieceScale={geometry.pieceScale}
+            roundness={geometry.pieceRoundness}
               prefix={prefix}
             />
           ))}
