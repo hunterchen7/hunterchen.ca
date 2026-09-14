@@ -22,28 +22,9 @@ interface HeroSectionProps {
   offset: SectionCoordinates;
 }
 
-// Session storage — skip typewriter on revisit
-const INTRO_SEEN_KEY = "hero-intro-seen";
-const IS_REVISIT =
-  typeof window !== "undefined" &&
-  sessionStorage.getItem(INTRO_SEEN_KEY) === "true";
-
-// Typewriter timing (ms)
 const INTRO_TEXT = "hey, I'm Hunter!";
-const INTRO_SEQUENCE_LENGTH = INTRO_TEXT.length + 1;
-const CHAR_DELAY = 50;
-const PUNCT_DELAY = 120;
-const PUNCTUATION = ",;:.!?";
-const TYPING_DURATION_MS = Array.from(
-  { length: INTRO_SEQUENCE_LENGTH },
-  (_, i) =>
-    PUNCTUATION.includes(INTRO_TEXT[i - 1] ?? "")
-      ? PUNCT_DELAY
-      : CHAR_DELAY,
-).reduce((a, b) => a + b, 0);
-const POST_TYPING_DELAY_MS = 200;
 
-// Content timing (seconds, relative to showContent becoming true).
+// Content timing (seconds, relative to page mount).
 //
 // The intro plays as a STAGED sequence — one thing at a time, minimal overlap:
 //   1. cards come in
@@ -57,14 +38,14 @@ const POST_TYPING_DELAY_MS = 200;
 const INTRO_PACE = 1.0;
 const HINT_GAP = 0.08;
 
-const TEXT_CONTAINER_DELAY = 0.2 * INTRO_PACE;
-const SUBTITLE_FADE_DURATION = 0.2 * INTRO_PACE;
-const CARD_STAGGER = (IS_REVISIT ? 0.2 : 0.25) * INTRO_PACE;
-const CARD_SPRING_SETTLE = (IS_REVISIT ? 0.65 : 0.7) * INTRO_PACE;
-const ARTWORK_STAGGER = (IS_REVISIT ? 0.2 : 0.25) * INTRO_PACE;
-const ARTWORK_REVEAL_DURATION = (IS_REVISIT ? 1.15 : 1.25) * INTRO_PACE;
-// const WAVE_AFTER_BOXES =
-//   (cards.length - 1) * CARD_STAGGER + (IS_REVISIT ? 0.25 : 0.3); // wave emoji retired
+// Stage 0 — the heading and subtitle are on screen from the first frame; the
+// rest of the intro (cards, hints) starts shortly after.
+const CONTENT_DELAY = 0.25 * INTRO_PACE;
+const CARD_STAGGER = 0.2 * INTRO_PACE;
+const CARD_SPRING_SETTLE = 0.65 * INTRO_PACE;
+const ARTWORK_STAGGER = 0.2 * INTRO_PACE;
+const ARTWORK_REVEAL_DURATION = 1.15 * INTRO_PACE;
+// const WAVE_AFTER_BOXES = (cards.length - 1) * CARD_STAGGER + 0.25; // wave emoji retired
 
 // Stage 1 — cards come in.
 const CARDS_FINISH = (cards.length - 1) * CARD_STAGGER + CARD_SPRING_SETTLE;
@@ -85,27 +66,21 @@ const ARTWORKS_LANDED =
 const HERO_CLICKME_DELAY = ARTWORKS_LANDED - HINT_ARROW_DRAW_OFFSET;
 const HERO_CLICKME_FINISH = HERO_CLICKME_DELAY + HINT_TOTAL_DURATION;
 // Stage 4 — the nav hint's text leads in first, then its actual arrow stroke
-// begins 80ms after the hero arrow finishes (showContent-relative; the export
-// below adds the pre-content typing time).
+// begins 80ms after the hero arrow finishes.
 const NAV_HINT_FROM_CONTENT =
   HERO_CLICKME_FINISH - HINT_ARROW_DRAW_OFFSET + HINT_GAP;
 // Stage 5 — begin the pseudo-3D loops only after the second (nav) arrow has
 // completely drawn.
 const HERO_MODEL_MOTION_DELAY = NAV_HINT_FROM_CONTENT + HINT_TOTAL_DURATION;
 
-const INTRO_FINISH = IS_REVISIT
-  ? 0
-  : (TYPING_DURATION_MS + POST_TYPING_DELAY_MS) / 1000;
-
 /** Seconds from page load until the navbar hint should begin. The nav hint
  *  lives in App.tsx and is measured from page mount, so it includes the
- *  pre-content typing time (0 on a revisit). */
-export const HERO_NAV_HINT_DELAY = INTRO_FINISH + NAV_HINT_FROM_CONTENT;
+ *  delay before the cards start. */
+export const HERO_NAV_HINT_DELAY = CONTENT_DELAY + NAV_HINT_FROM_CONTENT;
 
 export default function HeroSection({ offset }: HeroSectionProps) {
   const [hasBeenClicked, setHasBeenClicked] = useState(false);
-  const [charCount, setCharCount] = useState(0);
-  const [showContent, setShowContent] = useState(IS_REVISIT);
+  const [showContent, setShowContent] = useState(false);
   const [showArtwork, setShowArtwork] = useState(false);
   // const [waveAnimationReady, setWaveAnimationReady] = useState(false); // wave emoji retired
   const [modelAnimationsReady, setModelAnimationsReady] = useState(false);
@@ -161,36 +136,16 @@ export default function HeroSection({ offset }: HeroSectionProps) {
     }
     gridRef.current?.style.setProperty("--hero-glow-opacity", "0");
   }, []);
-  const typingDone = charCount >= INTRO_SEQUENCE_LENGTH;
-  // const waveTyped = charCount > INTRO_TEXT.length; // wave emoji retired
-
-  // Typewriter effect (skipped on revisit since typingDone is already true)
+  // Start the staged intro shortly after mount. Flipping the flag after mount
+  // (rather than initialising it true) keeps the cards' framer-motion
+  // `initial` state as the animation's starting point.
   useEffect(() => {
-    if (typingDone) return;
-    let cancelled = false;
-    const tick = (count: number) => {
-      if (cancelled || count >= INTRO_SEQUENCE_LENGTH) return;
-      const delay = PUNCTUATION.includes(INTRO_TEXT[count - 1] ?? "")
-        ? PUNCT_DELAY
-        : CHAR_DELAY;
-      setTimeout(() => {
-        if (cancelled) return;
-        setCharCount(count + 1);
-        tick(count + 1);
-      }, delay);
-    };
-    tick(charCount);
-    return () => {
-      cancelled = true;
-    };
-  }, [typingDone]);
-
-  // Show content after typing (skipped on revisit since both are already true)
-  useEffect(() => {
-    if (!typingDone) return;
-    const timer = setTimeout(() => setShowContent(true), POST_TYPING_DELAY_MS);
+    const timer = setTimeout(
+      () => setShowContent(true),
+      CONTENT_DELAY * 1000,
+    );
     return () => clearTimeout(timer);
-  }, [typingDone]);
+  }, []);
 
   // Wave emoji retired — armed its animation once the boxes had landed.
   // useEffect(() => {
@@ -205,13 +160,6 @@ export default function HeroSection({ offset }: HeroSectionProps) {
   //   );
   //   return () => window.clearTimeout(timer);
   // }, [showContent]);
-
-  // Mark intro as seen for future visits
-  useEffect(() => {
-    if (showContent) {
-      sessionStorage.setItem(INTRO_SEEN_KEY, "true");
-    }
-  }, [showContent]);
 
   // Fetch the decorative model chunks immediately after the hero's first
   // contentful paint instead of competing with it.
@@ -328,19 +276,10 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                 </div>
               </div>
             </div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{
-                delay: IS_REVISIT ? 0 : TEXT_CONTAINER_DELAY,
-                duration: IS_REVISIT ? 0.3 : 0.5,
-              }}
-              className="transition-all [grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center mx-auto text-right px-2 text-[#e8e5ee]/80"
-            >
+            <div className="[grid-area:3/1/4/4] md:[grid-area:3/1/4/3] relative flex items-center justify-end text-right px-2 text-[#e8e5ee]/80">
               <div>
               <p className="text-[10px] leading-3 text-[color:var(--hero-accent)] md:text-base md:leading-normal lg:text-lg">
-                  {INTRO_TEXT.slice(0, Math.min(charCount, INTRO_TEXT.length))}
-                  {!typingDone && <span className="animate-pulse">|</span>}
+                  {INTRO_TEXT}
                   {/* Waving hand emoji \u2014 retired, kept for reference.
                   {waveTyped ? (
                     <span
@@ -362,16 +301,11 @@ export default function HeroSection({ offset }: HeroSectionProps) {
                   ) : null}
                   */}
                 </p>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: showContent ? 1 : 0 }}
-                  transition={{ duration: SUBTITLE_FADE_DURATION }}
-                className="mt-2 text-[10px] leading-3 text-[color:var(--hero-accent)] md:mt-3 md:text-base md:leading-normal"
-                >
-                  welcome to my playground, have a look around
-                </motion.p>
+                <p className="mt-2 text-[10px] leading-3 text-[color:var(--hero-accent)] md:mt-3 md:text-base md:leading-normal">
+                  welcome to my playground.
+                </p>
               </div>
-            </motion.div>
+            </div>
             {cards.map((card, idx) => (
               <motion.div
                 key={card.id}

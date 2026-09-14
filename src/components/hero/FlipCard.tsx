@@ -134,7 +134,6 @@ export default function FlipCard({
   const localGlowY = bounds
     ? `calc(var(--hero-glow-y, 0px) - ${bounds.offsetTop}px)`
     : "50%";
-  const activeRadialGlow = `radial-gradient(230px circle at ${localGlowX} ${localGlowY}, ${heroRgba("accent", 0.09)}, transparent 68%)`;
   const activeBorderMask = `radial-gradient(240px circle at ${localGlowX} ${localGlowY}, black 18%, transparent 72%)`;
 
   const frontAnchorClass = {
@@ -201,13 +200,6 @@ export default function FlipCard({
     </>
   );
 
-  const renderActiveGlow = () => (
-    <div
-      className="hero-card-active-glow pointer-events-none absolute inset-0 z-[61] overflow-hidden rounded-[inherit]"
-      style={{ background: activeRadialGlow }}
-    />
-  );
-
   const glowOverlay = (
     <>
       <div
@@ -217,7 +209,6 @@ export default function FlipCard({
           background: radialGlow,
         }}
       />
-      {renderActiveGlow()}
       {renderBorderOverlays()}
     </>
   );
@@ -356,7 +347,6 @@ export default function FlipCard({
           style={sharedBg}
         >
           {backContent}
-          {renderActiveGlow()}
           {renderBorderOverlays()}
         </div>
       )}

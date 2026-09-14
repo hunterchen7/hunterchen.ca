@@ -86,7 +86,6 @@ html {
   transition-property: box-shadow, filter, transform;
 }
 
-.hero-card-active-glow,
 .hero-card-active-border,
 .hero-card-focus-border {
   opacity: 0;
@@ -188,10 +187,8 @@ html {
     0 0 38px rgba(112, 65, 151, 0.105);
 }
 
-.hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-active-glow,
 .hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-active-border,
 .hero-flip-card[data-card-state="front"]:has(.hero-card-toggle:focus-visible) .hero-card-focus-border,
-.hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-active-glow,
 .hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-active-border,
 .hero-flip-card[data-card-state="back"]:has(.hero-card-toggle:focus-visible) .hero-card-focus-border {
   opacity: 1;
@@ -236,9 +233,7 @@ html {
     box-shadow: var(--shadow-panel-raised);
   }
 
-  .hero-flip-card[data-card-state="front"]:hover .hero-card-active-glow,
   .hero-flip-card[data-card-state="front"]:hover .hero-card-active-border,
-  .hero-flip-card[data-card-state="back"]:hover .hero-card-active-glow,
   .hero-flip-card[data-card-state="back"]:hover .hero-card-active-border {
     opacity: 1;
   }
