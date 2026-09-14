@@ -1,14 +1,6 @@
 import { memo } from "react";
 import { HERO_COLORS, heroRgba, litHeroTone } from "../hero/heroPalette";
-import {
-  BOARD_DEPTH,
-  BOARD_GRID_PATH,
-  BOARD_SIZE,
-  LIGHT_SQUARES_PATH,
-  PIECE_SCALE,
-  clamp,
-  point,
-} from "./isoGeometry";
+import { DIAMOND, clamp, type BoardGeometry } from "./isoGeometry";
 
 /**
  * Piece artwork and board surface for the isometric chessboard, shared by the
@@ -371,7 +363,8 @@ export const PieceModel = memo(function PieceModel({
   x,
   y,
   prefix,
-}: RenderPiece & { prefix: string }) {
+  pieceScale = DIAMOND.pieceScale,
+}: RenderPiece & { pieceScale?: number; prefix: string }) {
   const shadowOpacity = clamp(0.92 - lift * 0.25 + impact * 0.08, 0.5, 0.98);
   const shadowRadiusX = 2.6 - lift * 0.18 + impact * 0.22;
   const shadowRadiusY = 0.78 - lift * 0.08 + impact * 0.08;
@@ -382,7 +375,7 @@ export const PieceModel = memo(function PieceModel({
       data-square={square}
       opacity={opacity}
       transform={`translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${(
-        scale * PIECE_SCALE
+        scale * pieceScale
       ).toFixed(3)})`}
     >
       <ellipse
@@ -402,22 +395,25 @@ export const PieceModel = memo(function PieceModel({
 });
 
 
-export const BoardSurface = memo(function BoardSurface() {
-  const far = point(0, BOARD_SIZE);
-  const left = point(BOARD_SIZE, 0);
-  const front = point(BOARD_SIZE, BOARD_SIZE);
+export const BoardSurface = memo(function BoardSurface({
+  geometry = DIAMOND,
+}: {
+  geometry?: BoardGeometry;
+}) {
+  const { boardDepth, corners, gridPath, lightSquaresPath } = geometry;
+  const { far, front, left, near } = corners;
 
   return (
     <g strokeLinecap="round" strokeLinejoin="round">
       <path
-        d={`M${left.x},${left.y} L${front.x},${front.y} L${front.x},${front.y + BOARD_DEPTH} L${left.x},${left.y + BOARD_DEPTH} Z`}
+        d={`M${left.x},${left.y} L${front.x},${front.y} L${front.x},${front.y + boardDepth} L${left.x},${left.y + boardDepth} Z`}
         fill={HERO_COLORS.mid}
         stroke={heroRgba("light", 0.58)}
         strokeWidth="0.76"
         vectorEffect="non-scaling-stroke"
       />
       <path
-        d={`M${far.x},${far.y} L${front.x},${front.y} L${front.x},${front.y + BOARD_DEPTH} L${far.x},${far.y + BOARD_DEPTH} Z`}
+        d={`M${far.x},${far.y} L${front.x},${front.y} L${front.x},${front.y + boardDepth} L${far.x},${far.y + boardDepth} Z`}
         fill={HERO_COLORS.deep}
         stroke={heroRgba("light", 0.48)}
         strokeWidth="0.76"
@@ -427,17 +423,17 @@ export const BoardSurface = memo(function BoardSurface() {
       <polygon
         data-board-squares="64"
         fill={HERO_COLORS.deep}
-        points={[point(0, 0), far, front, left]
+        points={[near, far, front, left]
           .map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
           .join(" ")}
       />
       <path
-        d={LIGHT_SQUARES_PATH}
+        d={lightSquaresPath}
         data-board-light-squares="32"
         fill={heroRgba("light", 0.9)}
       />
       <path
-        d={BOARD_GRID_PATH}
+        d={gridPath}
         fill="none"
         stroke={heroRgba("light", 0.24)}
         strokeWidth="0.28"
@@ -446,7 +442,7 @@ export const BoardSurface = memo(function BoardSurface() {
 
       <polygon
         fill="none"
-        points={[point(0, 0), far, front, left]
+        points={[near, far, front, left]
           .map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
           .join(" ")}
         stroke={heroRgba("light", 0.78)}

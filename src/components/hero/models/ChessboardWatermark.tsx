@@ -2,15 +2,14 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { heroRgba } from "../heroPalette";
 import ModelSvg from "./ModelSvg";
 import {
-  BOARD_CENTER,
   BOARD_SIZE,
+  DIAMOND,
   FILES,
   clamp,
   easeOutCubic,
   smoothstep,
-  squareCenter,
   squareIndices,
-  squarePoints,
+  type BoardGeometry,
 } from "../../chess/isoGeometry";
 import {
   BoardSurface,
@@ -40,8 +39,8 @@ import {
   pieceMotionAt,
 } from "../../chess/isoEffects";
 
-/** Namespaces this board's <defs> ids; the playable board uses its own. */
-const PIECE_PREFIX = "projects-chessboard-piece";
+/** Default <defs> namespace; a second instance must pass its own. */
+const DEFAULT_PIECE_PREFIX = "projects-chessboard-piece";
 
 
 type GameMove = {
@@ -244,19 +243,21 @@ const GAME_STATES = IMMORTAL_GAME.reduce<BoardPiece[][]>(
   [parseFen(START_FEN)],
 );
 
+// Precomputed outward-in ordering for the scatter. Measured on the diamond
+// because it is only a running order, not a position.
 const RESET_WAVE_BY_ID = new Map<string, number>(
   [...(GAME_STATES.at(-1) ?? [])]
     .filter((piece) => !piece.captured)
     .sort((a, b) => {
-      const aPosition = squareCenter(a.square);
-      const bPosition = squareCenter(b.square);
+      const aPosition = DIAMOND.squareCenter(a.square);
+      const bPosition = DIAMOND.squareCenter(b.square);
       const aDistance = Math.hypot(
-        aPosition.x - BOARD_CENTER.x,
-        aPosition.y - BOARD_CENTER.y,
+        aPosition.x - DIAMOND.boardCenter.x,
+        aPosition.y - DIAMOND.boardCenter.y,
       );
       const bDistance = Math.hypot(
-        bPosition.x - BOARD_CENTER.x,
-        bPosition.y - BOARD_CENTER.y,
+        bPosition.x - DIAMOND.boardCenter.x,
+        bPosition.y - DIAMOND.boardCenter.y,
       );
       return bDistance - aDistance || a.id.localeCompare(b.id);
     })
@@ -441,7 +442,11 @@ function useTimeline(frame: number | null): {
   return { elapsed, fps, simplified };
 }
 
-function renderPiecesForTimeline(timeline: Timeline): RenderPiece[] {
+function renderPiecesForTimeline(
+  timeline: Timeline,
+  geometry: BoardGeometry,
+): RenderPiece[] {
+  const { boardCenter: BOARD_CENTER, squareCenter } = geometry;
   const pieces = GAME_STATES[timeline.stateIndex] ?? [];
   const moveContext =
     timeline.activeMove >= 0
@@ -585,12 +590,15 @@ function renderPiecesForTimeline(timeline: Timeline): RenderPiece[] {
 
 function MoveHighlights({
   activeMove,
+  geometry,
   moveProgress,
 }: {
   activeMove: GameMove | undefined;
+  geometry: BoardGeometry;
   moveProgress: number;
 }) {
   if (!activeMove) return null;
+  const { squarePoints } = geometry;
   const fromSquare = squareIndices(activeMove.from);
   const toSquare = squareIndices(activeMove.to);
 
@@ -608,12 +616,19 @@ function MoveHighlights({
   );
 }
 
-function ChessboardWatermark() {
+function ChessboardWatermark({
+  geometry = DIAMOND,
+  prefix = DEFAULT_PIECE_PREFIX,
+}: {
+  geometry?: BoardGeometry;
+  prefix?: string;
+} = {}) {
+  const { squareCenter, squarePoints } = geometry;
   const frame = readPinnedModelFrame();
   const { elapsed, fps, simplified } = useTimeline(frame);
   const timeline = timelineAt(elapsed);
   const pieces = useMemo(
-    () => renderPiecesForTimeline(timeline),
+    () => renderPiecesForTimeline(timeline, geometry),
     [
       timeline.activeMove,
       timeline.moveProgress,
@@ -621,6 +636,7 @@ function ChessboardWatermark() {
       timeline.phaseElapsed,
       timeline.settleProgress,
       timeline.stateIndex,
+      geometry,
     ],
   );
   const activeMove =
@@ -669,16 +685,17 @@ function ChessboardWatermark() {
       viewBox="0 0 120 82"
       withGlow={false}
     >
-      <PieceDefinitions detail={!simplified} prefix={PIECE_PREFIX} />
+      <PieceDefinitions detail={!simplified} prefix={prefix} />
       <g
         data-board-shake={`${boardShake.x.toFixed(3)},${boardShake.y.toFixed(3)}`}
         data-chess-phase={timeline.phase}
         data-chess-phase-elapsed={timeline.phaseElapsed.toFixed(1)}
         transform={`translate(${boardShake.x.toFixed(3)} ${boardShake.y.toFixed(3)})`}
       >
-        <BoardSurface />
+        <BoardSurface geometry={geometry} />
         <MoveHighlights
           activeMove={activeMove}
+          geometry={geometry}
           moveProgress={timeline.moveProgress}
         />
         {checkCue ? (
@@ -701,7 +718,12 @@ function ChessboardWatermark() {
         ) : null}
         <g opacity={timeline.sceneOpacity.toFixed(3)}>
           {pieces.map((piece) => (
-            <PieceModel key={piece.id} {...piece} prefix={PIECE_PREFIX} />
+            <PieceModel
+              key={piece.id}
+              {...piece}
+              pieceScale={geometry.pieceScale}
+              prefix={prefix}
+            />
           ))}
           <CaptureBurst
             center={

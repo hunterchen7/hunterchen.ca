@@ -1,27 +1,40 @@
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { heroRgba } from "../hero/heroPalette";
-import {
-  BOARD_SIZE,
-  FILES,
-  center,
-  squareIndices,
-  squarePoints,
-} from "./isoGeometry";
+import { BOARD_SIZE, FILES, STRAIGHT, clamp, squareIndices } from "./isoGeometry";
 import {
   BoardSurface,
   PieceDefinitions,
   PieceModel,
-  dangerRgba,
   type PieceColor,
   type PieceKind,
   type RenderPiece,
 } from "./isoPieces";
-import type { BoardHighlights } from "../../hooks/useChessGame";
+import {
+  CaptureBurst,
+  CheckHighlight,
+  LANDING_EFFECT_MS,
+  LANDING_SETTLE_MS,
+  LandingDust,
+  MOVE_MS,
+  SETTLE_MS,
+  captureProgressAt,
+  capturedPieceMotion,
+  captureShakeAt,
+  landingImpactAt,
+  landingScaleAt,
+  mateShakeAt,
+  pieceMotionAt,
+} from "./isoEffects";
+import type { AnimatedMove, BoardHighlights } from "../../hooks/useChessGame";
 
 const PIECE_PREFIX = "iso-chess-piece";
 
 /** Half-extents of a piece's artwork, used for its click target. */
-const PIECE_HIT = { bottom: 1.1, halfWidth: 2.4, top: 5.4 };
+const PIECE_HIT = {
+  bottom: 1.1 * STRAIGHT.pieceScale,
+  halfWidth: 2.4 * STRAIGHT.pieceScale,
+  top: 5.4 * STRAIGHT.pieceScale,
+};
 
 const PIECE_NAMES: Record<PieceKind, string> = {
   b: "bishop",
@@ -47,12 +60,12 @@ function indicesFor(square: string, flipped: boolean) {
 
 function centerFor(square: string, flipped: boolean) {
   const { column, row } = indicesFor(square, flipped);
-  return center(row, column);
+  return STRAIGHT.center(row, column);
 }
 
 function pointsFor(square: string, flipped: boolean) {
   const { column, row } = indicesFor(square, flipped);
-  return squarePoints(row, column);
+  return STRAIGHT.squarePoints(row, column);
 }
 
 /** Expand a FEN placement field into one entry per occupied square. */
@@ -113,7 +126,93 @@ function CaptureRing({ square, flipped }: { flipped: boolean; square: string }) 
   );
 }
 
+/**
+ * Slow sine used by the check cue. Deliberately low-rate: it re-renders the
+ * board, and it only runs while a king is actually in check.
+ */
+function useCheckPulse(active: boolean): number {
+  const [pulse, setPulse] = useState(0.5);
+
+  useEffect(() => {
+    if (!active) {
+      setPulse(0.5);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setPulse(0.5 + Math.sin(performance.now() / 172) * 0.5);
+    }, 70);
+    return () => window.clearInterval(timer);
+  }, [active]);
+
+  return active ? pulse : 0.5;
+}
+
+/** Progress through a single move, all derived from one elapsed clock. */
+type MoveClock = {
+  capture: number;
+  landing: number;
+  move: number;
+  settle: number;
+};
+
+const IDLE_CLOCK: MoveClock = { capture: 0, landing: 0, move: 1, settle: 1 };
+
+/**
+ * Drives one move's animation. Returns the clock plus the move being played, or
+ * null once it has finished so the board renders at rest.
+ */
+function useMoveClock(move: AnimatedMove | null): {
+  clock: MoveClock;
+  playing: AnimatedMove | null;
+} {
+  const [elapsed, setElapsed] = useState<number | null>(null);
+  const seq = move?.seq ?? 0;
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    if (!seq || reducedMotion) {
+      setElapsed(null);
+      return;
+    }
+
+    const total = MOVE_MS + SETTLE_MS;
+    let frame = 0;
+    let start: number | null = null;
+
+    const step = (now: number) => {
+      if (start === null) start = now;
+      const next = now - start;
+      if (next >= total) {
+        setElapsed(null);
+        return;
+      }
+      setElapsed(next);
+      frame = window.requestAnimationFrame(step);
+    };
+
+    frame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frame);
+  }, [reducedMotion, seq]);
+
+  if (elapsed === null || !move) return { clock: IDLE_CLOCK, playing: null };
+
+  const moveProgress = clamp(elapsed / MOVE_MS);
+  return {
+    clock: {
+      capture: move.capturedSquare ? captureProgressAt(moveProgress) : 0,
+      landing: clamp((elapsed - MOVE_MS) / LANDING_EFFECT_MS),
+      move: moveProgress,
+      settle: clamp((elapsed - MOVE_MS) / LANDING_SETTLE_MS),
+    },
+    playing: move,
+  };
+}
+
 type IsoChessBoardProps = {
+  /** The move to play back as motion, or null to render at rest. */
+  animatedMove?: AnimatedMove | null;
   /** Softens the board while an overlay is up. */
   blurred?: boolean;
   detail?: boolean;
@@ -125,6 +224,7 @@ type IsoChessBoardProps = {
 };
 
 function IsoChessBoard({
+  animatedMove = null,
   blurred = false,
   detail = true,
   fen,
@@ -143,31 +243,101 @@ function IsoChessBoard({
     return lookup;
   }, [pieces]);
 
+  const { clock, playing } = useMoveClock(animatedMove);
+  const checkPulse = useCheckPulse(highlights.checkSquare !== null);
+
   // Painter's algorithm: larger row+column is nearer the viewer, so it draws
   // last and overlaps what is behind it.
   const rendered = useMemo<RenderPiece[]>(() => {
-    return pieces
-      .map((piece) => {
-        const { column, row } = indicesFor(piece.square, flipped);
-        const { x, y } = center(row, column);
-        return {
-          color: piece.color,
-          depth: row + column,
-          id: `${piece.color}${piece.kind}-${piece.square}`,
-          impact: 0,
-          kind: piece.kind,
-          lift: 0,
-          opacity: 1,
-          rotation: 0,
-          scale: 1,
-          square: piece.square,
-          verticalScale: 1,
-          x,
-          y,
-        } satisfies RenderPiece;
-      })
-      .sort((first, second) => first.depth - second.depth);
-  }, [flipped, pieces]);
+    const motion = pieceMotionAt(clock.move);
+
+    const list = pieces.map((piece) => {
+      const { column, row } = indicesFor(piece.square, flipped);
+      const at = STRAIGHT.center(row, column);
+      let x = at.x;
+      let y = at.y;
+      let impact = 0;
+      let lift = 0;
+      let verticalScale = 1;
+
+      // The board already holds the finished position, so the mover is drawn
+      // travelling backwards from where it came.
+      const travellingFrom =
+        playing && piece.square === playing.to
+          ? playing.from
+          : playing?.secondary && piece.square === playing.secondary.to
+            ? playing.secondary.from
+            : null;
+
+      if (travellingFrom) {
+        const start = centerFor(travellingFrom, flipped);
+        x = start.x + (at.x - start.x) * motion.travel;
+        y = start.y + (at.y - start.y) * motion.travel;
+        impact = landingImpactAt(clock.settle);
+        lift = motion.lift;
+        verticalScale = landingScaleAt(clock.settle);
+      }
+
+      return {
+        color: piece.color,
+        depth: y,
+        id: `${piece.color}${piece.kind}-${piece.square}`,
+        impact,
+        kind: piece.kind,
+        lift,
+        opacity: 1,
+        rotation: 0,
+        scale: 1,
+        square: piece.square,
+        verticalScale,
+        x,
+        y,
+      } satisfies RenderPiece;
+    });
+
+    // The captured piece is already gone from the position, so it is put back
+    // for as long as its knockback lasts.
+    if (
+      playing?.capturedSquare &&
+      playing.capturedColor &&
+      playing.capturedKind &&
+      clock.capture > 0 &&
+      clock.capture < 1
+    ) {
+      const { column, row } = indicesFor(playing.capturedSquare, flipped);
+      const at = STRAIGHT.center(row, column);
+      const knockback = capturedPieceMotion({
+        captureProgress: clock.capture,
+        fallSeed: playing.capturedSquare.charCodeAt(0),
+        moverFrom: centerFor(playing.from, flipped),
+        victimAt: at,
+      });
+
+      list.push({
+        color: playing.capturedColor,
+        depth: at.y,
+        id: `captured-${playing.seq}`,
+        impact: 0,
+        kind: playing.capturedKind as PieceKind,
+        lift: knockback.lift,
+        opacity: knockback.opacity,
+        rotation: knockback.rotation,
+        scale: knockback.scale,
+        square: playing.capturedSquare,
+        verticalScale: knockback.verticalScale,
+        x: at.x + knockback.dx,
+        y: at.y + knockback.dy,
+      } satisfies RenderPiece);
+    }
+
+    return list.sort((first, second) => first.depth - second.depth);
+  }, [clock.capture, clock.move, clock.settle, flipped, pieces, playing]);
+
+  const shake = useMemo(() => {
+    const mate = mateShakeAt(clock.landing, playing?.isMate ?? false);
+    const capture = captureShakeAt(clock.move, !!playing?.capturedSquare);
+    return { x: mate.x + capture.x, y: mate.y + capture.y };
+  }, [clock.landing, clock.move, playing]);
 
   const handleSelect = useCallback(
     (square: string) => {
@@ -242,7 +412,8 @@ function IsoChessBoard({
       viewBox="0 0 120 82"
     >
       <PieceDefinitions detail={detail} prefix={PIECE_PREFIX} />
-      <BoardSurface />
+      <g transform={`translate(${shake.x.toFixed(3)} ${shake.y.toFixed(3)})`}>
+      <BoardSurface geometry={STRAIGHT} />
 
       {highlights.lastMove ? (
         <g data-layer="last-move">
@@ -274,19 +445,13 @@ function IsoChessBoard({
       ) : null}
 
       {highlights.checkSquare ? (
-        <g data-layer="check">
-          <polygon
-            fill={dangerRgba(0.32)}
-            points={pointsFor(highlights.checkSquare, flipped)}
-          />
-          <polygon
-            fill="none"
-            points={pointsFor(highlights.checkSquare, flipped)}
-            stroke={dangerRgba(0.8)}
-            strokeWidth="0.85"
-            vectorEffect="non-scaling-stroke"
-          />
-        </g>
+        <CheckHighlight
+          center={centerFor(highlights.checkSquare, flipped)}
+          intensity={1}
+          mate={playing?.isMate ?? false}
+          points={pointsFor(highlights.checkSquare, flipped)}
+          pulse={checkPulse}
+        />
       ) : null}
 
       <g data-layer="legal-quiet">
@@ -295,11 +460,31 @@ function IsoChessBoard({
         ))}
       </g>
 
+      {playing ? (
+        <LandingDust
+          center={centerFor(playing.to, flipped)}
+          progress={clock.landing}
+        />
+      ) : null}
+
       <g data-layer="pieces" pointerEvents="none">
         {rendered.map((piece) => (
-          <PieceModel key={piece.id} {...piece} prefix={PIECE_PREFIX} />
+          <PieceModel
+            key={piece.id}
+            {...piece}
+            pieceScale={STRAIGHT.pieceScale}
+            prefix={PIECE_PREFIX}
+          />
         ))}
       </g>
+
+      {playing?.capturedSquare && playing.capturedColor ? (
+        <CaptureBurst
+          center={centerFor(playing.capturedSquare, flipped)}
+          color={playing.capturedColor}
+          progress={clock.capture}
+        />
+      ) : null}
 
       {/* Capture rings sit above the pieces so they read as a target. */}
       <g data-layer="legal-captures" pointerEvents="none">
@@ -336,6 +521,7 @@ function IsoChessBoard({
           ))}
         </g>
       ) : null}
+      </g>
     </svg>
   );
 }

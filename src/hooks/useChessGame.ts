@@ -34,6 +34,37 @@ export type ChessPhase = "idle" | "playing" | "over";
 export type MoveSquares = { from: string; to: string };
 
 /**
+ * Everything the renderer needs to play a move back as motion. Derived from the
+ * chess.js Move rather than by diffing positions, so castling, en passant and
+ * promotion are exact instead of guessed at.
+ */
+export type AnimatedMove = {
+  capturedColor: "b" | "w" | null;
+  capturedKind: string | null;
+  capturedSquare: string | null;
+  from: string;
+  isMate: boolean;
+  /** The rook's leg of a castle, if this was one. */
+  secondary: MoveSquares | null;
+  /** Increments per move so an identical move still retriggers the animation. */
+  seq: number;
+  to: string;
+};
+
+const CASTLE_ROOK_MOVES: Record<string, MoveSquares> = {
+  c1: { from: "a1", to: "d1" },
+  c8: { from: "a8", to: "d8" },
+  g1: { from: "h1", to: "f1" },
+  g8: { from: "h8", to: "f8" },
+};
+
+/** The pawn taken en passant sits beside the destination, not on it. */
+function enPassantSquare(to: string, moverColor: "b" | "w"): string {
+  const rank = Number(to[1]) + (moverColor === "w" ? -1 : 1);
+  return `${to[0]}${rank}`;
+}
+
+/**
  * Semantic highlight state. The renderer decides how to paint these — the flat
  * board used CSS backgrounds, the isometric board draws polygons.
  */
@@ -77,9 +108,36 @@ export function useChessGame() {
   const [legalMoveSquares, setLegalMoveSquares] = useState<Square[]>([]);
   const [lastMoveSquares, setLastMoveSquares] = useState<MoveSquares | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<MoveSquares | null>(null);
+  const [animatedMove, setAnimatedMove] = useState<AnimatedMove | null>(null);
+  const moveSeqRef = useRef(0);
   /** Result text is held after the board resets, so it outlives the position. */
   const [finishedStatus, setFinishedStatus] = useState<string | null>(null);
   const [playerWon, setPlayerWon] = useState(false);
+
+  const recordMove = useCallback(
+    (move: ReturnType<Chess["move"]>, mated: boolean) => {
+      const isEnPassant = move.flags.includes("e");
+      const isCastle = move.flags.includes("k") || move.flags.includes("q");
+      const capturedSquare = move.captured
+        ? isEnPassant
+          ? enPassantSquare(move.to, move.color)
+          : move.to
+        : null;
+
+      moveSeqRef.current += 1;
+      setAnimatedMove({
+        capturedColor: move.captured ? (move.color === "w" ? "b" : "w") : null,
+        capturedKind: move.captured ?? null,
+        capturedSquare,
+        from: move.from,
+        isMate: mated,
+        secondary: isCastle ? (CASTLE_ROOK_MOVES[move.to] ?? null) : null,
+        seq: moveSeqRef.current,
+        to: move.to,
+      });
+    },
+    [],
+  );
 
   const engineRef = useRef<Lc0Engine | null>(null);
   /** Bumped on every reset so a search in flight can't apply to a new game. */
@@ -135,6 +193,7 @@ export function useChessGame() {
     setPendingPromotion(null);
     setFinishedStatus(null);
     setPlayerWon(false);
+    setAnimatedMove(null);
     clearSelection();
     setPlayerColor((previous) => (previous === "w" ? "b" : "w"));
     setPhase(engineRef.current ? "playing" : "idle");
@@ -177,6 +236,7 @@ export function useChessGame() {
         const applied = game.move(uciToChessJsMove(move));
         if (applied) {
           playSoundForMove(!!applied.captured, game.inCheck());
+          recordMove(applied, game.isCheckmate());
           setLastMoveSquares({ from: applied.from, to: applied.to });
           setFenHistory((previous) => [...previous, game.fen()]);
           forceUpdate();
@@ -218,6 +278,7 @@ export function useChessGame() {
       game.reset();
       setFenHistory([game.fen()]);
       setLastMoveSquares(null);
+      setAnimatedMove(null);
       forceUpdate();
     }, GAME_OVER_HOLD_MS);
 
@@ -242,13 +303,14 @@ export function useChessGame() {
       const move = game.move(promotion ? { from, to, promotion } : { from, to });
       if (!move) return false;
       playSoundForMove(!!move.captured, game.inCheck());
+      recordMove(move, game.isCheckmate());
       clearSelection();
       setLastMoveSquares({ from: move.from, to: move.to });
       setFenHistory((previous) => [...previous, game.fen()]);
       forceUpdate();
       return true;
     },
-    [clearSelection, game],
+    [clearSelection, game, recordMove],
   );
 
   const canPlayerMove =
@@ -340,6 +402,7 @@ export function useChessGame() {
   }, [fen, game, lastMoveSquares, legalMoveSquares, selectedSquare]);
 
   return {
+    animatedMove,
     boardIsInteractive,
     canPlayerMove,
     cancelPromotion,

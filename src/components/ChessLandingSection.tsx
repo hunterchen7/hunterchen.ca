@@ -1,8 +1,9 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 import { ChessboardWatermark } from "./hero/deferredHeroModels";
 import IsoChessBoard from "./chess/IsoChessBoard";
 import { PieceShape, type PieceKind } from "./chess/isoPieces";
+import { STRAIGHT } from "./chess/isoGeometry";
 import Confetti from "./chess/Confetti";
 import { AnimatedLink } from "./AnimatedLink";
 import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
@@ -49,6 +50,7 @@ function DownloadProgress({
 
 export default function ChessLandingSection({ offset }: ChessLandingSectionProps) {
   const {
+    animatedMove,
     boardIsInteractive,
     cancelPromotion,
     completePromotion,
@@ -65,6 +67,30 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
     startGame,
     startNewGame,
   } = useChessGame();
+
+  const [infoOpen, setInfoOpen] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!infoOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) return;
+      if (infoRef.current?.contains(event.target)) return;
+      if ((event.target as HTMLElement).closest("[aria-label='About this chess engine']")) {
+        return;
+      }
+      setInfoOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setInfoOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [infoOpen]);
 
   const [confettiKey, setConfettiKey] = useState(0);
   useEffect(() => {
@@ -88,14 +114,18 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
             <div
               aria-hidden="true"
               className="h-full w-full"
-              style={{ filter: "blur(3px)", opacity: 0.75 }}
+              style={{ filter: "blur(1.2px)", opacity: 0.9 }}
             >
               <Suspense fallback={null}>
-                <ChessboardWatermark />
+                <ChessboardWatermark
+                  geometry={STRAIGHT}
+                  prefix="landing-chessboard-piece"
+                />
               </Suspense>
             </div>
           ) : (
             <IsoChessBoard
+              animatedMove={animatedMove}
               fen={fen}
               flipped={playerColor === "b"}
               highlights={highlights}
@@ -106,35 +136,53 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
 
           {overlayUp && hasCachedModel !== null ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
-              <div className="flex max-w-[440px] flex-col items-center gap-3 rounded-xl bg-[#1b1524]/70 px-6 py-5 text-center backdrop-blur-sm ring-1 ring-inset ring-fuchsia-300/20">
-                <h1 className="font-mono text-base text-fuchsia-200">
-                  play chess against me
-                </h1>
-                <p className="text-xs leading-5 text-purple-200/70">
-                  <AnimatedLink
-                    href="https://www.maiachess.com/"
-                    className="text-fuchsia-300/80"
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={startGame}
+                    className="cursor-pointer rounded-lg bg-[#1b1524] px-5 py-2.5 font-mono text-sm text-fuchsia-200 shadow-lg ring-1 ring-inset ring-fuchsia-300/30 transition-colors hover:bg-[#2a2036]"
                   >
-                    Maia
-                  </AnimatedLink>{" "}
-                  is a series of neural networks trained to play like humans. I{" "}
-                  <AnimatedLink
-                    href="https://github.com/hunterchen7/hunter-chessbot/"
-                    className="text-fuchsia-300/80"
-                  >
-                    fine-tuned one
-                  </AnimatedLink>{" "}
-                  on ~2000 of my own games so it plays like me.
-                </p>
-                <button
-                  type="button"
-                  onClick={startGame}
-                  className="cursor-pointer rounded-lg bg-[#1b1524] px-5 py-2.5 font-mono text-sm text-fuchsia-200 shadow-lg ring-1 ring-inset ring-fuchsia-300/30 transition-colors hover:bg-[#2a2036]"
-                >
-                  play
-                </button>
+                    play
+                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-expanded={infoOpen}
+                      aria-label="About this chess engine"
+                      onClick={() => setInfoOpen((open) => !open)}
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#1b1524] font-mono text-sm text-fuchsia-200/80 shadow-lg ring-1 ring-inset ring-fuchsia-300/25 transition-colors hover:bg-[#2a2036] hover:text-fuchsia-200"
+                    >
+                      i
+                    </button>
+                    {infoOpen ? (
+                      <div
+                        ref={infoRef}
+                        role="dialog"
+                        aria-label="About this chess engine"
+                        className="absolute left-1/2 top-10 z-20 w-[290px] -translate-x-1/2 rounded-xl bg-[#1b1524]/95 px-4 py-3 text-left text-xs leading-5 text-purple-200/75 shadow-xl ring-1 ring-inset ring-fuchsia-300/20 backdrop-blur-sm"
+                      >
+                        <AnimatedLink
+                          href="https://www.maiachess.com/"
+                          className="text-fuchsia-300/80"
+                        >
+                          Maia
+                        </AnimatedLink>{" "}
+                        is a series of neural networks trained to play like
+                        humans. I{" "}
+                        <AnimatedLink
+                          href="https://github.com/hunterchen7/hunter-chessbot/"
+                          className="text-fuchsia-300/80"
+                        >
+                          fine-tuned one
+                        </AnimatedLink>{" "}
+                        on ~2000 of my own games so it plays like me.
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
                 {hasCachedModel === false ? (
-                  <p className="font-mono text-[10px] leading-4 text-purple-100/60">
+                  <p className="rounded-sm bg-[#1b1524]/40 px-2 py-0.5 font-mono text-[10px] leading-4 text-purple-100/65 backdrop-blur-[1px]">
                     this will incur a one-time {downloadSizeLabel} download
                   </p>
                 ) : null}
