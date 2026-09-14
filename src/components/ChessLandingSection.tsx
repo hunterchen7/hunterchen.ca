@@ -35,17 +35,27 @@ interface ChessLandingSectionProps {
 
 /**
  * Pressing play runs one sequence: the resting pieces tumble off, the empty
- * board swings from the corner-on view round to head-on, then the opening
- * position drops in. Timings are cumulative milliseconds from the press.
+ * board swings from the corner-on view round to head-on, and the opening
+ * position drops in. Each stage is `at` milliseconds after the press.
+ *
+ * The drop-in deliberately starts before the swing finishes. Piece positions
+ * are read from the live geometry every frame, so the falling pieces track
+ * their squares while the board is still turning, and the two beats read as one
+ * movement instead of a stop and a restart.
  */
 const SEQUENCE = {
-  scatter: 900,
-  settle: 1_500,
-  swing: 1_000,
+  entry: { at: 1_350, ms: 1_400 },
+  scatter: { at: 0, ms: 800 },
+  swing: { at: 800, ms: 1_000 },
 } as const;
-const SWING_START = SEQUENCE.scatter;
-const SETTLE_START = SWING_START + SEQUENCE.swing;
-const SEQUENCE_MS = SETTLE_START + SEQUENCE.settle;
+const SEQUENCE_MS = Math.max(
+  ...Object.values(SEQUENCE).map((stage) => stage.at + stage.ms),
+);
+
+/** Progress through one stage of the sequence, 0 to 1. */
+function stageProgress(elapsed: number, stage: { at: number; ms: number }) {
+  return Math.min(1, Math.max(0, (elapsed - stage.at) / stage.ms));
+}
 
 type PlaySequence = {
   /** 0 to 1 as the opening position drops in. */
@@ -98,17 +108,17 @@ function usePlaySequence(playing: boolean): PlaySequence {
       return { entry: 1, geometry: STRAIGHT, restingBoard: false, scatter: 1 };
     }
 
-    const swing = smoothstep((elapsed - SWING_START) / SEQUENCE.swing);
+    const swing = smoothstep(stageProgress(elapsed, SEQUENCE.swing));
     return {
-      entry: Math.max(0, (elapsed - SETTLE_START) / SEQUENCE.settle),
+      entry: stageProgress(elapsed, SEQUENCE.entry),
       geometry:
         swing >= 1
           ? STRAIGHT
           : createBoardGeometry(
               blendProjections(DIAMOND_PROJECTION, STRAIGHT_PROJECTION, swing),
             ),
-      restingBoard: elapsed < SEQUENCE.scatter,
-      scatter: Math.min(1, elapsed / SEQUENCE.scatter),
+      restingBoard: elapsed < SEQUENCE.scatter.ms,
+      scatter: stageProgress(elapsed, SEQUENCE.scatter),
     };
   }, [elapsed, playing]);
 }
