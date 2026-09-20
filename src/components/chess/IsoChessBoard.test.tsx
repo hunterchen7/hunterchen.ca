@@ -11,7 +11,7 @@ import IsoChessBoard, {
 } from "./IsoChessBoard";
 import { RESET, SETUP_DURATION_MS, captureProgressAt } from "./isoEffects";
 import { STRAIGHT } from "./isoGeometry";
-import { PieceDefinitions } from "./isoPieces";
+import { BASE_RADIUS, PieceDefinitions, PieceModel } from "./isoPieces";
 import type { AnimatedMove, BoardHighlights } from "../../hooks/useChessGame";
 
 afterEach(cleanup);
@@ -279,27 +279,67 @@ describe("piece artwork", () => {
     }
   });
 
-  // Regression: an earlier base was a bell skirt over a disc over a wall over a
-  // footprint, and every piece shared the same three units of silhouette. The
-  // base is now a round puck, two stacked ellipses of equal radius, and each
-  // piece's puck has its own proportions.
-  it("stands every piece on a round puck of its own size", () => {
+  // Regression: the pieces were once stacks of separately stroked shapes (a
+  // puck, a stem, a collar, a head), and every seam between them showed. Each
+  // piece is now one silhouette: its parts are drawn once in the rim colour
+  // and then covered by their fills, so the only strokes left on top are open
+  // interior lines.
+  it("draws every piece as one outlined solid with no stroked seams", () => {
     const { container } = render(
       <svg>
         <PieceDefinitions detail prefix="t" roundness={0.8} />
       </svg>,
     );
-    const radii = new Map<string, number>();
-    for (const def of container.querySelectorAll("defs > g[id]")) {
-      const [side, top] = [def.children[0]!, def.children[1]!];
-      expect(side.tagName).toBe("ellipse");
-      expect(top.tagName).toBe("ellipse");
-      expect(top.getAttribute("rx")).toBe(side.getAttribute("rx"));
-      expect(Number(top.getAttribute("cy"))).toBeLessThan(Number(side.getAttribute("cy")));
-      radii.set(def.id.slice(-1), Number(side.getAttribute("rx")));
+    const defs = container.querySelectorAll("defs > g[id]");
+    expect(defs).toHaveLength(12);
+    for (const def of defs) {
+      const rim = def.children[0]!;
+      expect(rim.tagName).toBe("g");
+      expect(rim.getAttribute("stroke")).toBe(rim.getAttribute("fill"));
+      expect(rim.querySelectorAll("path").length).toBeGreaterThan(0);
+      for (const path of rim.querySelectorAll("path")) {
+        expect(path.getAttribute("d")).toMatch(/Z$/);
+      }
+      for (const stroked of def.querySelectorAll(":scope > :not(:first-child) [stroke]")) {
+        expect(stroked.getAttribute("fill")).toBe("none");
+      }
     }
-    expect(radii.get("p")).toBeLessThan(radii.get("r")!);
-    expect(radii.get("r")).toBeLessThan(radii.get("k")!);
-    expect(new Set(radii.values()).size).toBeGreaterThan(3);
+  });
+
+  it("stands every piece on a base of its own size, the pawn smallest", () => {
+    expect(BASE_RADIUS.p).toBeLessThan(BASE_RADIUS.r);
+    expect(BASE_RADIUS.r).toBeLessThan(BASE_RADIUS.k);
+    expect(new Set(Object.values(BASE_RADIUS)).size).toBeGreaterThan(3);
+  });
+
+  // Regression: the contact shadow used to be offset from the base, which
+  // read as the piece standing beside its shadow.
+  it("centres the contact shadow under the base", () => {
+    const { container } = render(
+      <svg>
+        <PieceModel
+          color="w"
+          depth={0}
+          id="p"
+          impact={0}
+          kind="k"
+          lift={0}
+          opacity={1}
+          prefix="t"
+          rotation={0}
+          scale={1}
+          square="e1"
+          verticalScale={1}
+          x={10}
+          y={20}
+        />
+      </svg>,
+    );
+    const shadows = container.querySelectorAll("ellipse");
+    expect(shadows.length).toBe(2);
+    for (const shadow of shadows) {
+      expect(shadow.getAttribute("cx")).toBe("0");
+      expect(shadow.getAttribute("cy")).toBe("0");
+    }
   });
 });
