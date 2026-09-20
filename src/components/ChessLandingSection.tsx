@@ -415,6 +415,7 @@ export default function ChessLandingSection({
                   fen={fen}
                   geometry={play.geometry}
                   pieceStage={pieceStage}
+                  dragColor={playerColor}
                   flipped={playerColor === "b"}
                   highlights={highlights}
                   interactive={boardIsInteractive && !busy}

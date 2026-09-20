@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { DIAMOND, STRAIGHT } from "./isoGeometry";
 import {
+  DROP_MS,
+  GAME_MOVE_MS,
   MOVE_MS,
+  dropMotionAt,
+  gameMotionAt,
   RESET,
   SETUP,
   SETUP_DURATION_MS,
@@ -136,5 +140,24 @@ describe("board reset", () => {
 describe("timing constants", () => {
   it("keeps a move shorter than the recorded step so the loop can breathe", () => {
     expect(MOVE_MS).toBeGreaterThan(0);
+  });
+});
+
+describe("game board motion", () => {
+  it("is quicker than the demo's and closer to constant speed", () => {
+    expect(GAME_MOVE_MS).toBeLessThan(MOVE_MS);
+    expect(DROP_MS).toBeLessThan(GAME_MOVE_MS);
+    // A quarter of the way into the travel window a full smoothstep has covered
+    // 16%; this curve covers more, since it leans toward linear.
+    expect(gameMotionAt(0.29).travel).toBeGreaterThan(0.2);
+    expect(gameMotionAt(0).travel).toBe(0);
+    expect(gameMotionAt(1).travel).toBe(1);
+  });
+
+  it("drops a held piece straight into its square with no pickup", () => {
+    expect(dropMotionAt(0, 1.5)).toEqual({ lift: 1.5, travel: 0 });
+    expect(dropMotionAt(1, 1.5).lift).toBeCloseTo(0);
+    expect(dropMotionAt(1, 1.5).travel).toBeCloseTo(1);
+    expect(dropMotionAt(0.5, 1.5).lift).toBeLessThan(1.5);
   });
 });

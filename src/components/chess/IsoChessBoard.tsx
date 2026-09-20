@@ -6,6 +6,7 @@ import {
   STRAIGHT,
   clamp,
   easeOutCubic,
+  squareAtIndices,
   squareIndices,
   type BoardGeometry,
 } from "./isoGeometry";
@@ -20,10 +21,13 @@ import {
 import {
   CaptureBurst,
   CheckHighlight,
+  DROP_MS,
+  dropMotionAt,
+  GAME_MOVE_MS,
+  gameMotionAt,
   LANDING_EFFECT_MS,
   LANDING_SETTLE_MS,
   LandingDust,
-  MOVE_MS,
   SETTLE_MS,
   captureProgressAt,
   capturedPieceMotion,
@@ -34,7 +38,6 @@ import {
   landingImpactAt,
   landingScaleAt,
   mateShakeAt,
-  pieceMotionAt,
 } from "./isoEffects";
 import type { AnimatedMove, BoardHighlights } from "../../hooks/useChessGame";
 
@@ -51,6 +54,27 @@ const HIGHLIGHT = {
   fill: "#7a4db5",
   ring: heroRgba("light", 0.85),
 } as const;
+
+/** Movement before a press on a piece becomes a drag rather than a click. */
+const DRAG_THRESHOLD_PX = 4;
+/** How high a dragged piece is held above the board, in board units. */
+const DRAG_LIFT = 1.5;
+/** How long a piece dropped somewhere illegal takes to slide home. */
+const SNAP_BACK_MS = 220;
+
+/** Where a dragged piece was let go, and how high it was held. */
+export type DropOrigin = { lift: number; x: number; y: number };
+
+/**
+ * Client coordinates into the board's own units. Null where the DOM cannot
+ * say (no layout, as in jsdom), in which case dragging quietly stays off.
+ */
+function clientToBoard(svg: SVGSVGElement, clientX: number, clientY: number) {
+  const ctm = svg.getScreenCTM?.();
+  if (!ctm) return null;
+  const m = ctm.inverse();
+  return { x: m.a * clientX + m.c * clientY + m.e, y: m.b * clientX + m.d * clientY + m.f };
+}
 
 /** Half-extents of a piece's artwork, used for its click target. */
 const pieceHitBox = (scale: number) => ({
@@ -89,6 +113,19 @@ function centerFor(geometry: BoardGeometry, square: string, flipped: boolean) {
 function pointsFor(geometry: BoardGeometry, square: string, flipped: boolean) {
   const { column, row } = indicesFor(square, flipped);
   return geometry.squarePoints(row, column);
+}
+
+/** The square under a board-space point, in the board's current orientation. */
+export function squareUnderPoint(
+  geometry: BoardGeometry,
+  x: number,
+  y: number,
+  flipped: boolean,
+): string | null {
+  const square = geometry.squareAtPoint(x, y);
+  if (!square || !flipped) return square;
+  const { column, row } = squareIndices(square);
+  return squareAtIndices(BOARD_SIZE - 1 - row, BOARD_SIZE - 1 - column);
 }
 
 /** Expand a FEN placement field into one entry per occupied square. */
@@ -142,6 +179,7 @@ function MoveDot({
   const light = isLightSquare(square);
   return (
     <ellipse
+      className="board-cue"
       cx={x.toFixed(2)}
       cy={y.toFixed(2)}
       fill={light ? heroRgba("deep", 0.5) : heroRgba("light", 0.55)}
@@ -162,6 +200,7 @@ function CaptureRing({
 }) {
   return (
     <polygon
+      className="board-cue"
       fill="none"
       points={pointsFor(geometry, square, flipped)}
       stroke={
@@ -210,11 +249,14 @@ export const IDLE_CLOCK: MoveClock = { capture: 0, landing: 0, move: 1, settle: 
  * Drives one move's animation. Returns the clock plus the move being played, or
  * null once it has finished so the board renders at rest.
  */
-export function useMoveClock(move: AnimatedMove | null): {
+export function useMoveClock(
+  move: AnimatedMove | null,
+  travelMs: number = GAME_MOVE_MS,
+): {
   clock: MoveClock;
   playing: AnimatedMove | null;
 } {
-  const total = MOVE_MS + SETTLE_MS;
+  const total = travelMs + SETTLE_MS;
   const seq = move?.seq ?? 0;
   // Keyed by move, and derived during render rather than set from the effect.
   // Waiting for the first animation frame let the board paint one frame with
@@ -246,21 +288,42 @@ export function useMoveClock(move: AnimatedMove | null): {
     return { clock: IDLE_CLOCK, playing: null };
   }
 
-  const moveProgress = clamp(elapsed / MOVE_MS);
+  const moveProgress = clamp(elapsed / travelMs);
   return {
     clock: {
       capture: move.capturedSquare ? captureProgressAt(moveProgress) : 0,
-      landing: clamp((elapsed - MOVE_MS) / LANDING_EFFECT_MS),
+      landing: clamp((elapsed - travelMs) / LANDING_EFFECT_MS),
       move: moveProgress,
-      settle: clamp((elapsed - MOVE_MS) / LANDING_SETTLE_MS),
+      settle: clamp((elapsed - travelMs) / LANDING_SETTLE_MS),
     },
     playing: move,
   };
 }
 
+/** Milliseconds since `key` last changed, capped at `duration`; 0 for key 0. */
+function useKeyedClock(key: number, duration: number): number {
+  const [tick, setTick] = useState({ elapsed: 0, key: 0 });
+  useEffect(() => {
+    if (!key) return;
+    let frame = 0;
+    let start: number | null = null;
+    const step = (now: number) => {
+      if (start === null) start = now;
+      const next = now - start;
+      setTick({ elapsed: Math.min(next, duration), key });
+      if (next < duration) frame = window.requestAnimationFrame(step);
+    };
+    frame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frame);
+  }, [duration, key]);
+  return tick.key === key ? tick.elapsed : 0;
+}
+
 /** Everything `renderPieces` needs to lay a position out. */
 export type RenderInput = {
   clock: MoveClock;
+  /** Set when the move being played was a drag: the mover starts here, held aloft. */
+  drop?: DropOrigin | null;
   flipped: boolean;
   geometry: BoardGeometry;
   pieceStage: PieceStage;
@@ -278,6 +341,7 @@ export type RenderInput = {
  */
 export function renderPieces({
   clock,
+  drop = null,
   flipped,
   geometry,
   pieceStage,
@@ -285,7 +349,8 @@ export function renderPieces({
   playing,
   waves,
 }: RenderInput): RenderPiece[] {
-  const motion = pieceMotionAt(clock.move);
+  const motion = gameMotionAt(clock.move);
+  const dropMotion = drop ? dropMotionAt(clock.move, drop.lift) : null;
 
   const list = pieces.map((piece) => {
     const { column, row } = indicesFor(piece.square, flipped);
@@ -306,11 +371,15 @@ export function renderPieces({
           : null;
 
     if (travellingFrom) {
-      const start = centerFor(geometry, travellingFrom, flipped);
-      x = start.x + (at.x - start.x) * motion.travel;
-      y = start.y + (at.y - start.y) * motion.travel;
+      // A dropped piece slides in from wherever it was let go; anything else
+      // (the rook's leg of a castle included) travels square to square.
+      const dropped = dropMotion && piece.square === playing?.to;
+      const start = dropped ? drop! : centerFor(geometry, travellingFrom, flipped);
+      const { lift: height, travel } = dropped ? dropMotion : motion;
+      x = start.x + (at.x - start.x) * travel;
+      y = start.y + (at.y - start.y) * travel;
       impact = landingImpactAt(clock.settle);
-      lift = motion.lift;
+      lift = height;
       verticalScale = landingScaleAt(clock.settle);
     }
 
@@ -407,6 +476,8 @@ type IsoChessBoardProps = {
   /** Softens the board while an overlay is up. */
   blurred?: boolean;
   detail?: boolean;
+  /** Pieces of this colour can be picked up and dragged; others are click-only. */
+  dragColor?: PieceColor | null;
   fen: string;
   /**
    * Plays the recorded game's own board-setup or board-clearing animation over
@@ -426,6 +497,7 @@ function IsoChessBoard({
   animatedMove = null,
   blurred = false,
   detail = true,
+  dragColor = null,
   fen,
   flipped = false,
   geometry = STRAIGHT,
@@ -448,7 +520,45 @@ function IsoChessBoard({
   // Quantised so the piece <defs> only rebuild a handful of times while the
   // view swings round, instead of on every frame.
   const pieceRoundness = Math.round(geometry.pieceRoundness * 20) / 20;
-  const { clock, playing } = useMoveClock(animatedMove);
+  // Dragging. The ref tracks the pointer; `drag` is only set once the press
+  // has moved far enough to be a drag, so a plain click never lifts a piece.
+  const dragRef = useRef<{
+    active: boolean;
+    pointerId: number;
+    square: string;
+    startX: number;
+    startY: number;
+    wasSelected: boolean;
+  } | null>(null);
+  const [drag, setDrag] = useState<{ square: string; x: number; y: number } | null>(null);
+  // Bumped on every press so the window listeners below are (re)attached.
+  const [press, setPress] = useState(0);
+  // A piece let go somewhere it cannot go slides back to its square.
+  const [snap, setSnap] = useState<{ from: DropOrigin; seq: number; square: string } | null>(
+    null,
+  );
+  const snapElapsed = useKeyedClock(snap?.seq ?? 0, SNAP_BACK_MS);
+  // A legal drop is remembered until the move it caused arrives, so that
+  // move plays from the drop point instead of the origin square.
+  const dropRef = useRef<{ from: string; origin: DropOrigin; seq?: number; to: string } | null>(
+    null,
+  );
+  const drop = useMemo(() => {
+    const pending = dropRef.current;
+    if (!animatedMove || !pending) return null;
+    const matches =
+      pending.from === animatedMove.from &&
+      pending.to === animatedMove.to &&
+      (pending.seq ?? animatedMove.seq) === animatedMove.seq;
+    if (!matches) {
+      dropRef.current = null;
+      return null;
+    }
+    pending.seq = animatedMove.seq;
+    return pending.origin;
+  }, [animatedMove]);
+
+  const { clock, playing } = useMoveClock(animatedMove, drop ? DROP_MS : GAME_MOVE_MS);
   const checkPulse = useCheckPulse(highlights.checkSquare !== null);
 
   // Painter's algorithm: larger row+column is nearer the viewer, so it draws
@@ -469,11 +579,12 @@ function IsoChessBoard({
   }, [flipped, geometry, pieceStage?.mode, pieces]);
 
   const rendered = useMemo(
-    () => renderPieces({ clock, flipped, geometry, pieceStage, pieces, playing, waves }),
+    () => renderPieces({ clock, drop, flipped, geometry, pieceStage, pieces, playing, waves }),
     [
       clock.capture,
       clock.move,
       clock.settle,
+      drop,
       flipped,
       geometry,
       pieceStage,
@@ -482,6 +593,37 @@ function IsoChessBoard({
       waves,
     ],
   );
+
+  // The held piece follows the pointer, drawn last so it passes over the rest;
+  // a snapping piece slides home the same way.
+  const snapping = snap && snapElapsed < SNAP_BACK_MS ? snap : null;
+  const drawn = useMemo(() => {
+    if (!drag && !snapping) return rendered;
+    return rendered
+      .map((piece) => {
+        if (drag && piece.square === drag.square) {
+          return { ...piece, depth: Infinity, lift: DRAG_LIFT, x: drag.x, y: drag.y };
+        }
+        if (snapping && piece.square === snapping.square) {
+          const t = easeOutCubic(snapElapsed / SNAP_BACK_MS);
+          const home = centerFor(geometry, snapping.square, flipped);
+          return {
+            ...piece,
+            depth: Infinity,
+            lift: snapping.from.lift * (1 - t),
+            x: snapping.from.x + (home.x - snapping.from.x) * t,
+            y: snapping.from.y + (home.y - snapping.from.y) * t,
+          };
+        }
+        return piece;
+      })
+      .sort((first, second) => first.depth - second.depth);
+  }, [drag, flipped, geometry, rendered, snapElapsed, snapping]);
+
+  const dragTarget = drag ? squareUnderPoint(geometry, drag.x, drag.y, flipped) : null;
+  const isLegalTarget = (square: string | null): square is string =>
+    square !== null &&
+    (highlights.legalQuiet.includes(square) || highlights.legalCaptures.includes(square));
 
   const shake = useMemo(() => {
     const mate = mateShakeAt(clock.landing, playing?.isMate ?? false);
@@ -496,6 +638,106 @@ function IsoChessBoard({
     },
     [onSelectSquare],
   );
+
+  const snapBack = useCallback((square: string, from: DropOrigin) => {
+    setSnap((previous) => ({ from, seq: (previous?.seq ?? 0) + 1, square }));
+  }, []);
+
+  const endDrag = useCallback(
+    (clientX: number, clientY: number, cancelled: boolean) => {
+      const pending = dragRef.current;
+      dragRef.current = null;
+      if (!pending) return;
+      if (!pending.active) {
+        // A press that never moved is a click: a second click on the selected
+        // piece puts it down again.
+        if (pending.wasSelected) handleSelect(pending.square);
+        return;
+      }
+      const svg = svgRef.current;
+      const point = svg ? clientToBoard(svg, clientX, clientY) : null;
+      const origin = { lift: DRAG_LIFT, x: point?.x ?? 0, y: point?.y ?? 0 };
+      const target = point && !cancelled ? squareUnderPoint(geometry, point.x, point.y, flipped) : null;
+      setDrag(null);
+      if (isLegalTarget(target)) {
+        dropRef.current = { from: pending.square, origin, to: target };
+        handleSelect(target);
+      } else if (point) {
+        snapBack(pending.square, origin);
+      }
+    },
+    [flipped, geometry, handleSelect, isLegalTarget, snapBack],
+  );
+
+  const moveDrag = useCallback((event: PointerEvent) => {
+    const pending = dragRef.current;
+    if (!pending || pending.pointerId !== event.pointerId) return;
+    if (
+      !pending.active &&
+      Math.hypot(event.clientX - pending.startX, event.clientY - pending.startY) <
+        DRAG_THRESHOLD_PX
+    ) {
+      return;
+    }
+    const svg = svgRef.current;
+    const point = svg ? clientToBoard(svg, event.clientX, event.clientY) : null;
+    if (!point) return;
+    pending.active = true;
+    setDrag({ square: pending.square, x: point.x, y: point.y });
+  }, []);
+
+  // The gesture is followed on the window rather than through pointer capture:
+  // the canvas underneath takes and releases capture on every press of an
+  // interactive target, which would strand the pointer on whatever square it
+  // crossed next. The handlers are read through refs so the listeners can stay
+  // attached for the whole press.
+  const moveDragRef = useRef(moveDrag);
+  const endDragRef = useRef(endDrag);
+  moveDragRef.current = moveDrag;
+  endDragRef.current = endDrag;
+  useEffect(() => {
+    if (!press) return;
+    const move = (event: PointerEvent) => moveDragRef.current(event);
+    const up = (event: PointerEvent) => {
+      if (dragRef.current?.pointerId !== event.pointerId) return;
+      endDragRef.current(event.clientX, event.clientY, false);
+    };
+    const cancel = (event: PointerEvent) => {
+      if (dragRef.current?.pointerId !== event.pointerId) return;
+      endDragRef.current(event.clientX, event.clientY, true);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", cancel);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
+    };
+  }, [press]);
+
+  /** Pointer handling for the player's own pieces: click to select, or pick up and drag. */
+  const dragProps = (square: string) => ({
+    onPointerDown: (event: React.PointerEvent<SVGElement>) => {
+      if (event.button !== 0) return;
+      const wasSelected = highlights.selected === square;
+      dragRef.current = {
+        active: false,
+        pointerId: event.pointerId,
+        square,
+        startX: event.clientX,
+        startY: event.clientY,
+        wasSelected,
+      };
+      setPress((count) => count + 1);
+      if (!wasSelected) handleSelect(square);
+    },
+    style: {
+      cursor: drag ? "grabbing" : "grab",
+      outline: "none",
+      touchAction: "none",
+    } as React.CSSProperties,
+  });
 
   /** Arrows walk files and ranks, which is what a player thinks in. */
   const handleKeyDown = useCallback(
@@ -570,14 +812,17 @@ function IsoChessBoard({
       <g transform={`translate(${shake.x.toFixed(3)} ${shake.y.toFixed(3)})`}>
       <BoardSurface geometry={geometry} />
 
+      {/* Cues are keyed by square so a change remounts them and they fade in. */}
       {highlights.lastMove ? (
-        <g data-layer="last-move">
+        <g data-layer="last-move" key={`${highlights.lastMove.from}-${highlights.lastMove.to}`}>
           <polygon
+            className="board-cue"
             fill={HIGHLIGHT.fill}
             opacity="0.45"
             points={pointsFor(geometry, highlights.lastMove.from, flipped)}
           />
           <polygon
+            className="board-cue"
             fill={HIGHLIGHT.fill}
             opacity="0.82"
             points={pointsFor(geometry, highlights.lastMove.to, flipped)}
@@ -586,13 +831,15 @@ function IsoChessBoard({
       ) : null}
 
       {highlights.selected ? (
-        <g data-layer="selected">
+        <g data-layer="selected" key={highlights.selected}>
           <polygon
+            className="board-cue"
             fill={HIGHLIGHT.fill}
             opacity="0.92"
             points={pointsFor(geometry, highlights.selected, flipped)}
           />
           <polygon
+            className="board-cue"
             fill="none"
             points={pointsFor(geometry, highlights.selected, flipped)}
             stroke={HIGHLIGHT.ring}
@@ -625,6 +872,20 @@ function IsoChessBoard({
         ))}
       </g>
 
+      {/* The square a dragged piece would land on. */}
+      {isLegalTarget(dragTarget) ? (
+        <g data-layer="drag-target" key={dragTarget}>
+          <polygon
+            className="board-cue"
+            fill="none"
+            points={pointsFor(geometry, dragTarget, flipped)}
+            stroke={HIGHLIGHT.ring}
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+          />
+        </g>
+      ) : null}
+
       {playing ? (
         <LandingDust
           center={centerFor(geometry, playing.to, flipped)}
@@ -633,7 +894,7 @@ function IsoChessBoard({
       ) : null}
 
       <g data-layer="pieces" pointerEvents="none">
-        {rendered.map((piece) => (
+        {drawn.map((piece) => (
           <PieceModel
             key={piece.id}
             {...piece}
@@ -651,8 +912,6 @@ function IsoChessBoard({
           progress={clock.capture}
         />
       ) : null}
-
-      {/* Capture rings sit above the pieces so they read as a target. */}
 
       {interactive ? (
         <g data-layer="hit-targets">
@@ -672,6 +931,7 @@ function IsoChessBoard({
           {rendered.map((piece) => (
             <rect
               {...hitProps(piece.square, false)}
+              {...(piece.color === dragColor ? { onClick: undefined, ...dragProps(piece.square) } : {})}
               fill="transparent"
               height={hit.top + hit.bottom}
               key={`piece-${piece.id}`}

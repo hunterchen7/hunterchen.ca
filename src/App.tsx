@@ -17,7 +17,6 @@ import {
 } from "@hunterchen/canvas";
 import { coordinates, navItems } from "./constants/coordinates";
 import ChessLandingSection from "./components/ChessLandingSection";
-import HintSvg from "./components/HintSvg";
 import ReaderContent from "./components/ReaderContent";
 import {
   HERO_COLORS,
@@ -40,7 +39,6 @@ const CANVAS_WIDTH = 7000;
 const CANVAS_GRADIENT = `radial-gradient(circle ${CANVAS_WIDTH / 2}px at ${CANVAS_WIDTH / 2}px ${canvasHeight / 2}px, var(--canvas-bg-bloom) 0%, var(--canvas-bg-mid) 40%, var(--canvas-bg-deep) 85%)`;
 
 // Seconds from load before the navbar hint draws itself.
-const NAV_HINT_DELAY = 1.6;
 
 // Dot color (warm purple highlight)
 const DOT_COLOR = "var(--canvas-dot)";
@@ -50,7 +48,6 @@ const loadDeferredCanvasSections = () =>
 const DeferredCanvasSections = lazy(loadDeferredCanvasSections);
 
 export default function App() {
-  const [showClickMe, setShowClickMe] = useState(true);
   const [loadDeferredSections, setLoadDeferredSections] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionName>("home");
   const focusTimerRef = useRef<number | null>(null);
@@ -115,25 +112,6 @@ export default function App() {
     return cancel;
   }, []);
 
-  useEffect(() => {
-    if (!showClickMe) return;
-
-    const handleClick = (e: MouseEvent) => {
-      let el = e.target as HTMLElement | null;
-      while (el) {
-        if (el.style.position === "fixed" && el.style.zIndex === "1000") {
-          setShowClickMe(false);
-          return;
-        }
-        el = el.parentElement;
-      }
-    };
-
-    // Use capture phase so we see clicks even if propagation is stopped
-    document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
-  }, [showClickMe]);
-
   return (
     <SectionFocusContext.Provider value={sectionFocusValue}>
       <ResumeViewerProvider>
@@ -144,12 +122,6 @@ export default function App() {
           onClickCapture={handleNavigationClick}
         >
         <ReaderContent />
-        <HintSvg
-          variant="nav"
-          show={showClickMe}
-          enterDelay={NAV_HINT_DELAY}
-          className="pointer-events-none fixed bottom-[49px] left-[53%] scale-[150%] z-[999] hidden -translate-x-1/2 md:block"
-        />
         <Canvas
           homeCoordinates={coordinates.home}
           canvasWidth={CANVAS_WIDTH}

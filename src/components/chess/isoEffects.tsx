@@ -33,6 +33,39 @@ export function pieceMotionAt(progress: number) {
   };
 }
 
+/** How long a move takes on the playable board; the recorded demo keeps MOVE_MS. */
+export const GAME_MOVE_MS = 700;
+
+/**
+ * The playable board's move: quicker than the demo's, and closer to constant
+ * speed. A full smoothstep hung in the air at the start and crawled into the
+ * square at the end, which a player waiting on their move feels.
+ */
+export function gameMotionAt(progress: number) {
+  const t = clamp(progress);
+  const pickup = easeOutCubic(t / 0.18);
+  const window = clamp((t - 0.1) / 0.76);
+  const travel = 0.6 * window + 0.4 * smoothstep(window);
+  const landing = smoothstep((t - 0.74) / 0.22);
+
+  return {
+    lift: 1.22 * pickup * (1 - landing),
+    travel,
+  };
+}
+
+/** How long a dropped piece takes to slide from the drop point into its square. */
+export const DROP_MS = 240;
+
+/**
+ * Motion of a piece let go mid-air: no pickup, since it is already held at
+ * `heldLift`; it settles into the square as it crosses the last of the gap.
+ */
+export function dropMotionAt(progress: number, heldLift: number) {
+  const t = easeOutCubic(clamp(progress));
+  return { lift: heldLift * (1 - t), travel: t };
+}
+
 export function landingScaleAt(progress: number): number {
   const t = clamp(progress);
   if (t <= 0) return 1;

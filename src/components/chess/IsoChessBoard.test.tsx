@@ -1,5 +1,5 @@
-import { cleanup, render, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import IsoChessBoard, {
   IDLE_CLOCK,
   isLightSquare,
@@ -341,5 +341,139 @@ describe("piece artwork", () => {
       expect(shadow.getAttribute("cx")).toBe("0");
       expect(shadow.getAttribute("cy")).toBe("0");
     }
+  });
+});
+
+describe("dragging", () => {
+  // jsdom lays nothing out, so the board's client-to-board conversion gets an
+  // identity matrix: pointer coordinates are board coordinates.
+  beforeEach(() => {
+    Object.defineProperty(SVGSVGElement.prototype, "getScreenCTM", {
+      configurable: true,
+      value: () => ({ inverse: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }) }),
+    });
+  });
+
+  const at = (square: string) => STRAIGHT.squareCenter(square);
+  const pointer = (square: string, extra = {}) => ({
+    clientX: at(square).x,
+    clientY: at(square).y,
+    pointerId: 1,
+    ...extra,
+  });
+  const rectFor = (container: HTMLElement, square: string) =>
+    container.querySelector(`rect[data-hit-square="${square}"]`)!;
+
+  it("picks up the player's own piece and drops it on a legal square", () => {
+    const onSelectSquare = vi.fn();
+    const { container } = render(
+      <IsoChessBoard
+        dragColor="w"
+        fen={START}
+        highlights={{ ...NO_HIGHLIGHTS, legalQuiet: ["e3", "e4"] }}
+        interactive
+        onSelectSquare={onSelectSquare}
+      />,
+    );
+    const pawn = rectFor(container, "e2");
+    fireEvent.pointerDown(pawn, pointer("e2", { button: 0 }));
+    expect(onSelectSquare).toHaveBeenLastCalledWith("e2");
+    fireEvent.pointerMove(pawn, pointer("e3"));
+    fireEvent.pointerMove(pawn, pointer("e4"));
+    // The held piece follows the pointer and is drawn last.
+    const pieces = container.querySelectorAll('[data-layer="pieces"] [data-piece]');
+    const held = pieces[pieces.length - 1]!;
+    expect(held.getAttribute("data-square")).toBe("e2");
+    expect(held.getAttribute("transform")).toContain(`translate(${at("e4").x.toFixed(2)} ${at("e4").y.toFixed(2)})`);
+    expect(container.querySelector('[data-layer="drag-target"]')).not.toBeNull();
+    fireEvent.pointerUp(pawn, pointer("e4"));
+    expect(onSelectSquare).toHaveBeenLastCalledWith("e4");
+    expect(onSelectSquare).toHaveBeenCalledTimes(2);
+  });
+
+  it("treats a press that does not move as a click, selecting once", () => {
+    const onSelectSquare = vi.fn();
+    const { container } = render(
+      <IsoChessBoard dragColor="w" fen={START} highlights={NO_HIGHLIGHTS} interactive onSelectSquare={onSelectSquare} />,
+    );
+    const pawn = rectFor(container, "e2");
+    fireEvent.pointerDown(pawn, pointer("e2", { button: 0 }));
+    fireEvent.pointerUp(pawn, pointer("e2"));
+    expect(onSelectSquare).toHaveBeenCalledTimes(1);
+    expect(onSelectSquare).toHaveBeenCalledWith("e2");
+  });
+
+  it("slides a piece dropped off its legal squares back home instead of moving it", () => {
+    const onSelectSquare = vi.fn();
+    const { container } = render(
+      <IsoChessBoard
+        dragColor="w"
+        fen={START}
+        highlights={{ ...NO_HIGHLIGHTS, legalQuiet: ["e3", "e4"], selected: "e2" }}
+        interactive
+        onSelectSquare={onSelectSquare}
+      />,
+    );
+    const pawn = rectFor(container, "e2");
+    fireEvent.pointerDown(pawn, pointer("e2", { button: 0 }));
+    fireEvent.pointerMove(pawn, pointer("d5"));
+    fireEvent.pointerUp(pawn, pointer("d5"));
+    // Already selected, so the press did not reselect, and the drop was illegal.
+    expect(onSelectSquare).not.toHaveBeenCalled();
+    const held = container.querySelector('[data-layer="pieces"] [data-piece][data-square="e2"]')!;
+    // Snapping back starts from the drop point.
+    expect(held.getAttribute("transform")).toContain(`translate(${at("d5").x.toFixed(2)} ${at("d5").y.toFixed(2)})`);
+  });
+
+  it("does not lift the opponent's pieces", () => {
+    const onSelectSquare = vi.fn();
+    const { container } = render(
+      <IsoChessBoard dragColor="w" fen={START} highlights={NO_HIGHLIGHTS} interactive onSelectSquare={onSelectSquare} />,
+    );
+    const pawn = rectFor(container, "e7");
+    fireEvent.pointerDown(pawn, pointer("e7", { button: 0 }));
+    fireEvent.pointerMove(pawn, pointer("e5"));
+    expect(container.querySelector('[data-layer="drag-target"]')).toBeNull();
+    expect(onSelectSquare).not.toHaveBeenCalled();
+    fireEvent.click(pawn);
+    expect(onSelectSquare).toHaveBeenCalledWith("e7");
+  });
+});
+
+describe("renderPieces after a drop", () => {
+  const move: AnimatedMove = {
+    capturedColor: null,
+    capturedKind: null,
+    capturedSquare: null,
+    from: "e2",
+    isMate: false,
+    secondary: null,
+    seq: 1,
+    to: "e4",
+  };
+  const drop = { lift: 1.5, x: 40, y: 30 };
+  const input = (progress: number) => ({
+    clock: { capture: 0, landing: 0, move: progress, settle: 0 },
+    drop,
+    flipped: false,
+    geometry: STRAIGHT,
+    pieceStage: null,
+    pieces: piecesFromFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"),
+    playing: move,
+    waves: new Map(),
+  });
+  const mover = (progress: number) => renderPieces(input(progress)).find((p) => p.square === "e4")!;
+
+  it("starts the mover where it was let go, still held up", () => {
+    expect(mover(0).x).toBeCloseTo(drop.x);
+    expect(mover(0).y).toBeCloseTo(drop.y);
+    expect(mover(0).lift).toBeCloseTo(drop.lift);
+  });
+
+  it("has it settled on its square at the end", () => {
+    const home = STRAIGHT.squareCenter("e4");
+    expect(mover(1).x).toBeCloseTo(home.x);
+    expect(mover(1).y).toBeCloseTo(home.y);
+    expect(mover(1).lift).toBeCloseTo(0);
   });
 });
