@@ -93,7 +93,7 @@ const PROMOTION_VIEWBOX: Record<string, string> = Object.fromEntries(
 
 /** One style for play, reset and new game, so the controls read as a set. */
 const CONTROL_CLASS =
-  "cursor-pointer px-4 py-1 font-mono text-2xl tracking-wide text-fuchsia-200/85 transition-colors hover:text-fuchsia-100";
+  "cursor-pointer rounded-xl border border-fuchsia-300/30 bg-fuchsia-900/30 px-6 py-2 font-mono text-xl tracking-wide text-fuchsia-100 transition-colors hover:border-fuchsia-300/50 hover:bg-fuchsia-900/50";
 
 /** Depends on whether this browser takes the WebGPU runtime build. */
 const downloadSizeLabel = `${Math.round(totalDownloadBytes() / 1_000_000)} MB`;
@@ -316,7 +316,17 @@ export default function ChessLandingSection({
 
   const band = useViewportBand(offset);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [infoHovered, setInfoHovered] = useState(false);
+  const infoHoverTimer = useRef<number | null>(null);
   const infoRef = useRef<HTMLDivElement>(null);
+  const hoverInfo = () => {
+    if (infoHoverTimer.current !== null) window.clearTimeout(infoHoverTimer.current);
+    setInfoHovered(true);
+  };
+  const unhoverInfo = () => {
+    infoHoverTimer.current = window.setTimeout(() => setInfoHovered(false), 180);
+  };
+  const showInfo = infoOpen || infoHovered;
 
   useEffect(() => {
     if (!infoOpen) return;
@@ -375,7 +385,7 @@ export default function ChessLandingSection({
           style={{
             height: band.height,
             left: band.left,
-            paddingBottom: band.paddingBottom,
+            paddingBottom: band.paddingBottom + band.height * 0.06,
             top: band.top,
             width: band.width,
           }}
@@ -485,18 +495,22 @@ export default function ChessLandingSection({
                   </button>
                   <button
                     type="button"
-                    aria-expanded={infoOpen}
+                    aria-expanded={showInfo}
                     aria-label="About this chess engine"
                     onClick={() => setInfoOpen((open) => !open)}
+                    onMouseEnter={hoverInfo}
+                    onMouseLeave={unhoverInfo}
                     className="absolute left-full top-1/2 ml-3 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full font-mono text-xs text-purple-200/35 ring-1 ring-inset ring-purple-200/15 transition-colors hover:text-purple-200/80 hover:ring-purple-200/40"
                   >
                     i
                   </button>
-                  {infoOpen ? (
+                  {showInfo ? (
                     <div
                       ref={infoRef}
                       role="dialog"
                       aria-label="About this chess engine"
+                      onMouseEnter={hoverInfo}
+                      onMouseLeave={unhoverInfo}
                       className="absolute bottom-full left-1/2 z-20 mb-3 w-[300px] -translate-x-1/2 rounded-xl bg-[#1b1524]/95 px-4 py-3 text-left text-xs leading-5 text-purple-200/75 shadow-xl ring-1 ring-inset ring-fuchsia-300/20 backdrop-blur-sm"
                     >
                       You're playing{" "}
