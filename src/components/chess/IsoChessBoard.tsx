@@ -111,6 +111,11 @@ function describeSquare(square: string, piece: BoardSquare | undefined): string 
   return `${square}, ${color} ${PIECE_NAMES[piece.kind]}`;
 }
 
+/** Light and dark squares need opposite cues, or one of them swallows the mark. */
+function isLightSquare(square: string): boolean {
+  return (FILES.indexOf(square[0] ?? "") + Number(square[1])) % 2 === 0;
+}
+
 /** A flat ellipse sits on the board plane; a circle would look upright. */
 function MoveDot({
   flipped,
@@ -122,13 +127,14 @@ function MoveDot({
   square: string;
 }) {
   const { x, y } = centerFor(geometry, square, flipped);
+  const light = isLightSquare(square);
   return (
     <ellipse
       cx={x.toFixed(2)}
       cy={y.toFixed(2)}
-      fill={heroRgba("light", 0.42)}
-      rx="1.15"
-      ry="0.58"
+      fill={light ? heroRgba("deep", 0.5) : heroRgba("light", 0.55)}
+      rx={(1.15 * geometry.pieceScale).toFixed(2)}
+      ry={(1.15 * geometry.pieceScale * geometry.pieceRoundness).toFixed(2)}
     />
   );
 }
@@ -146,8 +152,10 @@ function CaptureRing({
     <polygon
       fill="none"
       points={pointsFor(geometry, square, flipped)}
-      stroke={heroRgba("light", 0.6)}
-      strokeWidth="0.7"
+      stroke={
+        isLightSquare(square) ? heroRgba("deep", 0.7) : heroRgba("light", 0.7)
+      }
+      strokeWidth="0.85"
       vectorEffect="non-scaling-stroke"
     />
   );

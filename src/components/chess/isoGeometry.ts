@@ -215,14 +215,15 @@ export function createBoardGeometry(config: ProjectionConfig) {
 
 /** Corner-on view: the board's resting look, and the projects-card watermark. */
 export const DIAMOND_PROJECTION: ProjectionConfig = {
-  boardDepth: 5.2,
-  column: { x: 6.15, y: 3.075 },
+  boardDepth: 4.7,
+  // Raised from the classic 2:1 isometric so the view sits further above the
+  // board, matching the head-on view it swings into.
+  column: { x: 6.15, y: 3.7 },
   origin: { x: 60, y: 10.8 },
-  // Kept near the value this artwork was drawn at, so the projects-card
-  // watermark looks as it always has.
-  pieceRoundness: 0.34,
+  // Matches the squares, now that the artwork derives its discs from this.
+  pieceRoundness: 0.6,
   pieceScale: 1.06,
-  row: { x: -6.15, y: 3.075 },
+  row: { x: -6.15, y: 3.7 },
 };
 
 /**
@@ -231,13 +232,14 @@ export const DIAMOND_PROJECTION: ProjectionConfig = {
  * reads like a normal chessboard tilted back.
  */
 export const STRAIGHT_PROJECTION: ProjectionConfig = {
-  boardDepth: 4.6,
-  // Squares are 11 wide by 8.6 deep. That is a fairly high camera, which is
-  // what keeps successive ranks from stacking on top of each other.
-  column: { x: 0, y: 8.6 },
+  // Less of the slab shows from higher up.
+  boardDepth: 4.2,
+  // Squares are 11 wide by 9.1 deep. Steeper than a classic 2:1 view so the
+  // ranks separate, but not so steep that the side-on pieces read as flat.
+  column: { x: 0, y: 9.1 },
   origin: { x: 104, y: 6 },
-  // Matches the squares: a rank is 8.6 deep for every 11 of file width.
-  pieceRoundness: 0.78,
+  // Matches the squares: a rank is 9.1 deep for every 11 of file width.
+  pieceRoundness: 0.83,
   // A diamond square spans 12.3 units across the screen and its pieces sit at
   // about 40% of that. Matching the ratio on an 11-wide rectangle keeps the
   // familiar proportions and stops pieces from swallowing the rank behind.

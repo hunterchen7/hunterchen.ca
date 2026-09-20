@@ -163,15 +163,6 @@ function PieceBase({
         strokeWidth="0.3"
         vectorEffect="non-scaling-stroke"
       />
-      {detail ? (
-        <path
-          d={`M0,${-wall} V${ry.toFixed(2)} ${frontArc(width, ry, 0)
-            .replace("Q0,", `Q${(width * 0.62).toFixed(2)},`)
-            .replace(`${(-width).toFixed(2)},0.00`, `${(-0).toFixed(2)},${ry.toFixed(2)}`)} Z`}
-          fill={palette.shade}
-          opacity="0.001"
-        />
-      ) : null}
       <Disc cy={-wall} palette={palette} roundness={roundness} shade={detail} width={width} />
 
       {/* Flared skirt from the base up to the neck. */}
@@ -183,23 +174,11 @@ function PieceBase({
         vectorEffect="non-scaling-stroke"
       />
       {detail ? (
-        <>
-          <path
-            d={`M0,${(neck - 0.16).toFixed(2)} C${(top * 0.5).toFixed(2)},${(neck - 0.3).toFixed(2)} ${top},${neck} ${top},${neck} C${(waist + 0.5).toFixed(2)},${(neck + 0.75).toFixed(2)} ${(width * 0.94).toFixed(2)},${(-wall - 0.85).toFixed(2)} ${width},${-wall} ${frontArc(width, ry, -wall)
-              .replace(`${(-width).toFixed(2)}`, "0")} Z`}
-            fill={palette.shade}
-            opacity="0.26"
-          />
-          <path
-            d={`M${(-width * 0.93).toFixed(2)},${(-wall - 0.2).toFixed(2)} C${(-width * 0.88).toFixed(2)},${(-wall - 0.95).toFixed(2)} ${(-waist - 0.45).toFixed(2)},${(neck + 0.8).toFixed(2)} ${(-top * 0.96).toFixed(2)},${(neck + 0.06).toFixed(2)}`}
-            fill="none"
-            opacity="0.5"
-            stroke={palette.highlight}
-            strokeLinecap="round"
-            strokeWidth="0.26"
-            vectorEffect="non-scaling-stroke"
-          />
-        </>
+        <path
+          d={`M0,${(neck - 0.16).toFixed(2)} C${(top * 0.5).toFixed(2)},${(neck - 0.3).toFixed(2)} ${top},${neck} ${top},${neck} C${(waist + 0.5).toFixed(2)},${(neck + 0.75).toFixed(2)} ${(width * 0.94).toFixed(2)},${(-wall - 0.85).toFixed(2)} ${width},${-wall} Q${(width * 0.5).toFixed(2)},${(-wall + ry * 1.4).toFixed(2)} 0,${(-wall + ry).toFixed(2)} Z`}
+          fill={palette.shade}
+          opacity="0.26"
+        />
       ) : null}
     </>
   );

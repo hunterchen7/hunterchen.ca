@@ -282,7 +282,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
         <div className="flex w-full min-h-0 flex-1 items-center justify-center">
           <div
             className="relative h-full max-w-full"
-            style={{ aspectRatio: "1.45" }}
+            style={{ aspectRatio: "1.32" }}
           >
             {showAmbient ? (
               <div aria-hidden="true" className="h-full w-full">
