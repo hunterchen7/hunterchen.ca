@@ -234,9 +234,10 @@ const PROFILES: Record<PieceKind, (roundness: number) => Knot[]> = {
     ...sweep(SHOULDER, 1.33, 1.7, 1.6, "cove"),
     knot(1.7, 1.6),
     knot(5.4, 1.25),
-    // The cap: a wider band the notches are cut into.
-    knot(5.4, 1.75),
-    knot(ROOK_CAP_TOP, 1.75, "top"),
+    // The cap: a wider band whose top ring is the notch floor. The merlons
+    // stand on it as parts, so the notches between them are open.
+    knot(5.4, ROOK_CAP),
+    knot(ROOK_RIM, ROOK_CAP, "top"),
   ],
   n: () => [
     ...base(BASE_RADIUS.n),
@@ -427,14 +428,23 @@ function layers(knots: Knot[], roundness: number): Layer[] {
 // Parts that are not turned
 // ---------------------------------------------------------------------------
 
+/** One face of a part, drawn in order. */
+type Surface = {
+  d: string;
+  /** "inner" is the inside of a hollow, "lit" a flat facing up, "shade" an overlay. */
+  tone: "body" | "inner" | "lit" | "shade";
+};
+
 type Part = {
   /** Closed outline, part of the piece's silhouette. */
-  d: string;
+  d?: string;
   /** The edges that lie against the piece itself, stroked on top; open. */
   edge?: string;
   fill?: "body" | "shade";
   /** The part of it turned from the light. */
   shade?: string;
+  /** A part built from several faces instead of one outline. */
+  surfaces?: Surface[];
 };
 
 /** A point on a horizontal circle of `radius` at height `h`, at `angle` around it. */
@@ -464,46 +474,90 @@ function knightParts(roundness: number): Part[] {
   ];
 }
 
-const ROOK_CAP_TOP = 7.0;
 const ROOK_CAP = 1.75;
 const ROOK_BORE = 1.3;
-const ROOK_NOTCH_DEPTH = 0.5;
+/** The cap's top ring, which is also the floor of the notches. */
+const ROOK_RIM = 6.5;
+const ROOK_MERLON_TOP = 7.0;
+const ROOK_MERLON_SPAN = (64 * Math.PI) / 180;
+
+const rad = (degrees: number) => (degrees * Math.PI) / 180;
+
+/** Points along a horizontal circle of `radius` at height `h`, from one angle to another. */
+function arcPoints(radius: number, h: number, from: number, to: number, roundness: number): Point[] {
+  const steps = 6;
+  return Array.from({ length: steps + 1 }, (_, i) =>
+    around(radius, h, from + ((to - from) * i) / steps, roundness),
+  );
+}
+
+const polygon = (points: Point[]) => `M${points.map(at).join(" ")}Z`;
+const reversed = (points: Point[]) => [...points].reverse();
+
+/** The part of an angular span that faces the light, if any. */
+function litSpan(from: number, to: number): [number, number] | null {
+  for (const turn of [0, 2 * Math.PI]) {
+    const lo = Math.max(from, turn - Math.PI / 2);
+    const hi = Math.min(to, turn + Math.PI / 2);
+    if (lo < hi) return [lo, hi];
+  }
+  return null;
+}
 
 /**
- * Four narrow notches cut into the rook's cap at the diagonals, as the
- * Staunton pattern has them. Each takes a wedge out of the lit top ring; the
- * two in front also open a slot down the outer wall.
+ * One merlon: a segment of the cap's wall standing above the rim between two
+ * angles. Seen from in front, its outer face and lit top show; seen from
+ * behind, its top and the inside face across the bore. Each is drawn as its
+ * own surface, so the union has the merlon's true outline and the notches
+ * between merlons stay open.
  */
-function RookNotches({ palette, roundness }: { palette: PiecePalette; roundness: number }) {
-  const halfSpan = (11 * Math.PI) / 180;
-  return (
-    <>
-      {[45, 135, 225, 315].map((degrees) => {
-        const angle = (degrees * Math.PI) / 180;
-        const outerA = around(ROOK_CAP, ROOK_CAP_TOP, angle - halfSpan, roundness);
-        const outerB = around(ROOK_CAP, ROOK_CAP_TOP, angle + halfSpan, roundness);
-        const innerA = around(ROOK_BORE, ROOK_CAP_TOP, angle - halfSpan, roundness);
-        const innerB = around(ROOK_BORE, ROOK_CAP_TOP, angle + halfSpan, roundness);
-        const drop = (point: Point) => ({ x: point.x, y: point.y + ROOK_NOTCH_DEPTH });
-        return (
-          <g key={degrees}>
-            <path
-              d={`M${at(outerA)} L${at(outerB)} L${at(innerB)} L${at(innerA)} Z`}
-              fill={palette.shade}
-              opacity="0.55"
-            />
-            {Math.sin(angle) > 0 ? (
-              <path
-                d={`M${at(outerA)} L${at(outerB)} L${at(drop(outerB))} L${at(drop(outerA))} Z`}
-                fill={palette.deep}
-                opacity="0.85"
-              />
-            ) : null}
-          </g>
-        );
-      })}
-    </>
-  );
+function merlon(from: number, to: number, front: boolean, roundness: number): Part {
+  const outerLow = arcPoints(ROOK_CAP, ROOK_RIM, from, to, roundness);
+  const outerHigh = arcPoints(ROOK_CAP, ROOK_MERLON_TOP, from, to, roundness);
+  const innerLow = arcPoints(ROOK_BORE, ROOK_RIM, from, to, roundness);
+  const innerHigh = arcPoints(ROOK_BORE, ROOK_MERLON_TOP, from, to, roundness);
+  const outerFace: Surface = { d: polygon([...outerLow, ...reversed(outerHigh)]), tone: "body" };
+  const innerFace: Surface = { d: polygon([...innerHigh, ...reversed(innerLow)]), tone: "inner" };
+  const top: Surface = { d: polygon([...outerHigh, ...reversed(innerHigh)]), tone: "lit" };
+  // The outer face darkens where it turns from the light, like the wall below it.
+  const lit = litSpan(from, to);
+  const shade: Surface[] =
+    front && lit
+      ? [
+          {
+            d: polygon([
+              ...arcPoints(ROOK_CAP, ROOK_RIM, lit[0], lit[1], roundness),
+              ...reversed(arcPoints(ROOK_CAP, ROOK_MERLON_TOP, lit[0], lit[1], roundness)),
+            ]),
+            tone: "shade",
+          },
+        ]
+      : [];
+  return {
+    surfaces: front ? [innerFace, outerFace, ...shade, top] : [outerFace, innerFace, top],
+  };
+}
+
+/**
+ * Four broad merlons on the cap at front, back and sides, with the narrow
+ * notches between them at the diagonals, as the Staunton pattern has them.
+ * The side merlons wrap from back to front, so they are split where they
+ * cross the axis and each half is drawn with its own side showing.
+ */
+function rookParts(roundness: number): Part[] {
+  const half = ROOK_MERLON_SPAN / 2;
+  const spans: { from: number; to: number }[] = [];
+  for (const centre of [0, 90, 180, 270]) {
+    const from = rad(centre) - half;
+    const to = rad(centre) + half;
+    const axis = [0, Math.PI].find((a) => from < a && to > a);
+    if (axis === undefined) spans.push({ from, to });
+    else spans.push({ from, to: axis }, { from: axis, to });
+  }
+  return spans
+    .map((span) => ({ ...span, depth: Math.sin((span.from + span.to) / 2) }))
+    .sort((first, second) => first.depth - second.depth)
+    .map(({ depth, from, to }) => merlon(from, to, depth > 0, roundness));
 }
 
 /** Eight rounded teeth around the coronet, and the ball above its dish. */
@@ -557,10 +611,7 @@ function Gleam({ center, palette, radius }: { center: number; palette: PiecePale
 
 const PIECES: Record<PieceKind, PieceSpec> = {
   p: { details: (palette) => <Gleam center={5.43} palette={palette} radius={1.2} /> },
-  r: {
-    bore: ROOK_BORE,
-    details: (palette, roundness) => <RookNotches palette={palette} roundness={roundness} />,
-  },
+  r: { bore: ROOK_BORE, parts: rookParts },
   n: {
     parts: knightParts,
     details: (palette) => (
@@ -739,6 +790,32 @@ function FaceArt({
   );
 }
 
+function SurfaceArt({
+  detail,
+  palette,
+  surface,
+}: {
+  detail: boolean;
+  palette: PiecePalette;
+  surface: Surface;
+}) {
+  switch (surface.tone) {
+    case "body":
+      return <path d={surface.d} fill={palette.body} />;
+    case "lit":
+      return <path d={surface.d} fill={detail ? palette.highlight : palette.body} opacity={detail ? 0.9 : 1} />;
+    case "inner":
+      return (
+        <>
+          <path d={surface.d} fill={palette.deep} opacity="0.9" />
+          {detail ? <path d={surface.d} fill={palette.main} opacity="0.28" /> : null}
+        </>
+      );
+    case "shade":
+      return detail ? <path d={surface.d} fill={palette.shade} opacity={SHADE_OPACITY} /> : null;
+  }
+}
+
 export function PieceShape({
   bodyFill,
   color,
@@ -766,9 +843,14 @@ export function PieceShape({
         {stack.map((layer, index) => (
           <path d={layer.d} key={`rim-${index}`} vectorEffect="non-scaling-stroke" />
         ))}
-        {parts.map((part, index) => (
-          <path d={part.d} key={`rim-part-${index}`} vectorEffect="non-scaling-stroke" />
-        ))}
+        {parts.flatMap((part, index) =>
+          (part.surfaces
+            ? part.surfaces.filter((surface) => surface.tone !== "shade").map((surface) => surface.d)
+            : [part.d ?? ""]
+          ).map((d, face) => (
+            <path d={d} key={`rim-part-${index}-${face}`} vectorEffect="non-scaling-stroke" />
+          )),
+        )}
       </g>
       {stack.map((layer, index) => (
         <g key={`layer-${index}`}>
@@ -799,7 +881,13 @@ export function PieceShape({
       ))}
       {parts.map((part, index) => (
         <g key={`part-${index}`}>
-          <path d={part.d} fill={part.fill === "shade" ? palette.shade : palette.body} />
+          {part.surfaces ? (
+            part.surfaces.map((surface, face) => (
+              <SurfaceArt detail={detail} key={face} palette={palette} surface={surface} />
+            ))
+          ) : (
+            <path d={part.d} fill={part.fill === "shade" ? palette.shade : palette.body} />
+          )}
           {detail && part.shade ? (
             <path d={part.shade} fill={palette.shade} opacity={SHADE_OPACITY} />
           ) : null}
