@@ -23,6 +23,66 @@ import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 import { useChessGame } from "../hooks/useChessGame";
 import { totalDownloadBytes } from "../chess/config";
 
+/**
+ * The fixed navbar sits at the bottom of the viewport; this much of the band
+ * is kept clear above it for the controls. Mobile adds the safe-area inset.
+ */
+const NAVBAR_RESERVE = { desktop: 84, mobile: 120 };
+
+type Band = {
+  height: number;
+  left: number;
+  paddingBottom: number;
+  top: number;
+  width: number;
+};
+
+/**
+ * The part of the section that is on screen. The canvas shows the home
+ * section at zoom 1 and centred, so the visible band is the viewport's size
+ * in the middle of the section, less the strip the navbar covers.
+ */
+export function bandFor(
+  viewport: { height: number; width: number },
+  section: { height: number; width: number },
+): Band {
+  const width = Math.min(section.width, viewport.width);
+  const height = Math.min(section.height, viewport.height);
+  const reserve =
+    viewport.width < 768 ? NAVBAR_RESERVE.mobile : NAVBAR_RESERVE.desktop;
+  // How far the navbar's strip reaches up into the band: all of it when the
+  // band fills the viewport, less when the section ends above the navbar.
+  const overlap = Math.max(0, reserve - (viewport.height - height) / 2);
+  return {
+    height,
+    left: (section.width - width) / 2,
+    paddingBottom: overlap,
+    top: (section.height - height) / 2,
+    width,
+  };
+}
+
+function useViewportBand(section: { height: number; width: number }): Band {
+  const measure = () =>
+    bandFor(
+      typeof window === "undefined"
+        ? { height: section.height, width: section.width }
+        : { height: window.innerHeight, width: window.innerWidth },
+      section,
+    );
+  const [band, setBand] = useState(measure);
+
+  useEffect(() => {
+    const update = () => setBand(measure());
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section.height, section.width]);
+
+  return band;
+}
+
 /** Each promotion choice framed to its own height, base rim to top. */
 const PROMOTION_VIEWBOX: Record<string, string> = Object.fromEntries(
   Object.entries({ b: 10.6, n: 9.5, q: 11.5, r: 7.9 }).map(([kind, top]) => [
@@ -224,7 +284,9 @@ function DownloadProgress({
   );
 }
 
-export default function ChessLandingSection({ offset }: ChessLandingSectionProps) {
+export default function ChessLandingSection({
+  offset,
+}: ChessLandingSectionProps) {
   // True while the board is being swept, turned or laid out. Fed to the game
   // hook so the engine does not move over the animation, and used to keep the
   // board non-interactive for the same window.
@@ -248,6 +310,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
     startNewGame,
   } = useChessGame({ holdEngine: boardBusy });
 
+  const band = useViewportBand(offset);
   const [infoOpen, setInfoOpen] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
 
@@ -256,7 +319,11 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node)) return;
       if (infoRef.current?.contains(event.target)) return;
-      if ((event.target as HTMLElement).closest("[aria-label='About this chess engine']")) {
+      if (
+        (event.target as HTMLElement).closest(
+          "[aria-label='About this chess engine']",
+        )
+      ) {
         return;
       }
       setInfoOpen(false);
@@ -297,178 +364,202 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
       <AccessibleCanvasSection
         sectionId="home"
         label="Play chess"
-        className="relative flex h-full w-full flex-col items-center justify-center gap-1 px-3 pb-[180px] pt-2"
+        className="relative h-full w-full"
       >
-        {/* One container aspect across the whole swing: each view frames itself
+        <div
+          className="absolute flex flex-col items-center justify-center gap-1 px-3 pt-2"
+          style={{
+            height: band.height,
+            left: band.left,
+            paddingBottom: band.paddingBottom,
+            top: band.top,
+            width: band.width,
+          }}
+        >
+          {/* One container aspect across the whole swing: each view frames itself
             inside it, so the camera can move without reflowing the page. The
             ratio splits the difference between the wide resting view and the
             taller head-on one. */}
-        <div className="flex w-full min-h-0 flex-1 items-center justify-center">
-          <div
-            className="relative h-full max-w-full"
-            style={{ aspectRatio: "1.28" }}
-          >
-            {showAmbient ? (
-              <div aria-hidden="true" className="h-full w-full">
-                <ChessboardWatermark
-                  dismiss={play.scatter}
-                  prefix="landing-chessboard-piece"
-                  viewBox={DIAMOND.viewBox}
-                />
-              </div>
-            ) : (
-              <IsoChessBoard
-                animatedMove={animatedMove}
-                fen={fen}
-                geometry={play.geometry}
-                pieceStage={pieceStage}
-                flipped={playerColor === "b"}
-                highlights={highlights}
-                interactive={boardIsInteractive && !busy}
-                onSelectSquare={selectSquare}
-              />
-            )}
-
-            {engineState.isLoading ? (
-              <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
-                <div className="rounded-md bg-[#1b1524]/70 px-4 py-3 backdrop-blur-sm">
-                  <DownloadProgress
-                    message={engineState.loadingMessage}
-                    progress={engineState.loadingProgress}
+          <div className="flex w-full min-h-0 flex-1 items-center justify-center">
+            <div
+              className="relative h-full max-w-full"
+              style={{ aspectRatio: "1.28" }}
+            >
+              {showAmbient ? (
+                <div aria-hidden="true" className="h-full w-full">
+                  <ChessboardWatermark
+                    dismiss={play.scatter}
+                    prefix="landing-chessboard-piece"
+                    viewBox={DIAMOND.viewBox}
                   />
                 </div>
-              </div>
-            ) : null}
+              ) : (
+                <IsoChessBoard
+                  animatedMove={animatedMove}
+                  fen={fen}
+                  geometry={play.geometry}
+                  pieceStage={pieceStage}
+                  flipped={playerColor === "b"}
+                  highlights={highlights}
+                  interactive={boardIsInteractive && !busy}
+                  onSelectSquare={selectSquare}
+                />
+              )}
 
-            {pendingPromotion ? (
-              <div className="absolute inset-0 z-30 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-2 rounded-xl bg-[#1b1524]/90 px-4 py-3 ring-1 ring-inset ring-fuchsia-300/25 backdrop-blur-sm">
-                  <span className="font-mono text-[11px] text-purple-200/70">
-                    promote to
-                  </span>
-                  <div className="flex gap-1">
-                    {PROMOTION_CHOICES.map(({ kind, label }) => (
-                      <button
-                        key={kind}
-                        type="button"
-                        aria-label={label}
-                        onClick={() => completePromotion(kind as "q" | "r" | "b" | "n")}
-                        className="h-12 w-12 cursor-pointer rounded-lg ring-1 ring-inset ring-fuchsia-300/20 transition-colors hover:bg-fuchsia-300/10"
-                      >
-                        <svg className="h-full w-full" viewBox={PROMOTION_VIEWBOX[kind]}>
-                          <PieceShape
-                            color={playerColor}
-                            detail
-                            kind={kind}
-                            roundness={STRAIGHT.pieceRoundness}
-                          />
-                        </svg>
-                      </button>
-                    ))}
+              {engineState.isLoading ? (
+                <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
+                  <div className="rounded-md bg-[#1b1524]/70 px-4 py-3 backdrop-blur-sm">
+                    <DownloadProgress
+                      message={engineState.loadingMessage}
+                      progress={engineState.loadingProgress}
+                    />
                   </div>
-                  <button
-                    type="button"
-                    onClick={cancelPromotion}
-                    className="cursor-pointer font-mono text-[10px] text-purple-200/50 transition-colors hover:text-purple-200/80"
-                  >
-                    cancel
-                  </button>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {confettiKey > 0 ? <Confetti key={confettiKey} /> : null}
+              {pendingPromotion ? (
+                <div className="absolute inset-0 z-30 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2 rounded-xl bg-[#1b1524]/90 px-4 py-3 ring-1 ring-inset ring-fuchsia-300/25 backdrop-blur-sm">
+                    <span className="font-mono text-[11px] text-purple-200/70">
+                      promote to
+                    </span>
+                    <div className="flex gap-1">
+                      {PROMOTION_CHOICES.map(({ kind, label }) => (
+                        <button
+                          key={kind}
+                          type="button"
+                          aria-label={label}
+                          onClick={() =>
+                            completePromotion(kind as "q" | "r" | "b" | "n")
+                          }
+                          className="h-12 w-12 cursor-pointer rounded-lg ring-1 ring-inset ring-fuchsia-300/20 transition-colors hover:bg-fuchsia-300/10"
+                        >
+                          <svg
+                            className="h-full w-full"
+                            viewBox={PROMOTION_VIEWBOX[kind]}
+                          >
+                            <PieceShape
+                              color={playerColor}
+                              detail
+                              kind={kind}
+                              roundness={STRAIGHT.pieceRoundness}
+                            />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={cancelPromotion}
+                      className="cursor-pointer font-mono text-[10px] text-purple-200/50 transition-colors hover:text-purple-200/80"
+                    >
+                      cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {confettiKey > 0 ? <Confetti key={confettiKey} /> : null}
+            </div>
           </div>
-        </div>
 
-        <div className="flex min-h-[48px] flex-col items-center gap-1">
-          {overlayUp && hasCachedModel !== null ? (
-            <div className="flex flex-col items-center gap-2">
-              {/* The info button is positioned off the play button rather than
+          <div className="flex min-h-[48px] flex-col items-center gap-1">
+            {overlayUp && hasCachedModel !== null ? (
+              <div className="flex flex-col items-center gap-2">
+                {/* The info button is positioned off the play button rather than
                   sitting beside it in the flow, so play stays centred under the
                   board whether or not the button is there. */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={startGame}
-                  className={CONTROL_CLASS}
-                >
-                  play
-                </button>
-                <button
-                  type="button"
-                  aria-expanded={infoOpen}
-                  aria-label="About this chess engine"
-                  onClick={() => setInfoOpen((open) => !open)}
-                  className="absolute left-full top-1/2 ml-3 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full font-mono text-xs text-purple-200/35 ring-1 ring-inset ring-purple-200/15 transition-colors hover:text-purple-200/80 hover:ring-purple-200/40"
-                >
-                  i
-                </button>
-                {infoOpen ? (
-                  <div
-                    ref={infoRef}
-                    role="dialog"
-                    aria-label="About this chess engine"
-                    className="absolute bottom-full left-1/2 z-20 mb-3 w-[300px] -translate-x-1/2 rounded-xl bg-[#1b1524]/95 px-4 py-3 text-left text-xs leading-5 text-purple-200/75 shadow-xl ring-1 ring-inset ring-fuchsia-300/20 backdrop-blur-sm"
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={startGame}
+                    className={CONTROL_CLASS}
                   >
-                    You're playing{" "}
-                    <AnimatedLink
-                      href="https://www.maiachess.com/"
-                      className="text-fuchsia-300/80"
+                    play
+                  </button>
+                  <button
+                    type="button"
+                    aria-expanded={infoOpen}
+                    aria-label="About this chess engine"
+                    onClick={() => setInfoOpen((open) => !open)}
+                    className="absolute left-full top-1/2 ml-3 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full font-mono text-xs text-purple-200/35 ring-1 ring-inset ring-purple-200/15 transition-colors hover:text-purple-200/80 hover:ring-purple-200/40"
+                  >
+                    i
+                  </button>
+                  {infoOpen ? (
+                    <div
+                      ref={infoRef}
+                      role="dialog"
+                      aria-label="About this chess engine"
+                      className="absolute bottom-full left-1/2 z-20 mb-3 w-[300px] -translate-x-1/2 rounded-xl bg-[#1b1524]/95 px-4 py-3 text-left text-xs leading-5 text-purple-200/75 shadow-xl ring-1 ring-inset ring-fuchsia-300/20 backdrop-blur-sm"
                     >
-                      Maia
-                    </AnimatedLink>
-                    , a neural net trained to play like a person rather than an
-                    engine. I{" "}
-                    <AnimatedLink
-                      href="https://github.com/hunterchen7/hunter-chessbot/"
-                      className="text-fuchsia-300/80"
-                    >
-                      fine-tuned it
-                    </AnimatedLink>{" "}
-                    on about 2,000 of my own games, so what's across the board is
-                    a fair impression of me. Be gentle.
-                  </div>
+                      You're playing{" "}
+                      <AnimatedLink
+                        href="https://www.maiachess.com/"
+                        className="text-fuchsia-300/80"
+                      >
+                        Maia
+                      </AnimatedLink>
+                      , a neural net trained to play like a person rather than
+                      an engine. I{" "}
+                      <AnimatedLink
+                        href="https://github.com/hunterchen7/hunter-chessbot/"
+                        className="text-fuchsia-300/80"
+                      >
+                        fine-tuned it
+                      </AnimatedLink>{" "}
+                      on about 2,000 of my own games, so what's across the board
+                      is a fair impression of me. Be gentle.
+                    </div>
+                  ) : null}
+                </div>
+                {hasCachedModel === false ? (
+                  <p className="font-mono text-[10px] leading-4 text-purple-100/55">
+                    one-time {downloadSizeLabel} download
+                  </p>
                 ) : null}
               </div>
-              {hasCachedModel === false ? (
-                <p className="font-mono text-[10px] leading-4 text-purple-100/55">
-                  one-time {downloadSizeLabel} download
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+            ) : null}
 
-          {engineState.isThinking ? (
-            <span className="animate-pulse font-mono text-sm text-fuchsia-300/50">
-              thinking...
-            </span>
-          ) : null}
-
-          {finishedStatus ? (
-            <div className="flex flex-col items-center gap-2">
-              <span className="font-mono text-sm text-fuchsia-200">
-                {finishedStatus}
+            {engineState.isThinking ? (
+              <span className="animate-pulse font-mono text-sm text-fuchsia-300/50">
+                thinking...
               </span>
+            ) : null}
+
+            {finishedStatus ? (
+              <div className="flex flex-col items-center gap-2">
+                <span className="font-mono text-sm text-fuchsia-200">
+                  {finishedStatus}
+                </span>
+                <button
+                  type="button"
+                  onClick={restart.restart}
+                  className={CONTROL_CLASS}
+                >
+                  new game
+                </button>
+              </div>
+            ) : null}
+
+            {phase === "playing" &&
+            engineState.isReady &&
+            !engineState.isThinking ? (
               <button
                 type="button"
                 onClick={restart.restart}
                 className={CONTROL_CLASS}
               >
-                new game
+                reset
               </button>
-            </div>
-          ) : null}
+            ) : null}
 
-          {phase === "playing" && engineState.isReady && !engineState.isThinking ? (
-            <button type="button" onClick={restart.restart} className={CONTROL_CLASS}>
-              reset
-            </button>
-          ) : null}
-
-          {engineState.error ? (
-            <span className="font-mono text-sm text-red-400">{engineState.error}</span>
-          ) : null}
+            {engineState.error ? (
+              <span className="font-mono text-sm text-red-400">
+                {engineState.error}
+              </span>
+            ) : null}
+          </div>
         </div>
       </AccessibleCanvasSection>
     </CanvasComponent>

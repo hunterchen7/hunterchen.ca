@@ -25,15 +25,15 @@ const SECTION_HEIGHT = 700;
 // 1200 = 5500, leaving ~1500px of open space on the right of the 7000-wide canvas.
 export const coordinates = {
   home: {
-    // Taller than a laptop viewport on purpose, as the old chess section was:
-    // the canvas centres a section and zooms only by viewport width, so the
-    // overflow is split top and bottom. The top slice is piece headroom and the
-    // section keeps a bottom gutter deep enough that its controls stay above
-    // the fixed navbar on a 900px-tall viewport.
-    x: 1800,
+    // The canvas shows the home section at zoom 1, centred, so one unit here is
+    // one CSS pixel of viewport. The section is sized past any common desktop
+    // viewport; the landing lays its board out in a band the size of the
+    // viewport in the middle of it, so the board fills whatever screen it is
+    // on rather than a fixed box.
+    x: 1550,
     y: 700,
-    width: 1200,
-    height: 1100,
+    width: 1700,
+    height: 1500,
   },
 
   projects: {

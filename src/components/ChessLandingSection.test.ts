@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  bandFor,
   SCATTER_MS,
   SEQUENCE_MS,
   SETUP_AT,
@@ -53,5 +54,37 @@ describe("play sequence", () => {
     expect(done.geometry).toBe(STRAIGHT);
     expect(done.pieceStage).toBeNull();
     expect(done.restingBoard).toBe(false);
+  });
+});
+
+describe("bandFor", () => {
+  const section = { height: 1500, width: 1700 };
+
+  it("is the viewport's size, centred in the section, when the section is larger", () => {
+    const band = bandFor({ height: 900, width: 1440 }, section);
+    expect(band).toEqual({ height: 900, left: 130, paddingBottom: 84, top: 300, width: 1440 });
+  });
+
+  it("never exceeds the section", () => {
+    const band = bandFor({ height: 1600, width: 3000 }, section);
+    expect(band.width).toBe(1700);
+    expect(band.height).toBe(1500);
+    expect(band.top).toBe(0);
+    expect(band.left).toBe(0);
+  });
+
+  it("only clears the navbar as far as it reaches into the section", () => {
+    // A section 40px shorter than the viewport ends 20px above the bottom, so
+    // 20px of the navbar's strip falls outside it.
+    expect(bandFor({ height: 900, width: 1440 }, { height: 860, width: 1200 }).paddingBottom).toBe(
+      64,
+    );
+    expect(bandFor({ height: 900, width: 1440 }, { height: 600, width: 1200 }).paddingBottom).toBe(
+      0,
+    );
+  });
+
+  it("reserves more above the navbar on phones", () => {
+    expect(bandFor({ height: 844, width: 390 }, section).paddingBottom).toBe(120);
   });
 });

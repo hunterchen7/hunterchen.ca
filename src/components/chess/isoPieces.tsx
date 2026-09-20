@@ -247,8 +247,9 @@ const PROFILES: Record<PieceKind, (roundness: number) => Knot[]> = {
     ...base(BASE_RADIUS.q, { h: 2.3, r: 1.55 }),
     ...sweep(2.3, 1.55, 7.05, 0.82, "taper"),
     ...collar(7.05, 0.82, 1.62, 0.35, 1.22),
-    ...sweep(7.4, 1.22, 9.55, 1.95, "flare"),
-    knot(9.55, 1.95, "top"),
+    // A closed coronet, so it does not read as the rook's hollow tower.
+    ...sweep(7.4, 1.22, 9.4, 1.72, "flare"),
+    knot(9.4, 1.72, "top"),
   ],
   k: () => [
     ...base(BASE_RADIUS.k, { h: 2.4, r: 1.6 }),
@@ -460,10 +461,10 @@ function rookParts(roundness: number): Part[] {
 
 /** Points around the queen's crown, back to front, then the finial. */
 function queenParts(roundness: number): Part[] {
-  const rimY = -9.55;
-  const rim = 1.95;
-  const apexRadius = 1.78;
-  const height = 0.95;
+  const rimY = -9.4;
+  const rim = 1.72;
+  const apexRadius = 1.55;
+  const height = 0.7;
   const halfAngle = (11 * Math.PI) / 180;
   const at = (radius: number, angle: number) =>
     `${f(radius * Math.cos(angle))},${f(rimY + radius * roundness * Math.sin(angle))}`;
@@ -476,7 +477,7 @@ function queenParts(roundness: number): Part[] {
       return { d: `${open} Z`, edge: open };
     });
   const finial = silhouette(
-    [knot(9.3, 0.3), knot(ballFoot(10.82, 0.5, roundness), 0.3), ...ball(10.82, 0.5, roundness)],
+    [knot(9.4, 0.38), knot(ballFoot(10.35, 0.62, roundness), 0.38), ...ball(10.35, 0.62, roundness)],
     roundness,
   );
   return [...points, { d: finial, edge: finial }];
@@ -562,7 +563,7 @@ const PIECES: Record<PieceKind, PieceSpec> = {
       />
     ),
   },
-  q: { bore: 1.32, parts: queenParts },
+  q: { parts: queenParts },
   k: {
     parts: () => [{ d: `${KING_CROSS_EDGE} Z`, edge: KING_CROSS_EDGE }],
   },
