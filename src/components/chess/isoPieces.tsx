@@ -452,8 +452,8 @@ const at = ({ x, y }: Point) => `${f(x)},${f(y)}`;
  */
 const KNIGHT_HEAD =
   "M-1.5,-1.5 C-1.76,-3.2 -1.56,-5.6 -0.9,-7.2 C-0.75,-7.7 -0.55,-8.2 -0.2,-8.55 C0.1,-8.75 0.55,-8.75 0.95,-8.5 C1.45,-8.15 2.05,-7.2 2.55,-6.35 C2.75,-6.0 2.7,-5.55 2.45,-5.3 C2.2,-5.1 1.85,-5.15 1.55,-5.35 C1.2,-5.6 0.95,-5.95 0.8,-6.15 C0.85,-5.2 1.25,-3.8 1.55,-2.6 C1.62,-2.2 1.6,-1.8 1.55,-1.5";
-const KNIGHT_BACK_EAR = "M-0.45,-8.45 L-0.68,-9.15 L-0.1,-8.62";
-const KNIGHT_FRONT_EAR = "M0.15,-8.62 L0.3,-9.3 L0.78,-8.5";
+const KNIGHT_BACK_EAR = "M-0.45,-8.45 L-0.72,-9.3 L-0.05,-8.62";
+const KNIGHT_FRONT_EAR = "M0.15,-8.62 L0.32,-9.45 L0.85,-8.48";
 
 function knightParts(roundness: number): Part[] {
   const foot = `A1.53,${f(1.53 * roundness)} 0 0 1 -1.5,-1.5`;
@@ -550,9 +550,9 @@ const PIECES: Record<PieceKind, PieceSpec> = {
       <>
         {/* The mane, a dark ridge down the back of the neck. */}
         <path
-          d="M-1.5,-1.55 C-1.76,-3.2 -1.56,-5.6 -0.9,-7.2 C-0.75,-7.7 -0.55,-8.2 -0.2,-8.55 L0.05,-8.3 C-0.3,-7.95 -0.45,-7.5 -0.55,-7.1 C-1.1,-5.6 -1.25,-3.4 -1.0,-1.55 Z"
+          d="M-1.5,-1.55 C-1.76,-3.2 -1.56,-5.6 -0.9,-7.2 C-0.75,-7.7 -0.55,-8.2 -0.2,-8.55 L0.1,-8.28 C-0.25,-7.9 -0.42,-7.45 -0.5,-7.05 C-1.1,-5.5 -1.35,-3.4 -1.25,-1.55 Z"
           fill={palette.deep}
-          opacity="0.6"
+          opacity="0.42"
         />
         {/* The far side of the face and jaw. */}
         <path
@@ -602,11 +602,11 @@ const PIECES: Record<PieceKind, PieceSpec> = {
     details: (palette) => (
       <>
         <path
-          d="M-0.55,-9.05 L0.8,-7.55"
+          d="M-0.6,-9.1 L0.85,-7.5"
           fill="none"
           stroke={palette.deep}
           strokeLinecap="round"
-          strokeWidth="0.44"
+          strokeWidth="0.52"
           vectorEffect="non-scaling-stroke"
         />
         <Gleam center={7.35} palette={palette} radius={1.33} />
