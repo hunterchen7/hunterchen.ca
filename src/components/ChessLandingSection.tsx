@@ -93,7 +93,7 @@ const PROMOTION_VIEWBOX: Record<string, string> = Object.fromEntries(
 
 /** One style for play, reset and new game, so the controls read as a set. */
 const CONTROL_CLASS =
-  "cursor-pointer px-4 py-1.5 font-mono text-2xl tracking-wide text-fuchsia-200/85 transition-colors hover:text-fuchsia-100";
+  "cursor-pointer px-4 py-1 font-mono text-2xl tracking-wide text-fuchsia-200/85 transition-colors hover:text-fuchsia-100";
 
 /** Depends on whether this browser takes the WebGPU runtime build. */
 const downloadSizeLabel = `${Math.round(totalDownloadBytes() / 1_000_000)} MB`;
@@ -152,19 +152,23 @@ const RESTING_SEQUENCE: PlaySequence = {
 };
 
 /** Drives an elapsed clock for `duration`, restarting whenever `key` changes. */
-function useElapsed(key: number, duration: number): number {
-  const [elapsed, setElapsed] = useState(0);
+export function useElapsed(key: number, duration: number): number {
+  // The reading is stored with the key it belongs to. A new key reads 0 on
+  // its very first render; without that, the previous run's final time
+  // would stand for one render and anything gated on the clock (the side
+  // swap after a reset's sweep) would fire at once.
+  const [clock, setClock] = useState({ elapsed: 0, key });
 
   useEffect(() => {
     if (!key) {
-      setElapsed(0);
+      setClock({ elapsed: 0, key });
       return;
     }
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
-      setElapsed(duration);
+      setClock({ elapsed: duration, key });
       return;
     }
 
@@ -173,14 +177,14 @@ function useElapsed(key: number, duration: number): number {
     const step = (now: number) => {
       if (start === null) start = now;
       const next = now - start;
-      setElapsed(Math.min(next, duration));
+      setClock({ elapsed: Math.min(next, duration), key });
       if (next < duration) frame = window.requestAnimationFrame(step);
     };
     frame = window.requestAnimationFrame(step);
     return () => window.cancelAnimationFrame(frame);
   }, [duration, key]);
 
-  return elapsed;
+  return clock.key === key ? clock.elapsed : 0;
 }
 
 /** The play sequence at `elapsed` milliseconds after the press. Pure. */
@@ -380,7 +384,9 @@ export default function ChessLandingSection({
             inside it, so the camera can move without reflowing the page. The
             ratio splits the difference between the wide resting view and the
             taller head-on one. */}
-          <div className="flex w-full min-h-0 flex-1 items-center justify-center">
+          {/* The board takes most of the band but not all of it, so it sits
+              with a little air around it rather than filling the viewport. */}
+          <div className="flex h-[85%] w-full min-h-0 items-center justify-center">
             <div
               className="relative h-full max-w-full"
               style={{ aspectRatio: "1.28" }}
@@ -463,7 +469,7 @@ export default function ChessLandingSection({
             </div>
           </div>
 
-          <div className="flex min-h-[48px] flex-col items-center gap-1">
+          <div className="-mt-1.5 flex min-h-[44px] flex-col items-center">
             {overlayUp && hasCachedModel !== null ? (
               <div className="flex flex-col items-center gap-2">
                 {/* The info button is positioned off the play button rather than

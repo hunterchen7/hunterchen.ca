@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import {
   bandFor,
+  useElapsed,
   SCATTER_MS,
   SEQUENCE_MS,
   SETUP_AT,
@@ -86,5 +88,23 @@ describe("bandFor", () => {
 
   it("reserves more above the navbar on phones", () => {
     expect(bandFor({ height: 844, width: 390 }, section).paddingBottom).toBe(120);
+  });
+});
+
+describe("useElapsed", () => {
+  // Regression: a new run once read the previous run's final time for one
+  // render, so a second reset swapped the sides before the sweep had begun.
+  it("reads zero on the first render of a new run", async () => {
+    const { rerender, result } = renderHook(({ key }) => useElapsed(key, 200), {
+      initialProps: { key: 1 },
+    });
+    await waitFor(() => expect(result.current).toBeGreaterThan(0));
+    act(() => rerender({ key: 2 }));
+    expect(result.current).toBe(0);
+  });
+
+  it("is idle with no run", () => {
+    const { result } = renderHook(() => useElapsed(0, 200));
+    expect(result.current).toBe(0);
   });
 });

@@ -184,11 +184,12 @@ export function createBoardGeometry(config: ProjectionConfig) {
   const right = Math.max(...cornerX, Math.max(...centerX) + reach.side) + pad;
   const topEdge =
     Math.min(...cornerY, Math.min(...centerY) - reach.above * headroom) - pad;
+  // Little padding below: the controls sit close under the front wall.
   const bottomEdge =
     Math.max(
       Math.max(...cornerY) + boardDepth,
       Math.max(...centerY) + reach.below,
-    ) + pad;
+    ) + pad * 0.4;
   const frame = {
     height: bottomEdge - topEdge,
     width: right - left,

@@ -6,6 +6,8 @@ type ModelSvgProps = {
   fps?: number;
   frame?: number | null;
   name: string;
+  /** How the drawing sits in the box when their aspects differ; centred by default. */
+  preserveAspectRatio?: string;
   viewBox?: string;
   withGlow?: boolean;
 };
@@ -15,6 +17,7 @@ export default function ModelSvg({
   fps,
   frame,
   name,
+  preserveAspectRatio,
   viewBox = "0 0 120 100",
   withGlow = true,
 }: ModelSvgProps) {
@@ -28,6 +31,7 @@ export default function ModelSvg({
       data-model-fps={fps}
       data-model-frame={frame === null || frame === undefined ? undefined : frame.toFixed(3)}
       fill="none"
+      preserveAspectRatio={preserveAspectRatio}
       viewBox={viewBox}
     >
       {withGlow && (

@@ -725,6 +725,7 @@ function ChessboardWatermark({
       fps={fps}
       frame={frame}
       name="projects-chessboard"
+      preserveAspectRatio="xMidYMax meet"
       viewBox={viewBox ?? "0 0 120 82"}
       withGlow={false}
     >

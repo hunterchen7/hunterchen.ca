@@ -167,7 +167,7 @@ function CaptureRing({
       stroke={
         isLightSquare(square) ? heroRgba("deep", 0.7) : heroRgba("light", 0.7)
       }
-      strokeWidth="0.85"
+      strokeWidth="1.8"
       vectorEffect="non-scaling-stroke"
     />
   );
@@ -550,6 +550,7 @@ function IsoChessBoard({
   return (
     <svg
       className="h-full w-full overflow-visible"
+      preserveAspectRatio="xMidYMax meet"
       ref={svgRef}
       role={interactive ? "application" : "img"}
       aria-label="Chess board"
@@ -611,6 +612,13 @@ function IsoChessBoard({
         />
       ) : null}
 
+      {/* Capture rings sit on the board like every other cue, so the piece on
+          the square hides the ring's far edge instead of being cut by it. */}
+      <g data-layer="legal-captures">
+        {highlights.legalCaptures.map((square) => (
+          <CaptureRing flipped={flipped} geometry={geometry} key={square} square={square} />
+        ))}
+      </g>
       <g data-layer="legal-quiet">
         {highlights.legalQuiet.map((square) => (
           <MoveDot flipped={flipped} geometry={geometry} key={square} square={square} />
@@ -645,11 +653,6 @@ function IsoChessBoard({
       ) : null}
 
       {/* Capture rings sit above the pieces so they read as a target. */}
-      <g data-layer="legal-captures" pointerEvents="none">
-        {highlights.legalCaptures.map((square) => (
-          <CaptureRing flipped={flipped} geometry={geometry} key={square} square={square} />
-        ))}
-      </g>
 
       {interactive ? (
         <g data-layer="hit-targets">
