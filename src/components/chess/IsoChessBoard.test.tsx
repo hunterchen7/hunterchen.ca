@@ -279,18 +279,27 @@ describe("piece artwork", () => {
     }
   });
 
-  it("spans the base wall from the left edge to the right edge", () => {
+  // Regression: an earlier base was a bell skirt over a disc over a wall over a
+  // footprint, and every piece shared the same three units of silhouette. The
+  // base is now a round puck, two stacked ellipses of equal radius, and each
+  // piece's puck has its own proportions.
+  it("stands every piece on a round puck of its own size", () => {
     const { container } = render(
       <svg>
         <PieceDefinitions detail prefix="t" roundness={0.8} />
       </svg>,
     );
+    const radii = new Map<string, number>();
     for (const def of container.querySelectorAll("defs > g[id]")) {
-      const wall = def.children[1]!;
-      expect(wall.tagName).toBe("path");
-      const match = /^M(-[\d.]+),[-\d.]+ V0 Q0,[\d.]+ ([\d.]+),0 V/.exec(wall.getAttribute("d")!);
-      expect(match, `${def.id}: ${wall.getAttribute("d")}`).not.toBeNull();
-      expect(Number(match![2])).toBeCloseTo(-Number(match![1]), 6);
+      const [side, top] = [def.children[0]!, def.children[1]!];
+      expect(side.tagName).toBe("ellipse");
+      expect(top.tagName).toBe("ellipse");
+      expect(top.getAttribute("rx")).toBe(side.getAttribute("rx"));
+      expect(Number(top.getAttribute("cy"))).toBeLessThan(Number(side.getAttribute("cy")));
+      radii.set(def.id.slice(-1), Number(side.getAttribute("rx")));
     }
+    expect(radii.get("p")).toBeLessThan(radii.get("r")!);
+    expect(radii.get("r")).toBeLessThan(radii.get("k")!);
+    expect(new Set(radii.values()).size).toBeGreaterThan(3);
   });
 });

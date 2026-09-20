@@ -66,7 +66,7 @@ export const LIGHT_PIECE: PiecePalette = {
 export const DARK_PIECE: PiecePalette = {
   body: "#2b1141",
   main: "#2b1141",
-  highlight: "#4b2b6b",
+  highlight: "#3d2159",
   shade: HERO_COLORS.ink,
   deep: HERO_COLORS.ink,
   eye: HERO_COLORS.accent,
@@ -81,10 +81,38 @@ type PieceProps = {
   roundness: number;
 };
 
-/** Bottom half of a horizontal disc, as a quadratic through (0, ry). */
-function frontArc(width: number, ry: number, y: number): string {
-  return `Q0,${(y + ry * 2).toFixed(2)} ${(-width).toFixed(2)},${y.toFixed(2)}`;
-}
+/**
+ * Per-piece base proportions. The base is a plain round puck with a stem rising
+ * from an inset ring on its top face; these numbers are what stop the six
+ * pieces from sharing one silhouette below the waist.
+ */
+export type BaseSpec = {
+  /** Fraction of the puck radius the stem occupies where it meets the puck. */
+  foot: number;
+  /** Half-width where the stem meets the piece body at NECK. */
+  neckWidth: number;
+  /** Puck thickness: the sliver of edge that shows under the top face. */
+  thickness: number;
+  /** 0 is a straight-sided stem, 1 a deep Staunton waist. */
+  waist: number;
+  /** Puck radius. */
+  width: number;
+};
+
+export const BASE: Record<PieceKind, BaseSpec> = {
+  b: { foot: 0.74, neckWidth: 1.55, thickness: 0.5, waist: 0.85, width: 2.25 },
+  k: { foot: 0.76, neckWidth: 1.75, thickness: 0.62, waist: 0.9, width: 2.55 },
+  n: { foot: 0.8, neckWidth: 1.75, thickness: 0.5, waist: 0.55, width: 2.3 },
+  p: { foot: 0.72, neckWidth: 1.16, thickness: 0.42, waist: 0.8, width: 1.95 },
+  q: { foot: 0.76, neckWidth: 1.72, thickness: 0.6, waist: 0.9, width: 2.5 },
+  r: { foot: 0.84, neckWidth: 1.46, thickness: 0.55, waist: 0.15, width: 2.35 },
+};
+
+/** Where every piece body begins, in piece-local units above the puck. */
+const NECK = -2.55;
+
+const f = (value: number) => value.toFixed(2);
+const mix = (from: number, to: number, t: number) => from + (to - from) * t;
 
 /** A horizontal disc: lit top face, shaded right, with a front rim. */
 function Disc({
@@ -133,42 +161,67 @@ function Disc({
 }
 
 /**
- * The turned base every piece stands on: a short cylinder (footprint disc, wall,
- * lit top disc) with the flared skirt of the piece rising out of it. Drawing the
- * wall rather than a single flat ellipse is most of what makes the piece read as
- * a solid object rather than a sticker.
+ * The round puck every piece stands on, and the stem that rises out of it.
+ *
+ * The puck is two stacked ellipses: the lower one's front sliver is the edge.
+ * The stem stands inset on the top face so a ring of the face shows around it,
+ * which is what makes the base read as round rather than as a skirt. The stem's
+ * bottom edge follows the front arc of that inset ring.
  */
 function PieceBase({
   detail,
-  neckWidth = 1.02,
+  kind,
   palette,
   roundness,
-  width = 2.35,
-}: PieceProps & { neckWidth?: number; width?: number }) {
+}: PieceProps & { kind: PieceKind }) {
+  const { foot, neckWidth: neck, thickness, waist, width } = BASE[kind];
   const ry = width * roundness;
-  const wall = 0.58;
-  const neck = -2.55;
-  const waist = width * 0.44;
-  const top = neckWidth;
+  const footW = width * foot;
+  const footRy = footW * roundness;
+  const top = -thickness;
+  const rise = top - NECK;
+
+  // Left edge of the stem, foot to neck. Straight-line controls blended toward
+  // a Staunton waist: up first, then tucked in under the neck.
+  const p0 = { x: -footW, y: top };
+  const p3 = { x: -neck, y: NECK };
+  const c1 = {
+    x: mix(mix(p0.x, p3.x, 1 / 3), p0.x, waist),
+    y: mix(mix(p0.y, p3.y, 1 / 3), p0.y - rise * 0.6, waist),
+  };
+  const c2 = {
+    x: mix(mix(p0.x, p3.x, 2 / 3), p3.x - 0.5, waist),
+    y: mix(mix(p0.y, p3.y, 2 / 3), p3.y + rise * 0.25, waist),
+  };
+  const leftEdge = `C${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)} ${f(p3.x)},${f(p3.y)}`;
+  const neckDome = `C${f(-neck * 0.5)},${f(NECK - 0.22)} ${f(neck * 0.5)},${f(NECK - 0.22)} ${f(neck)},${f(NECK)}`;
+  const rightEdge = `C${f(-c2.x)},${f(c2.y)} ${f(-c1.x)},${f(c1.y)} ${f(footW)},${f(top)}`;
+  const footArc = `Q0,${f(top + footRy * 2)} ${f(-footW)},${f(top)}`;
 
   return (
     <>
-      {/* Footprint, and the wall of the base standing on it. */}
-      <ellipse cx="0" cy="0" fill={palette.deep} rx={width} ry={ry} />
-      {/* Left edge down, along the front of the footprint to the right edge,
-          back up. The straight top edge is hidden under the top disc. */}
-      <path
-        d={`M${-width},${-wall} V0 Q0,${(ry * 2).toFixed(2)} ${width},0 V${-wall} Z`}
-        fill={palette.main}
+      <ellipse
+        cx="0"
+        cy="0"
+        fill={palette.deep}
+        rx={width}
+        ry={ry}
         stroke={palette.stroke}
         strokeWidth="0.3"
         vectorEffect="non-scaling-stroke"
       />
-      <Disc cy={-wall} palette={palette} roundness={roundness} shade={detail} width={width} />
-
-      {/* Flared skirt from the base up to the neck. */}
+      <ellipse
+        cx="0"
+        cy={top}
+        fill={palette.body}
+        rx={width}
+        ry={ry}
+        stroke={palette.stroke}
+        strokeWidth="0.3"
+        vectorEffect="non-scaling-stroke"
+      />
       <path
-        d={`M${-width},${-wall} C${(-width * 0.94).toFixed(2)},${(-wall - 0.85).toFixed(2)} ${(-waist - 0.5).toFixed(2)},${(neck + 0.75).toFixed(2)} ${-top},${neck} C${(-top * 0.5).toFixed(2)},${(neck - 0.3).toFixed(2)} ${(top * 0.5).toFixed(2)},${(neck - 0.3).toFixed(2)} ${top},${neck} C${(waist + 0.5).toFixed(2)},${(neck + 0.75).toFixed(2)} ${(width * 0.94).toFixed(2)},${(-wall - 0.85).toFixed(2)} ${width},${-wall} ${frontArc(width, ry, -wall)} Z`}
+        d={`M${f(p0.x)},${f(p0.y)} ${leftEdge} ${neckDome} ${rightEdge} ${footArc} Z`}
         fill={palette.body}
         stroke={palette.stroke}
         strokeWidth="0.32"
@@ -176,9 +229,9 @@ function PieceBase({
       />
       {detail ? (
         <path
-          d={`M0,${(neck - 0.16).toFixed(2)} C${(top * 0.5).toFixed(2)},${(neck - 0.3).toFixed(2)} ${top},${neck} ${top},${neck} C${(waist + 0.5).toFixed(2)},${(neck + 0.75).toFixed(2)} ${(width * 0.94).toFixed(2)},${(-wall - 0.85).toFixed(2)} ${width},${-wall} Q${(width * 0.5).toFixed(2)},${(-wall + ry * 1.4).toFixed(2)} 0,${(-wall + ry).toFixed(2)} Z`}
+          d={`M0,${f(NECK - 0.11)} C${f(neck * 0.5)},${f(NECK - 0.22)} ${f(neck)},${f(NECK)} ${f(neck)},${f(NECK)} ${rightEdge} Q${f(footW * 0.5)},${f(top + footRy * 1.4)} 0,${f(top + footRy)} Z`}
           fill={palette.shade}
-          opacity="0.26"
+          opacity="0.22"
         />
       ) : null}
     </>
@@ -233,7 +286,7 @@ function Body({
 function Pawn({ detail, palette, roundness }: PieceProps) {
   return (
     <>
-      <PieceBase detail={detail} palette={palette} roundness={roundness} width={2.12} />
+      <PieceBase detail={detail} kind="p" palette={palette} roundness={roundness} />
       <path
         d="M-1.16,-2.55 C-0.98,-3.3 -0.72,-4.2 -0.7,-4.78 H0.7 C0.72,-4.2 0.98,-3.3 1.16,-2.55 Z"
         fill={palette.body}
@@ -318,7 +371,7 @@ function Rook({ detail, palette, roundness }: PieceProps) {
 
   return (
     <>
-      <PieceBase detail={detail} palette={palette} roundness={roundness} width={2.35} />
+      <PieceBase detail={detail} kind="r" palette={palette} roundness={roundness} />
 
       {/* Shaft, waisted in the middle and flaring out under the rim. */}
       <path
@@ -396,13 +449,7 @@ function Rook({ detail, palette, roundness }: PieceProps) {
 function Knight({ detail, palette, roundness }: PieceProps) {
   return (
     <>
-      <PieceBase
-        detail={detail}
-        neckWidth={1.72}
-        palette={palette}
-        roundness={roundness}
-        width={2.42}
-      />
+      <PieceBase detail={detail} kind="n" palette={palette} roundness={roundness} />
 
       {/* Back ear, set behind the poll. */}
       <path
@@ -498,7 +545,7 @@ function Knight({ detail, palette, roundness }: PieceProps) {
 function Bishop({ detail, palette, roundness }: PieceProps) {
   return (
     <>
-      <PieceBase detail={detail} palette={palette} roundness={roundness} width={2.35} />
+      <PieceBase detail={detail} kind="b" palette={palette} roundness={roundness} />
       <Body detail={detail} palette={palette} spread={1.55} top={-6.4} waist={0.72} />
       <Disc cy={-6.52} palette={palette} roundness={roundness} shade={detail} width={1.78} />
       <path
@@ -530,7 +577,7 @@ function Queen({ detail, palette, roundness }: PieceProps) {
   const points = [-2.02, -1.01, 0, 1.01, 2.02];
   return (
     <>
-      <PieceBase detail={detail} palette={palette} roundness={roundness} width={2.55} />
+      <PieceBase detail={detail} kind="q" palette={palette} roundness={roundness} />
       <Body detail={detail} palette={palette} spread={1.72} top={-7.5} waist={0.82} />
       <Disc cy={-7.62} palette={palette} roundness={roundness} shade={detail} width={1.98} />
       <path
@@ -569,7 +616,7 @@ function Queen({ detail, palette, roundness }: PieceProps) {
 function King({ detail, palette, roundness }: PieceProps) {
   return (
     <>
-      <PieceBase detail={detail} palette={palette} roundness={roundness} width={2.55} />
+      <PieceBase detail={detail} kind="k" palette={palette} roundness={roundness} />
       <Body detail={detail} palette={palette} spread={1.75} top={-7.7} waist={0.82} />
       <Disc cy={-7.84} palette={palette} roundness={roundness} shade={detail} width={2.04} />
       <path
@@ -713,8 +760,8 @@ export const PieceModel = memo(function PieceModel({
   // than an SVG blur filter repeated across 32 pieces. It flattens and fades as
   // the piece lifts off the board mid-move.
   const shadowOpacity = clamp(0.9 - lift * 0.3 + impact * 0.08, 0.35, 0.95);
-  const shadowRadiusX = 2.45 + lift * 0.3 + impact * 0.22;
-  const shadowRadiusY = shadowRadiusX * roundness * 0.44;
+  const shadowRadiusX = BASE[kind].width * 1.08 + lift * 0.3 + impact * 0.22;
+  const shadowRadiusY = shadowRadiusX * roundness * 0.92;
 
   return (
     <g
@@ -727,16 +774,16 @@ export const PieceModel = memo(function PieceModel({
     >
       <g opacity={shadowOpacity.toFixed(3)}>
         <ellipse
-          cx="0.42"
-          cy="0.34"
+          cx="0.38"
+          cy="0.3"
           fill={heroRgba("ink", 0.18)}
-          rx={shadowRadiusX * 1.22}
-          ry={shadowRadiusY * 1.45}
+          rx={shadowRadiusX * 1.14}
+          ry={shadowRadiusY * 1.14}
         />
         <ellipse
-          cx="0.26"
-          cy="0.26"
-          fill={heroRgba("ink", 0.46)}
+          cx="0.24"
+          cy="0.2"
+          fill={heroRgba("ink", 0.44)}
           rx={shadowRadiusX}
           ry={shadowRadiusY}
         />

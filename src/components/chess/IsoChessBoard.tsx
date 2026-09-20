@@ -40,6 +40,18 @@ import type { AnimatedMove, BoardHighlights } from "../../hooks/useChessGame";
 
 const PIECE_PREFIX = "iso-chess-piece";
 
+/**
+ * Square highlights are a solid mid purple, not a translucent wash over the
+ * square. A wash lands a highlighted dark square within a few RGB points of a
+ * dark piece's lit side and a highlighted light square near a white piece's
+ * shaded side, and the piece standing on it loses its silhouette. This tone sits
+ * between the two piece palettes with margin either way, on either square.
+ */
+const HIGHLIGHT = {
+  fill: "#7a4db5",
+  ring: heroRgba("light", 0.85),
+} as const;
+
 /** Half-extents of a piece's artwork, used for its click target. */
 const pieceHitBox = (scale: number) => ({
   bottom: 1.1 * scale,
@@ -560,11 +572,13 @@ function IsoChessBoard({
       {highlights.lastMove ? (
         <g data-layer="last-move">
           <polygon
-            fill={heroRgba("light", 0.16)}
+            fill={HIGHLIGHT.fill}
+            opacity="0.45"
             points={pointsFor(geometry, highlights.lastMove.from, flipped)}
           />
           <polygon
-            fill={heroRgba("accent", 0.26)}
+            fill={HIGHLIGHT.fill}
+            opacity="0.82"
             points={pointsFor(geometry, highlights.lastMove.to, flipped)}
           />
         </g>
@@ -573,13 +587,14 @@ function IsoChessBoard({
       {highlights.selected ? (
         <g data-layer="selected">
           <polygon
-            fill={heroRgba("accent", 0.34)}
+            fill={HIGHLIGHT.fill}
+            opacity="0.92"
             points={pointsFor(geometry, highlights.selected, flipped)}
           />
           <polygon
             fill="none"
             points={pointsFor(geometry, highlights.selected, flipped)}
-            stroke={heroRgba("light", 0.82)}
+            stroke={HIGHLIGHT.ring}
             strokeWidth="0.9"
             vectorEffect="non-scaling-stroke"
           />
