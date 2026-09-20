@@ -479,7 +479,7 @@ const ROOK_BORE = 1.3;
 /** The cap's top ring, which is also the floor of the notches. */
 const ROOK_RIM = 6.5;
 const ROOK_MERLON_TOP = 7.0;
-const ROOK_MERLON_SPAN = (64 * Math.PI) / 180;
+const ROOK_MERLON_SPAN = (70 * Math.PI) / 180;
 
 const rad = (degrees: number) => (degrees * Math.PI) / 180;
 
@@ -494,8 +494,8 @@ function arcPoints(radius: number, h: number, from: number, to: number, roundnes
 const polygon = (points: Point[]) => `M${points.map(at).join(" ")}Z`;
 const reversed = (points: Point[]) => [...points].reverse();
 
-/** The part of an angular span that faces the light, if any. */
-function litSpan(from: number, to: number): [number, number] | null {
+/** The part of an angular span on the side turned from the light, if any. */
+function shadedSpan(from: number, to: number): [number, number] | null {
   for (const turn of [0, 2 * Math.PI]) {
     const lo = Math.max(from, turn - Math.PI / 2);
     const hi = Math.min(to, turn + Math.PI / 2);
@@ -511,8 +511,17 @@ function litSpan(from: number, to: number): [number, number] | null {
  * own surface, so the union has the merlon's true outline and the notches
  * between merlons stay open.
  */
-function merlon(from: number, to: number, front: boolean, roundness: number): Part {
-  const outerLow = arcPoints(ROOK_CAP, ROOK_RIM, from, to, roundness);
+function merlon(
+  from: number,
+  to: number,
+  front: boolean,
+  ends: { from: boolean; to: boolean },
+  roundness: number,
+): Part {
+  // The outer face reaches a little below the rim so it covers the rim's
+  // edge line where the merlon stands; the wall below is the same tone.
+  const foot = ROOK_RIM - 0.15;
+  const outerLow = arcPoints(ROOK_CAP, foot, from, to, roundness);
   const outerHigh = arcPoints(ROOK_CAP, ROOK_MERLON_TOP, from, to, roundness);
   const innerLow = arcPoints(ROOK_BORE, ROOK_RIM, from, to, roundness);
   const innerHigh = arcPoints(ROOK_BORE, ROOK_MERLON_TOP, from, to, roundness);
@@ -520,21 +529,42 @@ function merlon(from: number, to: number, front: boolean, roundness: number): Pa
   const innerFace: Surface = { d: polygon([...innerHigh, ...reversed(innerLow)]), tone: "inner" };
   const top: Surface = { d: polygon([...outerHigh, ...reversed(innerHigh)]), tone: "lit" };
   // The outer face darkens where it turns from the light, like the wall below it.
-  const lit = litSpan(from, to);
+  const shaded = shadedSpan(from, to);
   const shade: Surface[] =
-    front && lit
+    front && shaded
       ? [
           {
             d: polygon([
-              ...arcPoints(ROOK_CAP, ROOK_RIM, lit[0], lit[1], roundness),
-              ...reversed(arcPoints(ROOK_CAP, ROOK_MERLON_TOP, lit[0], lit[1], roundness)),
+              ...arcPoints(ROOK_CAP, foot, shaded[0], shaded[1], roundness),
+              ...reversed(arcPoints(ROOK_CAP, ROOK_MERLON_TOP, shaded[0], shaded[1], roundness)),
             ]),
             tone: "shade",
           },
         ]
       : [];
+  // The cut faces where the merlon ends at a notch. The one at `to` faces
+  // along the rim's direction of travel and shows when it is on the right;
+  // the one at `from` faces back and shows when it is on the left. A face
+  // that looks to the right is turned from the light.
+  const cuts: Surface[] = [];
+  for (const [angle, wanted, visible, facesRight] of [
+    [to, ends.to, Math.cos(to) > 0, Math.sin(to) < 0],
+    [from, ends.from, Math.cos(from) < 0, Math.sin(from) > 0],
+  ] as const) {
+    if (!wanted || !visible) continue;
+    const d = polygon([
+      around(ROOK_BORE, ROOK_RIM, angle, roundness),
+      around(ROOK_CAP, ROOK_RIM, angle, roundness),
+      around(ROOK_CAP, ROOK_MERLON_TOP, angle, roundness),
+      around(ROOK_BORE, ROOK_MERLON_TOP, angle, roundness),
+    ]);
+    cuts.push({ d, tone: "body" });
+    if (facesRight) cuts.push({ d, tone: "shade" });
+  }
   return {
-    surfaces: front ? [innerFace, outerFace, ...shade, top] : [outerFace, innerFace, top],
+    surfaces: front
+      ? [innerFace, ...cuts, outerFace, ...shade, top]
+      : [outerFace, innerFace, ...cuts, top],
   };
 }
 
@@ -546,18 +576,22 @@ function merlon(from: number, to: number, front: boolean, roundness: number): Pa
  */
 function rookParts(roundness: number): Part[] {
   const half = ROOK_MERLON_SPAN / 2;
-  const spans: { from: number; to: number }[] = [];
+  const spans: { ends: { from: boolean; to: boolean }; from: number; to: number }[] = [];
   for (const centre of [0, 90, 180, 270]) {
     const from = rad(centre) - half;
     const to = rad(centre) + half;
     const axis = [0, Math.PI].find((a) => from < a && to > a);
-    if (axis === undefined) spans.push({ from, to });
-    else spans.push({ from, to: axis }, { from: axis, to });
+    if (axis === undefined) spans.push({ ends: { from: true, to: true }, from, to });
+    else
+      spans.push(
+        { ends: { from: true, to: false }, from, to: axis },
+        { ends: { from: false, to: true }, from: axis, to },
+      );
   }
   return spans
     .map((span) => ({ ...span, depth: Math.sin((span.from + span.to) / 2) }))
     .sort((first, second) => first.depth - second.depth)
-    .map(({ depth, from, to }) => merlon(from, to, depth > 0, roundness));
+    .map(({ depth, ends, from, to }) => merlon(from, to, depth > 0, ends, roundness));
 }
 
 /** Eight rounded teeth around the coronet, and the ball above its dish. */
