@@ -129,13 +129,13 @@ const IMMORTAL_GAME: GameMove[] = [
   { from: "d6", to: "e7", san: "Be7#" },
 ];
 
-const SETUP_EMPTY_HOLD_MS = 140;
+const SETUP_EMPTY_HOLD_MS = 60;
 const SETUP_BACK_RANK_PAIR_COUNT = 8;
 const SETUP_PAWN_PAIR_COUNT = 8;
-const SETUP_PAIR_INTERVAL_MS = 225;
+const SETUP_PAIR_INTERVAL_MS = 170;
 const SETUP_PIECE_MS = 720;
-const SETUP_PAWN_GAP_MS = 260;
-const SETUP_SETTLE_MS = 660;
+const SETUP_PAWN_GAP_MS = 140;
+const SETUP_SETTLE_MS = 420;
 const SETUP_BACK_RANK_END_MS =
   SETUP_EMPTY_HOLD_MS +
   (SETUP_BACK_RANK_PAIR_COUNT - 1) * SETUP_PAIR_INTERVAL_MS +
@@ -156,7 +156,7 @@ const RESET_EMPTY_HOLD_MS = 900;
 // animation-ready gate (the laptop begins at t=0 of it), so this offset is how
 // far chess trails the laptop — it holds the opening board this long before the
 // game plays out.
-const CHESS_LEAD_IN_MS = 1_000;
+const CHESS_LEAD_IN_MS = 250;
 const PLAYBACK_RATE = 1.15;
 const LOOP_DURATION_MS =
   SETUP_DURATION_MS +
