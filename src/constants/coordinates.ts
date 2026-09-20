@@ -1,4 +1,8 @@
 import type { SectionCoordinates, NavItem } from "@hunterchen/canvas";
+// Passed as components, not names. The canvas library resolves a string icon by
+// dynamically importing the whole lucide barrel and indexing it, which pulls the
+// entire icon set (~526 kB) at runtime; handing it the component skips that.
+import { Camera, Folders, Home, Info } from "lucide-react";
 
 /**
  * Canvas Layout (7000 x 4000 — width set via CANVAS_WIDTH in App.tsx):
@@ -51,21 +55,21 @@ export const navItems: NavItem[] = [
   {
     id: "home",
     label: "Home",
-    icon: "Home",
+    icon: Home,
     ...coordinates.home,
     isHome: true,
   },
   {
     id: "projects",
     label: "Projects",
-    icon: "Folders",
+    icon: Folders,
     ...coordinates.projects,
   },
-  { id: "about", label: "About", icon: "Info", ...coordinates.about },
+  { id: "about", label: "About", icon: Info, ...coordinates.about },
   {
     id: "gallery",
     label: "Gallery",
-    icon: "Camera",
+    icon: Camera,
     ...coordinates.gallery,
   },
 ];

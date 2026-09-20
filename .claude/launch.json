@@ -5,7 +5,9 @@
       "name": "dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 7700
+      "port": 7700,
+      "url": "http://localhost:7700",
+      "autoPort": false
     }
   ]
 }
