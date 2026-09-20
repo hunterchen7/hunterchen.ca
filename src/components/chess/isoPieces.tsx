@@ -222,7 +222,9 @@ const PROFILES: Record<PieceKind, (roundness: number) => Knot[]> = {
     knot(6.35, 1.98),
     knot(6.9, 1.98, "top"),
   ],
-  n: () => [...base(BASE_RADIUS.n, { h: 1.85, r: 1.5 }), knot(2.55, 1.95, "top")],
+  // The neck flares straight out of the cove; the collar it stands on is
+  // narrower than the base flat so it does not read as a second puck.
+  n: () => [...base(BASE_RADIUS.n, { h: 1.75, r: 1.3 }), knot(2.55, 1.62, "top")],
   b: () => [
     ...base(BASE_RADIUS.b, { h: 2.2, r: 1.38 }),
     ...sweep(2.2, 1.38, 6.25, 0.72, "taper"),
@@ -408,9 +410,9 @@ type Part = {
 };
 
 const KNIGHT_HEAD =
-  "M-1.95,-2.55 C-2.04,-4.22 -1.9,-6.28 -1.25,-7.68 C-0.93,-8.36 -0.48,-8.65 -0.08,-8.72 C0.1,-8.75 0.27,-8.72 0.43,-8.65 C0.84,-8.6 1.18,-8.37 1.4,-8 C1.59,-7.67 1.67,-7.18 1.78,-6.68 L2.08,-5.92 Q2.2,-5.62 2.1,-5.34 L2,-5.08 Q1.91,-4.86 1.62,-4.9 L1.37,-4.95 C0.99,-5.04 0.8,-5.58 0.6,-6.04 Q0.48,-6.29 0.3,-6.08 C0.48,-5.25 0.86,-3.93 1.55,-2.55";
+  "M-1.62,-2.55 C-1.98,-4.1 -1.9,-6.28 -1.25,-7.68 C-0.93,-8.36 -0.48,-8.65 -0.08,-8.72 C0.1,-8.75 0.27,-8.72 0.43,-8.65 C0.84,-8.6 1.18,-8.37 1.4,-8 C1.59,-7.67 1.67,-7.18 1.78,-6.68 L2.08,-5.92 Q2.2,-5.62 2.1,-5.34 L2,-5.08 Q1.91,-4.86 1.62,-4.9 L1.37,-4.95 C0.99,-5.04 0.8,-5.58 0.6,-6.04 Q0.48,-6.29 0.3,-6.08 C0.48,-5.25 0.86,-3.93 1.42,-2.55";
 /** The neck's footprint on the collar: an ellipse in the board's perspective. */
-const KNIGHT_FOOT = 1.75;
+const KNIGHT_FOOT = 1.52;
 const KNIGHT_BACK_EAR = "M-0.3,-8.62 L-0.58,-9.05 Q-0.65,-9.25 -0.43,-9.15 L0.02,-8.66";
 const KNIGHT_FRONT_EAR = "M-0.04,-8.69 L-0.1,-9.2 Q-0.1,-9.4 0.1,-9.26 L0.48,-8.68";
 
@@ -418,13 +420,13 @@ const KING_CROSS_EDGE =
   "M-0.42,-10.15 V-11.07 H-1.28 V-11.85 H-0.42 V-12.85 H0.42 V-11.85 H1.28 V-11.07 H0.42 V-10.15";
 
 function knightParts(roundness: number): Part[] {
-  const foot = `A${f(KNIGHT_FOOT)},${f(KNIGHT_FOOT * roundness)} 0 0 1 -1.95,-2.55`;
+  const foot = `A${f(KNIGHT_FOOT)},${f(KNIGHT_FOOT * roundness)} 0 0 1 -1.62,-2.55`;
   return [
     { d: `${KNIGHT_BACK_EAR} Z`, fill: "shade" },
     {
       d: `${KNIGHT_HEAD} ${foot} Z`,
-      // The chest where it comes down to the collar, and the neck's foot.
-      edge: `M0.8,-4.34 C0.99,-3.78 1.24,-3.17 1.55,-2.55 ${foot}`,
+      // The chest where it comes down to the collar.
+      edge: "M0.8,-4.34 C0.98,-3.8 1.18,-3.2 1.42,-2.55",
     },
     { d: `${KNIGHT_FRONT_EAR} Z`, edge: KNIGHT_FRONT_EAR },
   ];
@@ -501,7 +503,7 @@ const PIECES: Record<PieceKind, PieceSpec> = {
         {/* Mane down the back, kept soft because the body gradient already
             does most of the modelling. */}
         <path
-          d="M-1.93,-2.68 C-2.04,-4.46 -1.82,-6.36 -1.12,-7.76 C-0.8,-8.38 -0.4,-8.65 -0.08,-8.72 L0.21,-8.47 C-0.36,-7.43 -0.79,-5.82 -0.75,-4.05 L-0.68,-2.55 Z"
+          d="M-1.6,-2.68 C-1.94,-4.3 -1.82,-6.36 -1.12,-7.76 C-0.8,-8.38 -0.4,-8.65 -0.08,-8.72 L0.21,-8.47 C-0.36,-7.43 -0.79,-5.82 -0.75,-4.05 L-0.68,-2.55 Z"
           fill={palette.shade}
           opacity="0.3"
         />

@@ -23,6 +23,14 @@ import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 import { useChessGame } from "../hooks/useChessGame";
 import { totalDownloadBytes } from "../chess/config";
 
+/** Each promotion choice framed to its own height, base rim to top. */
+const PROMOTION_VIEWBOX: Record<string, string> = Object.fromEntries(
+  Object.entries({ b: 10.6, n: 9.5, q: 11.5, r: 7.9 }).map(([kind, top]) => [
+    kind,
+    `-3.4 ${-(top + 0.5)} 6.8 ${top + 0.5 + 2.3}`,
+  ]),
+);
+
 /** One style for play, reset and new game, so the controls read as a set. */
 const CONTROL_CLASS =
   "cursor-pointer px-4 py-1.5 font-mono text-2xl tracking-wide text-fuchsia-200/85 transition-colors hover:text-fuchsia-100";
@@ -347,7 +355,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
                         onClick={() => completePromotion(kind as "q" | "r" | "b" | "n")}
                         className="h-12 w-12 cursor-pointer rounded-lg ring-1 ring-inset ring-fuchsia-300/20 transition-colors hover:bg-fuchsia-300/10"
                       >
-                        <svg className="h-full w-full" viewBox="-3.2 -6.2 6.4 7.8">
+                        <svg className="h-full w-full" viewBox={PROMOTION_VIEWBOX[kind]}>
                           <PieceShape
                             color={playerColor}
                             detail
