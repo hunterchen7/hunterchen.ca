@@ -479,7 +479,7 @@ export default function ChessLandingSection({
             </div>
           </div>
 
-          <div className="mt-10 flex min-h-[44px] flex-col items-center">
+          <div className="mt-16 flex min-h-[44px] flex-col items-center">
             {overlayUp && hasCachedModel !== null ? (
               <div className="flex flex-col items-center gap-2">
                 {/* The info button is positioned off the play button rather than
