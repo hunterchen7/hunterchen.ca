@@ -621,3 +621,14 @@ html {
 .board-cue {
   animation: board-cue-in 140ms ease-out;
 }
+
+/* Controls that arrive after a wait, such as play once the board is set. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fade-in 600ms ease-out;
+}

@@ -652,6 +652,7 @@ function MoveHighlights({
 function ChessboardWatermark({
   dismiss = 0,
   geometry = DIAMOND,
+  onPiecesSet,
   prefix = DEFAULT_PIECE_PREFIX,
   viewBox,
 }: {
@@ -661,6 +662,8 @@ function ChessboardWatermark({
    */
   dismiss?: number;
   geometry?: BoardGeometry;
+  /** Called once the opening setup has finished and every piece is standing. */
+  onPiecesSet?: () => void;
   prefix?: string;
   /** Defaults to the card-sized frame this watermark has always used. */
   viewBox?: string;
@@ -669,6 +672,10 @@ function ChessboardWatermark({
   const frame = readPinnedModelFrame();
   const { elapsed, fps, simplified } = useTimeline(frame);
   const timeline = timelineAt(elapsed);
+  const piecesSet = timeline.phase !== "setup";
+  useEffect(() => {
+    if (piecesSet) onPiecesSet?.();
+  }, [onPiecesSet, piecesSet]);
   const pieces = useMemo(
     () => renderPiecesForTimeline(timeline, geometry, dismiss),
     [

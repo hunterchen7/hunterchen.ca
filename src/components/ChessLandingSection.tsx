@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 // Imported directly rather than through deferredHeroModels: this board is the
 // landing's main content, so it belongs in the initial bundle instead of
@@ -366,6 +366,9 @@ export default function ChessLandingSection({
   // once — the position resets immediately rather than waiting for the engine —
   // and the view swings round to head-on while the engine loads.
   const overlayUp = phase === "idle";
+  // Play waits for the resting board's opening setup to finish, then fades in.
+  const [piecesSet, setPiecesSet] = useState(false);
+  const markPiecesSet = useCallback(() => setPiecesSet(true), []);
   const play = usePlaySequence(!overlayUp);
   const restart = useRestartSequence(startNewGame);
   const showAmbient = overlayUp || play.restingBoard;
@@ -438,6 +441,7 @@ export default function ChessLandingSection({
                 <div aria-hidden="true" className="h-full w-full">
                   <ChessboardWatermark
                     dismiss={play.scatter}
+                    onPiecesSet={markPiecesSet}
                     prefix="landing-chessboard-piece"
                     viewBox={DIAMOND.viewBox}
                   />
@@ -504,8 +508,8 @@ export default function ChessLandingSection({
           </div>
 
           <div className="relative mt-16 flex min-h-[44px] w-full flex-col items-center" ref={controlsRef}>
-            {overlayUp && hasCachedModel !== null ? (
-              <div className="flex flex-col items-center gap-2">
+            {overlayUp && piecesSet && hasCachedModel !== null ? (
+              <div className="fade-in flex flex-col items-center gap-2">
                 {/* The info button is positioned off the play button rather than
                   sitting beside it in the flow, so play stays centred under the
                   board whether or not the button is there. */}
