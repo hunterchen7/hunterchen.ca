@@ -37,6 +37,8 @@ import {
   landingScaleAt,
   mateShakeAt,
   pieceMotionAt,
+  resetPieceMotion,
+  resetWaves,
 } from "../../chess/isoEffects";
 
 /** Default <defs> namespace; a second instance must pass its own. */
@@ -458,7 +460,7 @@ function renderPiecesForTimeline(
   const captured = moveContext?.captured;
   const motion = pieceMotionAt(timeline.moveProgress);
 
-  return pieces
+  const rendered = pieces
     .map((piece): RenderPiece => {
       const start = squareCenter(piece.square);
       let x = start.x;
@@ -578,27 +580,37 @@ function renderPiecesForTimeline(
         y,
       };
     })
-    .map((piece): RenderPiece => {
-      if (dismiss <= 0) return piece;
-      // Each piece gets its own beat and direction so the board clears as a
-      // scatter rather than everything sliding off together.
-      const seed = piece.id.charCodeAt(0) + piece.id.charCodeAt(piece.id.length - 1);
-      const delay = ((seed % 7) / 7) * 0.34;
-      const t = smoothstep((dismiss - delay) / (1 - delay));
-      if (t <= 0) return piece;
-
-      const away = piece.x < BOARD_CENTER.x ? -1 : 1;
-      return {
-        ...piece,
-        lift: piece.lift - t * 1.4,
-        opacity: piece.opacity * (1 - t),
-        rotation: piece.rotation + away * t * 74,
-        scale: piece.scale * (1 - t * 0.2),
-        x: piece.x + away * t * (3.4 + (seed % 5) * 0.7),
-        y: piece.y + t * (2.6 + (seed % 4) * 0.5),
-      };
-    })
     .sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id));
+
+  if (dismiss <= 0) return rendered;
+
+  // Sweeping the board on demand runs the same outward wave the loop's own
+  // reset phase uses, so a live game starting looks like the recording
+  // restarting.
+  const waves = resetWaves(
+    rendered.map((piece) => ({ at: { x: piece.x, y: piece.y }, id: piece.id })),
+    BOARD_CENTER,
+  );
+
+  return rendered.map((piece): RenderPiece => {
+    const motion = resetPieceMotion({
+      at: { x: piece.x, y: piece.y },
+      boardCenter: BOARD_CENTER,
+      elapsed: dismiss,
+      wave: waves.get(piece.id) ?? 0,
+    });
+
+    return {
+      ...piece,
+      lift: piece.lift + motion.lift,
+      opacity: piece.opacity * motion.opacity,
+      rotation: piece.rotation + motion.rotation,
+      scale: piece.scale * motion.scale,
+      verticalScale: piece.verticalScale * motion.verticalScale,
+      x: piece.x + motion.dx,
+      y: piece.y + motion.dy,
+    };
+  });
 }
 
 // Every piece takes a `detail` flag: when false (mobile / simplified mode) the
@@ -644,8 +656,8 @@ function ChessboardWatermark({
   viewBox,
 }: {
   /**
-   * 0 to 1. Tumbles every piece off the board, used to clear it before the
-   * playable board takes over. The board itself stays put.
+   * Milliseconds into an on-demand sweep of the board, using the same outward
+   * wave the loop's reset phase uses. The board itself stays put.
    */
   dismiss?: number;
   geometry?: BoardGeometry;

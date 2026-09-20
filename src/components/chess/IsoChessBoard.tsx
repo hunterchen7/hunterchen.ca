@@ -27,6 +27,9 @@ import {
   SETTLE_MS,
   captureProgressAt,
   capturedPieceMotion,
+  resetPieceMotion,
+  resetWaves,
+  setupPieceMotion,
   captureShakeAt,
   landingImpactAt,
   landingScaleAt,
@@ -242,10 +245,11 @@ type IsoChessBoardProps = {
   detail?: boolean;
   fen: string;
   /**
-   * 0 to 1. Drops the pieces onto an empty board, staggered from the back rank
-   * forward. 1 means fully settled.
+   * Plays the recorded game's own board-setup or board-clearing animation over
+   * the current position. `elapsed` is milliseconds into it; null leaves the
+   * pieces at rest.
    */
-  entry?: number;
+  pieceStage?: { elapsed: number; mode: "scatter" | "setup" } | null;
   /** Projection to draw in; animated while the view swings round on play. */
   geometry?: BoardGeometry;
   flipped?: boolean;
@@ -258,13 +262,13 @@ function IsoChessBoard({
   animatedMove = null,
   blurred = false,
   detail = true,
-  entry = 1,
   fen,
   flipped = false,
   geometry = STRAIGHT,
   highlights,
   interactive = false,
   onSelectSquare,
+  pieceStage = null,
 }: IsoChessBoardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [focusSquare, setFocusSquare] = useState<string>("e2");
@@ -285,6 +289,21 @@ function IsoChessBoard({
 
   // Painter's algorithm: larger row+column is nearer the viewer, so it draws
   // last and overlaps what is behind it.
+  // Scatter order depends only on where the pieces currently stand.
+  const waves = useMemo(() => {
+    if (pieceStage?.mode !== "scatter") return new Map<string, number>();
+    return resetWaves(
+      pieces.map((piece) => {
+        const { column, row } = indicesFor(piece.square, flipped);
+        return {
+          at: geometry.center(row, column),
+          id: `${piece.color}${piece.kind}-${piece.square}`,
+        };
+      }),
+      geometry.boardCenter,
+    );
+  }, [flipped, geometry, pieceStage?.mode, pieces]);
+
   const rendered = useMemo<RenderPiece[]>(() => {
     const motion = pieceMotionAt(clock.move);
 
@@ -315,16 +334,47 @@ function IsoChessBoard({
         verticalScale = landingScaleAt(clock.settle);
       }
 
+      // Setting the board up, or clearing it, replaces the resting pose using
+      // the recorded game's own entrance and scatter.
+      const id = `${piece.color}${piece.kind}-${piece.square}`;
+      let opacity = 1;
+      let rotation = 0;
+      let scale = 1;
+      if (pieceStage) {
+        const staged =
+          pieceStage.mode === "setup"
+            ? setupPieceMotion({
+                at,
+                boardCenter: geometry.boardCenter,
+                elapsed: pieceStage.elapsed,
+                kind: piece.kind,
+                square: piece.square,
+              })
+            : resetPieceMotion({
+                at,
+                boardCenter: geometry.boardCenter,
+                elapsed: pieceStage.elapsed,
+                wave: waves.get(id) ?? 0,
+              });
+        x += staged.dx;
+        y += staged.dy;
+        lift += staged.lift;
+        opacity = staged.opacity;
+        rotation = staged.rotation;
+        scale = staged.scale;
+        verticalScale *= staged.verticalScale;
+      }
+
       return {
         color: piece.color,
         depth: y,
-        id: `${piece.color}${piece.kind}-${piece.square}`,
+        id,
         impact,
         kind: piece.kind,
         lift,
-        opacity: 1,
-        rotation: 0,
-        scale: 1,
+        opacity,
+        rotation,
+        scale,
         square: piece.square,
         verticalScale,
         x,
@@ -368,7 +418,17 @@ function IsoChessBoard({
     }
 
     return list.sort((first, second) => first.depth - second.depth);
-  }, [clock.capture, clock.move, clock.settle, entry, flipped, geometry, pieces, playing]);
+  }, [
+    clock.capture,
+    clock.move,
+    clock.settle,
+    flipped,
+    geometry,
+    pieceStage,
+    pieces,
+    playing,
+    waves,
+  ]);
 
   const shake = useMemo(() => {
     const mate = mateShakeAt(clock.landing, playing?.isMate ?? false);

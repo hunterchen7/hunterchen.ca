@@ -304,3 +304,175 @@ export function CheckHighlight({
   );
 }
 
+
+/* -------------------------------------------------------------------------- */
+/* Board setup and teardown                                                    */
+/*                                                                            */
+/* The recorded game clears the board and lays it out again between loops.     */
+/* Those two animations are reused verbatim whenever a live game starts or is  */
+/* reset, so a restart looks the same as the recording restarting.             */
+/* -------------------------------------------------------------------------- */
+
+/** Pieces leave outward in waves, furthest from the centre first. */
+export const RESET = {
+  pieceMs: 680,
+  totalMs: 1_400,
+  waveIntervalMs: 110,
+} as const;
+
+/** Back-rank pairs arrive from the edges inward, then the pawns rise. */
+export const SETUP = {
+  backRankPairs: 8,
+  emptyHoldMs: 140,
+  pairIntervalMs: 225,
+  pawnGapMs: 260,
+  pawnPairs: 8,
+  pieceMs: 720,
+  settleMs: 660,
+} as const;
+
+const SETUP_BACK_RANK_END_MS =
+  SETUP.emptyHoldMs + (SETUP.backRankPairs - 1) * SETUP.pairIntervalMs + SETUP.pieceMs;
+const SETUP_PAWN_START_MS = SETUP_BACK_RANK_END_MS + SETUP.pawnGapMs;
+export const SETUP_DURATION_MS =
+  SETUP_PAWN_START_MS +
+  (SETUP.pawnPairs - 1) * SETUP.pairIntervalMs +
+  SETUP.pieceMs +
+  SETUP.settleMs;
+
+function timedProgress(elapsed: number, delay: number, duration: number): number {
+  return smoothstep((elapsed - delay) / duration);
+}
+
+/**
+ * When a piece joins the setup. Pairs are keyed off the file's distance from the
+ * edge, so the rooks land first and the kings and queens last, with black a beat
+ * ahead of white.
+ */
+export function setupDelayFor(square: string, kind: string): number {
+  const file = "abcdefgh".indexOf(square[0] ?? "");
+  const edgeDepth = Math.min(file, 7 - file);
+  const isWhite = Number(square[1]) <= 2;
+  const pair = (kind === "p" ? 8 : 0) + edgeDepth * 2 + (isWhite ? 1 : 0);
+
+  return kind === "p"
+    ? SETUP_PAWN_START_MS + (pair - SETUP.backRankPairs) * SETUP.pairIntervalMs
+    : SETUP.emptyHoldMs + pair * SETUP.pairIntervalMs;
+}
+
+type PieceMotion = {
+  dx: number;
+  dy: number;
+  lift: number;
+  opacity: number;
+  rotation: number;
+  scale: number;
+  verticalScale: number;
+};
+
+const AT_REST: PieceMotion = {
+  dx: 0,
+  dy: 0,
+  lift: 0,
+  opacity: 1,
+  rotation: 0,
+  scale: 1,
+  verticalScale: 1,
+};
+
+/** Pawns rise out of the board; everything else flies in from off the edge. */
+export function setupPieceMotion({
+  at,
+  boardCenter,
+  elapsed,
+  kind,
+  square,
+}: {
+  at: Point;
+  boardCenter: Point;
+  elapsed: number;
+  kind: string;
+  square: string;
+}): PieceMotion {
+  const progress = timedProgress(elapsed, setupDelayFor(square, kind), SETUP.pieceMs);
+
+  if (kind === "p") {
+    const emergence = easeOutCubic(progress);
+    const settle = smoothstep((progress - 0.72) / 0.28);
+    return {
+      dx: 0,
+      dy: 0,
+      lift: 0,
+      opacity: smoothstep(progress / 0.3),
+      rotation: 0,
+      scale: 0.78 + emergence * 0.25 - settle * 0.03,
+      verticalScale: 0.06 + emergence * 1.01 - settle * 0.07,
+    };
+  }
+
+  const vector = { x: at.x - boardCenter.x, y: at.y - boardCenter.y };
+  const distance = Math.hypot(vector.x, vector.y) || 1;
+  const directionX = vector.x / distance;
+  const directionY = vector.y / distance;
+  const remaining = 1 - progress;
+
+  return {
+    dx: directionX * remaining * 19,
+    dy: directionY * remaining * 12,
+    lift: Math.sin(Math.PI * progress) * 1.25,
+    opacity: smoothstep(progress / 0.42),
+    rotation: (directionX >= 0 ? 1 : -1) * remaining * 11,
+    scale: 0.72 + progress * 0.28,
+    verticalScale: 0.9 + progress * 0.1,
+  };
+}
+
+/** Pieces are flung outward from the centre, tumbling and fading as they go. */
+export function resetPieceMotion({
+  at,
+  boardCenter,
+  elapsed,
+  wave,
+}: {
+  at: Point;
+  boardCenter: Point;
+  elapsed: number;
+  wave: number;
+}): PieceMotion {
+  const progress = timedProgress(elapsed, wave * RESET.waveIntervalMs, RESET.pieceMs);
+  if (progress <= 0) return AT_REST;
+
+  const vector = { x: at.x - boardCenter.x, y: at.y - boardCenter.y };
+  const distance = Math.hypot(vector.x, vector.y) || 1;
+  const directionX = vector.x / distance;
+  const directionY = vector.y / distance;
+
+  return {
+    dx: directionX * progress * 17,
+    dy: directionY * progress * 10 + progress * 2.4,
+    lift: Math.sin(Math.PI * progress) * 1.45 - progress * 0.7,
+    opacity: 1 - smoothstep((progress - 0.42) / 0.58),
+    rotation: (directionX >= 0 ? 1 : -1) * progress * 58,
+    scale: 1 - progress * 0.24,
+    verticalScale: 1 - progress * 0.08,
+  };
+}
+
+/**
+ * Wave index per piece for the scatter: furthest from the centre leaves first,
+ * four pieces to a wave.
+ */
+export function resetWaves(
+  pieces: { id: string; at: Point }[],
+  boardCenter: Point,
+): Map<string, number> {
+  return new Map(
+    [...pieces]
+      .sort((first, second) => {
+        const a = Math.hypot(first.at.x - boardCenter.x, first.at.y - boardCenter.y);
+        const b = Math.hypot(second.at.x - boardCenter.x, second.at.y - boardCenter.y);
+        return b - a || first.id.localeCompare(second.id);
+      })
+      .map((piece, index) => [piece.id, Math.floor(index / 4)] as const),
+  );
+}

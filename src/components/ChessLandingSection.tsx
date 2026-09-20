@@ -16,6 +16,7 @@ import {
   smoothstep,
   type BoardGeometry,
 } from "./chess/isoGeometry";
+import { RESET, SETUP_DURATION_MS } from "./chess/isoEffects";
 import Confetti from "./chess/Confetti";
 import { AnimatedLink } from "./AnimatedLink";
 import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
@@ -37,51 +38,53 @@ interface ChessLandingSectionProps {
 }
 
 /**
- * Pressing play runs one sequence: the resting pieces tumble off, the empty
- * board swings from the corner-on view round to head-on, and the opening
- * position drops in. Each stage is `at` milliseconds after the press.
+ * Pressing play runs three stages, strictly in order:
  *
- * The drop-in deliberately starts before the swing finishes. Piece positions
- * are read from the live geometry every frame, so the falling pieces track
- * their squares while the board is still turning, and the two beats read as one
- * movement instead of a stop and a restart.
+ *   1. the resting pieces are swept off, exactly as the recorded game clears
+ *      the board between loops
+ *   2. the empty board swings from the corner-on view round to head-on
+ *   3. the opening position is laid out again, using the recorded game's own
+ *      setup animation
+ *
+ * They do not overlap: the board turns with nothing standing on it.
+ *
+ * `rate` compresses the recorded timings without changing the motion, since the
+ * original setup takes over five seconds on its own.
  */
-const SEQUENCE = {
-  entry: { at: 1_350, ms: 1_400 },
-  scatter: { at: 0, ms: 800 },
-  swing: { at: 800, ms: 1_000 },
-} as const;
-const SEQUENCE_MS = Math.max(
-  ...Object.values(SEQUENCE).map((stage) => stage.at + stage.ms),
-);
+const SCATTER_RATE = 1.25;
+const SETUP_RATE = 1.8;
+const SWING_MS = 1_000;
 
-/** Progress through one stage of the sequence, 0 to 1. */
-function stageProgress(elapsed: number, stage: { at: number; ms: number }) {
-  return Math.min(1, Math.max(0, (elapsed - stage.at) / stage.ms));
-}
+const SCATTER_MS = RESET.totalMs / SCATTER_RATE;
+const SETUP_MS = SETUP_DURATION_MS / SETUP_RATE;
+const SWING_AT = SCATTER_MS;
+const SETUP_AT = SWING_AT + SWING_MS;
+const SEQUENCE_MS = SETUP_AT + SETUP_MS;
+
+type PieceStage = { elapsed: number; mode: "scatter" | "setup" } | null;
 
 type PlaySequence = {
-  /** 0 to 1 as the opening position drops in. */
-  entry: number;
   geometry: BoardGeometry;
-  /** True while the resting board is still on screen, tumbling its pieces. */
+  pieceStage: PieceStage;
+  /** True while the resting board is still on screen being swept. */
   restingBoard: boolean;
-  /** 0 to 1 as the resting pieces leave. */
+  /** Milliseconds into the resting board's sweep. */
   scatter: number;
 };
 
 const RESTING_SEQUENCE: PlaySequence = {
-  entry: 0,
   geometry: DIAMOND,
+  pieceStage: null,
   restingBoard: true,
   scatter: 0,
 };
 
-function usePlaySequence(playing: boolean): PlaySequence {
+/** Drives an elapsed clock for `duration`, restarting whenever `key` changes. */
+function useElapsed(key: number, duration: number): number {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    if (!playing) {
+    if (!key) {
       setElapsed(0);
       return;
     }
@@ -89,7 +92,7 @@ function usePlaySequence(playing: boolean): PlaySequence {
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
-      setElapsed(SEQUENCE_MS);
+      setElapsed(duration);
       return;
     }
 
@@ -98,32 +101,87 @@ function usePlaySequence(playing: boolean): PlaySequence {
     const step = (now: number) => {
       if (start === null) start = now;
       const next = now - start;
-      setElapsed(Math.min(next, SEQUENCE_MS));
-      if (next < SEQUENCE_MS) frame = window.requestAnimationFrame(step);
+      setElapsed(Math.min(next, duration));
+      if (next < duration) frame = window.requestAnimationFrame(step);
     };
     frame = window.requestAnimationFrame(step);
     return () => window.cancelAnimationFrame(frame);
-  }, [playing]);
+  }, [duration, key]);
+
+  return elapsed;
+}
+
+function usePlaySequence(playing: boolean): PlaySequence {
+  const elapsed = useElapsed(playing ? 1 : 0, SEQUENCE_MS);
 
   return useMemo(() => {
     if (!playing) return RESTING_SEQUENCE;
     if (elapsed >= SEQUENCE_MS) {
-      return { entry: 1, geometry: STRAIGHT, restingBoard: false, scatter: 1 };
+      return {
+        geometry: STRAIGHT,
+        pieceStage: null,
+        restingBoard: false,
+        scatter: RESET.totalMs,
+      };
     }
 
-    const swing = smoothstep(stageProgress(elapsed, SEQUENCE.swing));
+    if (elapsed < SWING_AT) {
+      return {
+        geometry: DIAMOND,
+        pieceStage: null,
+        restingBoard: true,
+        scatter: elapsed * SCATTER_RATE,
+      };
+    }
+
+    const swing = smoothstep((elapsed - SWING_AT) / SWING_MS);
     return {
-      entry: stageProgress(elapsed, SEQUENCE.entry),
       geometry:
         swing >= 1
           ? STRAIGHT
           : createBoardGeometry(
               blendProjections(DIAMOND_PROJECTION, STRAIGHT_PROJECTION, swing),
             ),
-      restingBoard: elapsed < SEQUENCE.scatter.ms,
-      scatter: stageProgress(elapsed, SEQUENCE.scatter),
+      // Before the setup begins this is elapsed 0, which draws every piece at
+      // zero opacity — an empty board to turn.
+      pieceStage: {
+        elapsed: Math.max(0, elapsed - SETUP_AT) * SETUP_RATE,
+        mode: "setup",
+      },
+      restingBoard: false,
+      scatter: RESET.totalMs,
     };
   }, [elapsed, playing]);
+}
+
+/**
+ * Restarting a live game sweeps the board and lays it out again, the same two
+ * animations play uses, but without moving the camera. The position only
+ * changes at the hand-over between them.
+ */
+function useRestartSequence(onSwap: () => void) {
+  const [run, setRun] = useState(0);
+  const swapped = useRef(0);
+  const elapsed = useElapsed(run, SCATTER_MS + SETUP_MS);
+
+  useEffect(() => {
+    if (!run || swapped.current === run) return;
+    if (elapsed < SCATTER_MS) return;
+    swapped.current = run;
+    onSwap();
+  }, [elapsed, onSwap, run]);
+
+  const stage: PieceStage = !run
+    ? null
+    : elapsed < SCATTER_MS
+      ? { elapsed: elapsed * SCATTER_RATE, mode: "scatter" }
+      : { elapsed: (elapsed - SCATTER_MS) * SETUP_RATE, mode: "setup" };
+
+  return {
+    restart: () => setRun((value) => value + 1),
+    running: run > 0 && elapsed < SCATTER_MS + SETUP_MS,
+    stage,
+  };
 }
 
 function DownloadProgress({
@@ -204,8 +262,11 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
   // once — the position resets immediately rather than waiting for the engine —
   // and the view swings round to head-on while the engine loads.
   const overlayUp = phase === "idle";
-  const { entry, geometry, restingBoard, scatter } = usePlaySequence(!overlayUp);
-  const showAmbient = overlayUp || restingBoard;
+  const play = usePlaySequence(!overlayUp);
+  const restart = useRestartSequence(startNewGame);
+  const showAmbient = overlayUp || play.restingBoard;
+  // A manual restart takes over the pieces; otherwise the play sequence does.
+  const pieceStage = restart.running ? restart.stage : play.pieceStage;
 
   return (
     <CanvasComponent offset={offset}>
@@ -226,7 +287,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
             {showAmbient ? (
               <div aria-hidden="true" className="h-full w-full">
                 <ChessboardWatermark
-                  dismiss={scatter}
+                  dismiss={play.scatter}
                   prefix="landing-chessboard-piece"
                   viewBox={DIAMOND.viewBox}
                 />
@@ -234,12 +295,12 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
             ) : (
               <IsoChessBoard
                 animatedMove={animatedMove}
-                entry={entry}
                 fen={fen}
-                geometry={geometry}
+                geometry={play.geometry}
+                pieceStage={pieceStage}
                 flipped={playerColor === "b"}
                 highlights={highlights}
-                interactive={boardIsInteractive}
+                interactive={boardIsInteractive && !restart.running}
                 onSelectSquare={selectSquare}
               />
             )}
@@ -364,7 +425,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
               </span>
               <button
                 type="button"
-                onClick={startNewGame}
+                onClick={restart.restart}
                 className="cursor-pointer rounded-lg border border-fuchsia-300/30 bg-fuchsia-900/30 px-4 py-1.5 font-mono text-xs text-fuchsia-200 transition-colors hover:bg-fuchsia-900/50"
               >
                 new game
@@ -375,7 +436,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
           {phase === "playing" && engineState.isReady && !engineState.isThinking ? (
             <button
               type="button"
-              onClick={startNewGame}
+              onClick={restart.restart}
               className="cursor-pointer font-mono text-xs text-fuchsia-300/40 transition-colors hover:text-fuchsia-300/70"
             >
               reset
