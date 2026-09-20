@@ -369,7 +369,9 @@ export default function ChessLandingSection({
   // Play waits for the resting board's opening setup to finish, then fades in.
   const [piecesSet, setPiecesSet] = useState(false);
   const markPiecesSet = useCallback(() => setPiecesSet(true), []);
-  const play = usePlaySequence(!overlayUp);
+  // The board only turns to play once the engine is ready: until then the
+  // resting demo keeps running with the download's progress under it.
+  const play = usePlaySequence(phase === "playing" && engineState.isReady);
   const restart = useRestartSequence(startNewGame);
   const showAmbient = overlayUp || play.restingBoard;
   // A manual restart takes over the pieces; otherwise the play sequence does.
