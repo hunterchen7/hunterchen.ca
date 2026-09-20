@@ -200,38 +200,37 @@ function useMoveClock(move: AnimatedMove | null): {
   clock: MoveClock;
   playing: AnimatedMove | null;
 } {
-  const [elapsed, setElapsed] = useState<number | null>(null);
+  const total = MOVE_MS + SETTLE_MS;
   const seq = move?.seq ?? 0;
+  // Keyed by move, and derived during render rather than set from the effect.
+  // Waiting for the first animation frame let the board paint one frame with
+  // the piece already on its destination square, which read as a hop before the
+  // travel started.
+  const [tick, setTick] = useState({ elapsed: 0, seq: 0 });
+  const elapsed = tick.seq === seq ? tick.elapsed : 0;
+
   const reducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   useEffect(() => {
-    if (!seq || reducedMotion) {
-      setElapsed(null);
-      return;
-    }
+    if (!seq || reducedMotion) return;
 
-    const total = MOVE_MS + SETTLE_MS;
     let frame = 0;
     let start: number | null = null;
-
     const step = (now: number) => {
       if (start === null) start = now;
       const next = now - start;
-      if (next >= total) {
-        setElapsed(null);
-        return;
-      }
-      setElapsed(next);
-      frame = window.requestAnimationFrame(step);
+      setTick({ elapsed: Math.min(next, total), seq });
+      if (next < total) frame = window.requestAnimationFrame(step);
     };
-
     frame = window.requestAnimationFrame(step);
     return () => window.cancelAnimationFrame(frame);
-  }, [reducedMotion, seq]);
+  }, [reducedMotion, seq, total]);
 
-  if (elapsed === null || !move) return { clock: IDLE_CLOCK, playing: null };
+  if (!move || reducedMotion || elapsed >= total) {
+    return { clock: IDLE_CLOCK, playing: null };
+  }
 
   const moveProgress = clamp(elapsed / MOVE_MS);
   return {

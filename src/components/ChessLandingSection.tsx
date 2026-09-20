@@ -273,7 +273,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
       <AccessibleCanvasSection
         sectionId="home"
         label="Play chess"
-        className="relative flex h-full w-full flex-col items-center justify-center gap-4 px-4 pb-24 pt-4"
+        className="relative flex h-full w-full flex-col items-center justify-center gap-2 px-3 pb-[76px] pt-2"
       >
         {/* One container aspect across the whole swing: each view frames itself
             inside it, so the camera can move without reflowing the page. The
@@ -282,7 +282,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
         <div className="flex w-full min-h-0 flex-1 items-center justify-center">
           <div
             className="relative h-full max-w-full"
-            style={{ aspectRatio: "1.32" }}
+            style={{ aspectRatio: "1.28" }}
           >
             {showAmbient ? (
               <div aria-hidden="true" className="h-full w-full">
@@ -357,7 +357,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
           </div>
         </div>
 
-        <div className="flex min-h-[72px] flex-col items-center gap-2">
+        <div className="flex min-h-[58px] flex-col items-center gap-1.5">
           {overlayUp && hasCachedModel !== null ? (
             <div className="flex flex-col items-center gap-2">
               {/* The info button is positioned off the play button rather than

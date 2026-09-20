@@ -171,13 +171,23 @@ export function createBoardGeometry(config: ProjectionConfig) {
     side: 3 * pieceScale,
   };
   const pad = 1.5;
-  const left = Math.min(...centers.map((p) => p.x)) - reach.side - pad;
-  const right = Math.max(...centers.map((p) => p.x)) + reach.side + pad;
-  const topEdge = Math.min(...centers.map((p) => p.y)) - reach.above - pad;
+  // Nearly all of the piece headroom is reserved. Trimming it does make the
+  // board fill more of the frame, but the container is height-bound either way,
+  // so the only thing that changes is whether the back rank gets clipped.
+  const headroom = 0.96;
+  const cornerX = corners.map((p) => p.x);
+  const cornerY = corners.map((p) => p.y);
+  const centerX = centers.map((p) => p.x);
+  const centerY = centers.map((p) => p.y);
+
+  const left = Math.min(...cornerX, Math.min(...centerX) - reach.side) - pad;
+  const right = Math.max(...cornerX, Math.max(...centerX) + reach.side) + pad;
+  const topEdge =
+    Math.min(...cornerY, Math.min(...centerY) - reach.above * headroom) - pad;
   const bottomEdge =
     Math.max(
-      Math.max(...corners.map((p) => p.y)) + boardDepth,
-      Math.max(...centers.map((p) => p.y)) + reach.below,
+      Math.max(...cornerY) + boardDepth,
+      Math.max(...centerY) + reach.below,
     ) + pad;
   const frame = {
     height: bottomEdge - topEdge,
