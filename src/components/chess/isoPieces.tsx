@@ -57,25 +57,24 @@ export const LIGHT_PIECE: PiecePalette = {
   stroke: heroRgba("light", 0.96),
 };
 
+// The dark side sits below the board's own dark tone rather than on it. The
+// board's dark squares are HERO_COLORS.deep; a piece body painted the same hex
+// dissolves into them, and on a highlighted square its lit side lands within a
+// few RGB points of the wash, which cut a hard line through the silhouette
+// wherever the square's edge passed behind it. A pale rim holds the outline on
+// any purple ground.
 export const DARK_PIECE: PiecePalette = {
-  body: HERO_COLORS.deep,
-  main: HERO_COLORS.deep,
-  highlight: HERO_COLORS.mid,
+  body: "#2b1141",
+  main: "#2b1141",
+  highlight: "#4b2b6b",
   shade: HERO_COLORS.ink,
   deep: HERO_COLORS.ink,
   eye: HERO_COLORS.accent,
   eyeStroke: heroRgba("light", 0.78),
-  stroke: heroRgba("accent", 0.62),
+  stroke: heroRgba("light", 0.4),
 };
 
 
-/**
- * `roundness` is the ratio of a horizontal circle's drawn height to its width,
- * i.e. the sine of the camera's elevation. Every disc, collar and rim on a
- * piece derives its `ry` from it, so the pieces sit in the same perspective as
- * the board they stand on: shallow for the corner-on diamond, much rounder for
- * the head-on board.
- */
 type PieceProps = {
   detail: boolean;
   palette: PiecePalette;
@@ -156,8 +155,10 @@ function PieceBase({
     <>
       {/* Footprint, and the wall of the base standing on it. */}
       <ellipse cx="0" cy="0" fill={palette.deep} rx={width} ry={ry} />
+      {/* Left edge down, along the front of the footprint to the right edge,
+          back up. The straight top edge is hidden under the top disc. */}
       <path
-        d={`M${-width},${-wall} V0 ${frontArc(width, ry, 0)} V${-wall} Z`}
+        d={`M${-width},${-wall} V0 Q0,${(ry * 2).toFixed(2)} ${width},0 V${-wall} Z`}
         fill={palette.main}
         stroke={palette.stroke}
         strokeWidth="0.3"

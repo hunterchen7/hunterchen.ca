@@ -53,17 +53,17 @@ interface ChessLandingSectionProps {
  */
 const SCATTER_RATE = 1.25;
 const SETUP_RATE = 1.8;
-const SWING_MS = 1_000;
+export const SWING_MS = 1_000;
 
-const SCATTER_MS = RESET.totalMs / SCATTER_RATE;
-const SETUP_MS = SETUP_DURATION_MS / SETUP_RATE;
-const SWING_AT = SCATTER_MS;
-const SETUP_AT = SWING_AT + SWING_MS;
-const SEQUENCE_MS = SETUP_AT + SETUP_MS;
+export const SCATTER_MS = RESET.totalMs / SCATTER_RATE;
+export const SETUP_MS = SETUP_DURATION_MS / SETUP_RATE;
+export const SWING_AT = SCATTER_MS;
+export const SETUP_AT = SWING_AT + SWING_MS;
+export const SEQUENCE_MS = SETUP_AT + SETUP_MS;
 
 type PieceStage = { elapsed: number; mode: "scatter" | "setup" } | null;
 
-type PlaySequence = {
+export type PlaySequence = {
   geometry: BoardGeometry;
   pieceStage: PieceStage;
   /** True while the resting board is still on screen being swept. */
@@ -111,47 +111,51 @@ function useElapsed(key: number, duration: number): number {
   return elapsed;
 }
 
-function usePlaySequence(playing: boolean): PlaySequence {
-  const elapsed = useElapsed(playing ? 1 : 0, SEQUENCE_MS);
-
-  return useMemo(() => {
-    if (!playing) return RESTING_SEQUENCE;
-    if (elapsed >= SEQUENCE_MS) {
-      return {
-        geometry: STRAIGHT,
-        pieceStage: null,
-        restingBoard: false,
-        scatter: RESET.totalMs,
-      };
-    }
-
-    if (elapsed < SWING_AT) {
-      return {
-        geometry: DIAMOND,
-        pieceStage: null,
-        restingBoard: true,
-        scatter: elapsed * SCATTER_RATE,
-      };
-    }
-
-    const swing = smoothstep((elapsed - SWING_AT) / SWING_MS);
+/** The play sequence at `elapsed` milliseconds after the press. Pure. */
+export function playSequenceAt(elapsed: number): PlaySequence {
+  if (elapsed >= SEQUENCE_MS) {
     return {
-      geometry:
-        swing >= 1
-          ? STRAIGHT
-          : createBoardGeometry(
-              blendProjections(DIAMOND_PROJECTION, STRAIGHT_PROJECTION, swing),
-            ),
-      // Before the setup begins this is elapsed 0, which draws every piece at
-      // zero opacity — an empty board to turn.
-      pieceStage: {
-        elapsed: Math.max(0, elapsed - SETUP_AT) * SETUP_RATE,
-        mode: "setup",
-      },
+      geometry: STRAIGHT,
+      pieceStage: null,
       restingBoard: false,
       scatter: RESET.totalMs,
     };
-  }, [elapsed, playing]);
+  }
+
+  if (elapsed < SWING_AT) {
+    return {
+      geometry: DIAMOND,
+      pieceStage: null,
+      restingBoard: true,
+      scatter: elapsed * SCATTER_RATE,
+    };
+  }
+
+  const swing = smoothstep((elapsed - SWING_AT) / SWING_MS);
+  return {
+    geometry:
+      swing >= 1
+        ? STRAIGHT
+        : createBoardGeometry(
+            blendProjections(DIAMOND_PROJECTION, STRAIGHT_PROJECTION, swing),
+          ),
+    // Before the setup begins this is elapsed 0, which draws every piece at
+    // zero opacity — an empty board to turn.
+    pieceStage: {
+      elapsed: Math.max(0, elapsed - SETUP_AT) * SETUP_RATE,
+      mode: "setup",
+    },
+    restingBoard: false,
+    scatter: RESET.totalMs,
+  };
+}
+
+function usePlaySequence(playing: boolean): PlaySequence {
+  const elapsed = useElapsed(playing ? 1 : 0, SEQUENCE_MS);
+  return useMemo(
+    () => (playing ? playSequenceAt(elapsed) : RESTING_SEQUENCE),
+    [elapsed, playing],
+  );
 }
 
 /**

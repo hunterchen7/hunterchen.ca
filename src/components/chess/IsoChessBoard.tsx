@@ -56,7 +56,7 @@ const PIECE_NAMES: Record<PieceKind, string> = {
   r: "rook",
 };
 
-type BoardSquare = { color: PieceColor; kind: PieceKind; square: string };
+export type BoardSquare = { color: PieceColor; kind: PieceKind; square: string };
 
 /**
  * Board indices for a square, accounting for orientation. Flipping mirrors both
@@ -80,7 +80,7 @@ function pointsFor(geometry: BoardGeometry, square: string, flipped: boolean) {
 }
 
 /** Expand a FEN placement field into one entry per occupied square. */
-function piecesFromFen(fen: string): BoardSquare[] {
+export function piecesFromFen(fen: string): BoardSquare[] {
   const placement = fen.split(" ")[0] ?? "";
   const pieces: BoardSquare[] = [];
   placement.split("/").forEach((rankText, rankIndex) => {
@@ -112,7 +112,7 @@ function describeSquare(square: string, piece: BoardSquare | undefined): string 
 }
 
 /** Light and dark squares need opposite cues, or one of them swallows the mark. */
-function isLightSquare(square: string): boolean {
+export function isLightSquare(square: string): boolean {
   return (FILES.indexOf(square[0] ?? "") + Number(square[1])) % 2 === 0;
 }
 
@@ -182,21 +182,23 @@ function useCheckPulse(active: boolean): number {
   return active ? pulse : 0.5;
 }
 
+export type PieceStage = { elapsed: number; mode: "scatter" | "setup" } | null;
+
 /** Progress through a single move, all derived from one elapsed clock. */
-type MoveClock = {
+export type MoveClock = {
   capture: number;
   landing: number;
   move: number;
   settle: number;
 };
 
-const IDLE_CLOCK: MoveClock = { capture: 0, landing: 0, move: 1, settle: 1 };
+export const IDLE_CLOCK: MoveClock = { capture: 0, landing: 0, move: 1, settle: 1 };
 
 /**
  * Drives one move's animation. Returns the clock plus the move being played, or
  * null once it has finished so the board renders at rest.
  */
-function useMoveClock(move: AnimatedMove | null): {
+export function useMoveClock(move: AnimatedMove | null): {
   clock: MoveClock;
   playing: AnimatedMove | null;
 } {
@@ -244,6 +246,149 @@ function useMoveClock(move: AnimatedMove | null): {
   };
 }
 
+/** Everything `renderPieces` needs to lay a position out. */
+export type RenderInput = {
+  clock: MoveClock;
+  flipped: boolean;
+  geometry: BoardGeometry;
+  pieceStage: PieceStage;
+  pieces: BoardSquare[];
+  playing: AnimatedMove | null;
+  waves: Map<string, number>;
+};
+
+/**
+ * Lays the position out as drawable pieces: resting, mid-move, mid-capture, or
+ * mid setup/scatter. Pure, so the invariants that have bitten before — the
+ * victim standing on its square until the mover arrives, the mover drawn at its
+ * origin on the first frame, an empty board at setup elapsed 0 — can be unit
+ * tested without a browser.
+ */
+export function renderPieces({
+  clock,
+  flipped,
+  geometry,
+  pieceStage,
+  pieces,
+  playing,
+  waves,
+}: RenderInput): RenderPiece[] {
+  const motion = pieceMotionAt(clock.move);
+
+  const list = pieces.map((piece) => {
+    const { column, row } = indicesFor(piece.square, flipped);
+    const at = geometry.center(row, column);
+    let x = at.x;
+    let y = at.y;
+    let impact = 0;
+    let lift = 0;
+    let verticalScale = 1;
+
+    // The board already holds the finished position, so the mover is drawn
+    // travelling backwards from where it came.
+    const travellingFrom =
+      playing && piece.square === playing.to
+        ? playing.from
+        : playing?.secondary && piece.square === playing.secondary.to
+          ? playing.secondary.from
+          : null;
+
+    if (travellingFrom) {
+      const start = centerFor(geometry, travellingFrom, flipped);
+      x = start.x + (at.x - start.x) * motion.travel;
+      y = start.y + (at.y - start.y) * motion.travel;
+      impact = landingImpactAt(clock.settle);
+      lift = motion.lift;
+      verticalScale = landingScaleAt(clock.settle);
+    }
+
+    // Setting the board up, or clearing it, replaces the resting pose using
+    // the recorded game's own entrance and scatter.
+    const id = `${piece.color}${piece.kind}-${piece.square}`;
+    let opacity = 1;
+    let rotation = 0;
+    let scale = 1;
+    if (pieceStage) {
+      const staged =
+        pieceStage.mode === "setup"
+          ? setupPieceMotion({
+              at,
+              boardCenter: geometry.boardCenter,
+              elapsed: pieceStage.elapsed,
+              kind: piece.kind,
+              square: piece.square,
+            })
+          : resetPieceMotion({
+              at,
+              boardCenter: geometry.boardCenter,
+              elapsed: pieceStage.elapsed,
+              wave: waves.get(id) ?? 0,
+            });
+      x += staged.dx;
+      y += staged.dy;
+      lift += staged.lift;
+      opacity = staged.opacity;
+      rotation = staged.rotation;
+      scale = staged.scale;
+      verticalScale *= staged.verticalScale;
+    }
+
+    return {
+      color: piece.color,
+      depth: y,
+      id,
+      impact,
+      kind: piece.kind,
+      lift,
+      opacity,
+      rotation,
+      scale,
+      square: piece.square,
+      verticalScale,
+      x,
+      y,
+    } satisfies RenderPiece;
+  });
+
+  // The captured piece is already gone from the position, so it is put back
+  // for the whole move: standing on its square until the mover arrives, then
+  // knocked back. Gating this on the knockback having started made the victim
+  // vanish on the click and reappear mid-travel.
+  if (
+    playing?.capturedSquare &&
+    playing.capturedColor &&
+    playing.capturedKind &&
+    clock.capture < 1
+  ) {
+    const { column, row } = indicesFor(playing.capturedSquare, flipped);
+    const at = geometry.center(row, column);
+    const knockback = capturedPieceMotion({
+      captureProgress: clock.capture,
+      fallSeed: playing.capturedSquare.charCodeAt(0),
+      moverFrom: centerFor(geometry, playing.from, flipped),
+      victimAt: at,
+    });
+
+    list.push({
+      color: playing.capturedColor,
+      depth: at.y,
+      id: `captured-${playing.seq}`,
+      impact: 0,
+      kind: playing.capturedKind as PieceKind,
+      lift: knockback.lift,
+      opacity: knockback.opacity,
+      rotation: knockback.rotation,
+      scale: knockback.scale,
+      square: playing.capturedSquare,
+      verticalScale: knockback.verticalScale,
+      x: at.x + knockback.dx,
+      y: at.y + knockback.dy,
+    } satisfies RenderPiece);
+  }
+
+  return list.sort((first, second) => first.depth - second.depth);
+}
+
 type IsoChessBoardProps = {
   /** The move to play back as motion, or null to render at rest. */
   animatedMove?: AnimatedMove | null;
@@ -256,7 +401,7 @@ type IsoChessBoardProps = {
    * the current position. `elapsed` is milliseconds into it; null leaves the
    * pieces at rest.
    */
-  pieceStage?: { elapsed: number; mode: "scatter" | "setup" } | null;
+  pieceStage?: PieceStage;
   /** Projection to draw in; animated while the view swings round on play. */
   geometry?: BoardGeometry;
   flipped?: boolean;
@@ -311,131 +456,20 @@ function IsoChessBoard({
     );
   }, [flipped, geometry, pieceStage?.mode, pieces]);
 
-  const rendered = useMemo<RenderPiece[]>(() => {
-    const motion = pieceMotionAt(clock.move);
-
-    const list = pieces.map((piece) => {
-      const { column, row } = indicesFor(piece.square, flipped);
-      const at = geometry.center(row, column);
-      let x = at.x;
-      let y = at.y;
-      let impact = 0;
-      let lift = 0;
-      let verticalScale = 1;
-
-      // The board already holds the finished position, so the mover is drawn
-      // travelling backwards from where it came.
-      const travellingFrom =
-        playing && piece.square === playing.to
-          ? playing.from
-          : playing?.secondary && piece.square === playing.secondary.to
-            ? playing.secondary.from
-            : null;
-
-      if (travellingFrom) {
-        const start = centerFor(geometry, travellingFrom, flipped);
-        x = start.x + (at.x - start.x) * motion.travel;
-        y = start.y + (at.y - start.y) * motion.travel;
-        impact = landingImpactAt(clock.settle);
-        lift = motion.lift;
-        verticalScale = landingScaleAt(clock.settle);
-      }
-
-      // Setting the board up, or clearing it, replaces the resting pose using
-      // the recorded game's own entrance and scatter.
-      const id = `${piece.color}${piece.kind}-${piece.square}`;
-      let opacity = 1;
-      let rotation = 0;
-      let scale = 1;
-      if (pieceStage) {
-        const staged =
-          pieceStage.mode === "setup"
-            ? setupPieceMotion({
-                at,
-                boardCenter: geometry.boardCenter,
-                elapsed: pieceStage.elapsed,
-                kind: piece.kind,
-                square: piece.square,
-              })
-            : resetPieceMotion({
-                at,
-                boardCenter: geometry.boardCenter,
-                elapsed: pieceStage.elapsed,
-                wave: waves.get(id) ?? 0,
-              });
-        x += staged.dx;
-        y += staged.dy;
-        lift += staged.lift;
-        opacity = staged.opacity;
-        rotation = staged.rotation;
-        scale = staged.scale;
-        verticalScale *= staged.verticalScale;
-      }
-
-      return {
-        color: piece.color,
-        depth: y,
-        id,
-        impact,
-        kind: piece.kind,
-        lift,
-        opacity,
-        rotation,
-        scale,
-        square: piece.square,
-        verticalScale,
-        x,
-        y,
-      } satisfies RenderPiece;
-    });
-
-    // The captured piece is already gone from the position, so it is put back
-    // for as long as its knockback lasts.
-    if (
-      playing?.capturedSquare &&
-      playing.capturedColor &&
-      playing.capturedKind &&
-      clock.capture > 0 &&
-      clock.capture < 1
-    ) {
-      const { column, row } = indicesFor(playing.capturedSquare, flipped);
-      const at = geometry.center(row, column);
-      const knockback = capturedPieceMotion({
-        captureProgress: clock.capture,
-        fallSeed: playing.capturedSquare.charCodeAt(0),
-        moverFrom: centerFor(geometry, playing.from, flipped),
-        victimAt: at,
-      });
-
-      list.push({
-        color: playing.capturedColor,
-        depth: at.y,
-        id: `captured-${playing.seq}`,
-        impact: 0,
-        kind: playing.capturedKind as PieceKind,
-        lift: knockback.lift,
-        opacity: knockback.opacity,
-        rotation: knockback.rotation,
-        scale: knockback.scale,
-        square: playing.capturedSquare,
-        verticalScale: knockback.verticalScale,
-        x: at.x + knockback.dx,
-        y: at.y + knockback.dy,
-      } satisfies RenderPiece);
-    }
-
-    return list.sort((first, second) => first.depth - second.depth);
-  }, [
-    clock.capture,
-    clock.move,
-    clock.settle,
-    flipped,
-    geometry,
-    pieceStage,
-    pieces,
-    playing,
-    waves,
-  ]);
+  const rendered = useMemo(
+    () => renderPieces({ clock, flipped, geometry, pieceStage, pieces, playing, waves }),
+    [
+      clock.capture,
+      clock.move,
+      clock.settle,
+      flipped,
+      geometry,
+      pieceStage,
+      pieces,
+      playing,
+      waves,
+    ],
+  );
 
   const shake = useMemo(() => {
     const mate = mateShakeAt(clock.landing, playing?.isMate ?? false);
@@ -489,7 +523,7 @@ function IsoChessBoard({
     return squares;
   }, []);
 
-  const hitProps = (square: string) => ({
+  const hitProps = (square: string, focusable = true) => ({
     "aria-label": describeSquare(square, pieceBySquare.get(square)),
     "data-hit-square": square,
     onClick: () => handleSelect(square),
@@ -498,7 +532,7 @@ function IsoChessBoard({
     // never starts a canvas pan.
     role: "button",
     style: { cursor: "pointer", outline: "none" } as React.CSSProperties,
-    tabIndex: square === focusSquare ? 0 : -1,
+    tabIndex: focusable && square === focusSquare ? 0 : -1,
   });
 
   return (
@@ -619,7 +653,7 @@ function IsoChessBoard({
               square its head overlaps. */}
           {rendered.map((piece) => (
             <rect
-              {...hitProps(piece.square)}
+              {...hitProps(piece.square, false)}
               fill="transparent"
               height={hit.top + hit.bottom}
               key={`piece-${piece.id}`}
