@@ -18,6 +18,7 @@ import {
 } from "./chess/isoGeometry";
 import { RESET, SETUP_DURATION_MS } from "./chess/isoEffects";
 import Confetti from "./chess/Confetti";
+import { RotateCcw } from "lucide-react";
 import { AnimatedLink } from "./AnimatedLink";
 import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 import { useChessGame } from "../hooks/useChessGame";
@@ -91,7 +92,7 @@ const PROMOTION_VIEWBOX: Record<string, string> = Object.fromEntries(
   ]),
 );
 
-/** One style for play, reset and new game, so the controls read as a set. */
+/** One style for play and new game, so the controls read as a set. */
 const CONTROL_CLASS =
   "cursor-pointer rounded-xl border border-fuchsia-300/30 bg-fuchsia-900/30 px-6 py-2 font-mono text-xl tracking-wide text-fuchsia-100 transition-colors hover:border-fuchsia-300/50 hover:bg-fuchsia-900/50";
 
@@ -423,17 +424,6 @@ export default function ChessLandingSection({
                 />
               )}
 
-              {engineState.isLoading ? (
-                <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
-                  <div className="rounded-md bg-[#1b1524]/70 px-4 py-3 backdrop-blur-sm">
-                    <DownloadProgress
-                      message={engineState.loadingMessage}
-                      progress={engineState.loadingProgress}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
               {pendingPromotion ? (
                 <div className="absolute inset-0 z-30 flex items-center justify-center">
                   <div className="flex flex-col items-center gap-2 rounded-xl bg-[#1b1524]/90 px-4 py-3 ring-1 ring-inset ring-fuchsia-300/25 backdrop-blur-sm">
@@ -477,6 +467,7 @@ export default function ChessLandingSection({
               ) : null}
 
               {confettiKey > 0 ? <Confetti key={confettiKey} /> : null}
+
             </div>
           </div>
 
@@ -542,6 +533,13 @@ export default function ChessLandingSection({
               </div>
             ) : null}
 
+            {engineState.isLoading ? (
+              <DownloadProgress
+                message={engineState.loadingMessage}
+                progress={engineState.loadingProgress}
+              />
+            ) : null}
+
             {engineState.isThinking ? (
               <span className="animate-pulse font-mono text-sm text-fuchsia-300/50">
                 thinking...
@@ -563,15 +561,16 @@ export default function ChessLandingSection({
               </div>
             ) : null}
 
-            {phase === "playing" &&
-            engineState.isReady &&
-            !engineState.isThinking ? (
+
+            {phase === "playing" && engineState.isReady && !engineState.isThinking && !busy ? (
               <button
                 type="button"
+                aria-label="Reset the game"
+                title="Reset"
                 onClick={restart.restart}
-                className={CONTROL_CLASS}
+                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-fuchsia-300/30 bg-fuchsia-900/30 text-fuchsia-100 transition-colors hover:border-fuchsia-300/50 hover:bg-fuchsia-900/50"
               >
-                reset
+                <RotateCcw size={22} />
               </button>
             ) : null}
 

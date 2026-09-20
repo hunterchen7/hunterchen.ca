@@ -524,13 +524,25 @@ function IsoChessBoard({
   // has moved far enough to be a drag, so a plain click never lifts a piece.
   const dragRef = useRef<{
     active: boolean;
+    /** Where the piece's base sits relative to the pointer, so it is carried, not centred. */
+    offsetX: number;
+    offsetY: number;
     pointerId: number;
     square: string;
     startX: number;
     startY: number;
     wasSelected: boolean;
   } | null>(null);
-  const [drag, setDrag] = useState<{ square: string; x: number; y: number } | null>(null);
+  const [drag, setDrag] = useState<{
+    /** Where the pointer is, which decides the target square. */
+    pointerX: number;
+    pointerY: number;
+    square: string;
+    /** Where the piece is drawn. */
+    x: number;
+    y: number;
+  } | null>(null);
+  const dragPositionRef = useRef<{ x: number; y: number } | null>(null);
   // Bumped on every press so the window listeners below are (re)attached.
   const [press, setPress] = useState(0);
   // A piece let go somewhere it cannot go slides back to its square.
@@ -620,7 +632,9 @@ function IsoChessBoard({
       .sort((first, second) => first.depth - second.depth);
   }, [drag, flipped, geometry, rendered, snapElapsed, snapping]);
 
-  const dragTarget = drag ? squareUnderPoint(geometry, drag.x, drag.y, flipped) : null;
+  const dragTarget = drag
+    ? squareUnderPoint(geometry, drag.pointerX, drag.pointerY, flipped)
+    : null;
   const isLegalTarget = (square: string | null): square is string =>
     square !== null &&
     (highlights.legalQuiet.includes(square) || highlights.legalCaptures.includes(square));
@@ -656,13 +670,18 @@ function IsoChessBoard({
       }
       const svg = svgRef.current;
       const point = svg ? clientToBoard(svg, clientX, clientY) : null;
-      const origin = { lift: DRAG_LIFT, x: point?.x ?? 0, y: point?.y ?? 0 };
-      const target = point && !cancelled ? squareUnderPoint(geometry, point.x, point.y, flipped) : null;
+      const held = dragPositionRef.current;
+      dragPositionRef.current = null;
       setDrag(null);
+      if (!held) return;
+      // The move plays from where the piece is, not where the pointer is.
+      const origin = { lift: DRAG_LIFT, x: held.x, y: held.y };
+      const target =
+        point && !cancelled ? squareUnderPoint(geometry, point.x, point.y, flipped) : null;
       if (isLegalTarget(target)) {
         dropRef.current = { from: pending.square, origin, to: target };
         handleSelect(target);
-      } else if (point) {
+      } else {
         snapBack(pending.square, origin);
       }
     },
@@ -683,7 +702,9 @@ function IsoChessBoard({
     const point = svg ? clientToBoard(svg, event.clientX, event.clientY) : null;
     if (!point) return;
     pending.active = true;
-    setDrag({ square: pending.square, x: point.x, y: point.y });
+    const position = { x: point.x + pending.offsetX, y: point.y + pending.offsetY };
+    dragPositionRef.current = position;
+    setDrag({ pointerX: point.x, pointerY: point.y, square: pending.square, ...position });
   }, []);
 
   // The gesture is followed on the window rather than through pointer capture:
@@ -721,8 +742,13 @@ function IsoChessBoard({
     onPointerDown: (event: React.PointerEvent<SVGElement>) => {
       if (event.button !== 0) return;
       const wasSelected = highlights.selected === square;
+      const svg = svgRef.current;
+      const grabbed = svg ? clientToBoard(svg, event.clientX, event.clientY) : null;
+      const base = centerFor(geometry, square, flipped);
       dragRef.current = {
         active: false,
+        offsetX: grabbed ? base.x - grabbed.x : 0,
+        offsetY: grabbed ? base.y - grabbed.y : 0,
         pointerId: event.pointerId,
         square,
         startX: event.clientX,
