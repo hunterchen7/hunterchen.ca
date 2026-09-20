@@ -8,9 +8,9 @@ import type { EngineState } from "../chess/types";
 import { playSoundForMove } from "../components/chess/sounds";
 
 /** MCTS simulations per engine move. */
-const SEARCH_NODES = 150;
+const SEARCH_NODES = 400;
 /** Sharpens toward the top move while still picking second-best sometimes. */
-const SEARCH_TEMPERATURE = 0.67;
+const SEARCH_TEMPERATURE = 0.55;
 /** Deliberate pause so an instant reply still reads as thinking. */
 const THINKING_PAUSE_MS = 1_000;
 /** How long the finished position stays up before the board resets. */
