@@ -641,6 +641,7 @@ function ChessboardWatermark({
   dismiss = 0,
   geometry = DIAMOND,
   prefix = DEFAULT_PIECE_PREFIX,
+  viewBox,
 }: {
   /**
    * 0 to 1. Tumbles every piece off the board, used to clear it before the
@@ -649,6 +650,8 @@ function ChessboardWatermark({
   dismiss?: number;
   geometry?: BoardGeometry;
   prefix?: string;
+  /** Defaults to the card-sized frame this watermark has always used. */
+  viewBox?: string;
 } = {}) {
   const { squareCenter, squarePoints } = geometry;
   const frame = readPinnedModelFrame();
@@ -710,7 +713,7 @@ function ChessboardWatermark({
       fps={fps}
       frame={frame}
       name="projects-chessboard"
-      viewBox="0 0 120 82"
+      viewBox={viewBox ?? "0 0 120 82"}
       withGlow={false}
     >
       <PieceDefinitions

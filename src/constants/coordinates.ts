@@ -25,10 +25,12 @@ const SECTION_HEIGHT = 700;
 // 1200 = 5500, leaving ~1500px of open space on the right of the 7000-wide canvas.
 export const coordinates = {
   home: {
+    // Kept under a typical viewport height so the board and the play button
+    // below it are both on screen at the default zoom.
     x: 1800,
     y: 700,
     width: 1200,
-    height: 1000,
+    height: 880,
   },
 
   projects: {

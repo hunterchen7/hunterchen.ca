@@ -446,7 +446,7 @@ function IsoChessBoard({
         shapeRendering: "geometricPrecision",
         transition: "filter 320ms ease",
       }}
-      viewBox="0 0 120 82"
+      viewBox={geometry.viewBox}
     >
       <PieceDefinitions
         detail={detail}

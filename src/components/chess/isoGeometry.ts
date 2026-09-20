@@ -154,6 +154,38 @@ export function createBoardGeometry(config: ProjectionConfig) {
     return squareAtIndices(Math.floor(row), Math.floor(column));
   };
 
+  // Tight frame around everything that gets drawn: the board top face, the slab
+  // below it, and the piece artwork standing on the squares. Deriving this per
+  // projection rather than sharing one fixed viewBox is what lets each view
+  // fill its container instead of floating in dead space.
+  const corners = [
+    point(0, 0),
+    point(0, BOARD_SIZE),
+    point(BOARD_SIZE, BOARD_SIZE),
+    point(BOARD_SIZE, 0),
+  ];
+  const centers = squares.map(({ column, row }) => center(row, column));
+  const reach = {
+    above: 13.8 * pieceScale,
+    below: 1.4 * pieceScale,
+    side: 3 * pieceScale,
+  };
+  const pad = 1.5;
+  const left = Math.min(...centers.map((p) => p.x)) - reach.side - pad;
+  const right = Math.max(...centers.map((p) => p.x)) + reach.side + pad;
+  const topEdge = Math.min(...centers.map((p) => p.y)) - reach.above - pad;
+  const bottomEdge =
+    Math.max(
+      Math.max(...corners.map((p) => p.y)) + boardDepth,
+      Math.max(...centers.map((p) => p.y)) + reach.below,
+    ) + pad;
+  const frame = {
+    height: bottomEdge - topEdge,
+    width: right - left,
+    x: left,
+    y: topEdge,
+  };
+
   return {
     boardAtPoint,
     boardCenter: point(BOARD_SIZE / 2, BOARD_SIZE / 2),
@@ -165,6 +197,8 @@ export function createBoardGeometry(config: ProjectionConfig) {
       left: point(BOARD_SIZE, 0),
       near: point(0, 0),
     },
+    /** Width over height of `viewBox`, for sizing the container. */
+    aspect: frame.width / frame.height,
     center,
     gridPath,
     lightSquaresPath,
@@ -175,6 +209,7 @@ export function createBoardGeometry(config: ProjectionConfig) {
     squareCenter,
     squarePoints,
     squares,
+    viewBox: `${frame.x.toFixed(2)} ${frame.y.toFixed(2)} ${frame.width.toFixed(2)} ${frame.height.toFixed(2)}`,
   };
 }
 
