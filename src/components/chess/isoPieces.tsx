@@ -236,7 +236,7 @@ const PROFILES: Record<PieceKind, (roundness: number) => Knot[]> = {
     knot(5.4, 1.25),
     // The cap: a wider band the notches are cut into.
     knot(5.4, 1.75),
-    knot(6.5, 1.75, "top"),
+    knot(ROOK_CAP_TOP, 1.75, "top"),
   ],
   n: () => [
     ...base(BASE_RADIUS.n),
@@ -464,32 +464,46 @@ function knightParts(roundness: number): Part[] {
   ];
 }
 
-/** Four broad merlons around the rook's cap, the notches between them. */
-function rookParts(roundness: number): Part[] {
-  const rimH = 6.5;
-  const rim = 1.75;
-  const height = 0.5;
-  const halfSpan = (31 * Math.PI) / 180;
-  return [45, 135, 225, 315]
-    .map((degrees) => (degrees * Math.PI) / 180)
-    .sort((first, second) => Math.sin(first) - Math.sin(second))
-    .map((angle) => {
-      const front = Math.sin(angle) > 0;
-      const left = around(rim, rimH, angle - halfSpan, roundness);
-      const right = around(rim, rimH, angle + halfSpan, roundness);
-      const lift = (point: Point) => ({ x: point.x, y: point.y - height });
-      // Left to right along the front is anticlockwise on screen, along the back clockwise.
-      const over = front ? 0 : 1;
-      const back = front ? 1 : 0;
-      const arc = `${f(rim)},${f(rim * roundness)} 0 0`;
-      const open = `M${at(left)} L${at(lift(left))} A${arc} ${over} ${at(lift(right))} L${at(right)}`;
-      const shadeFrom = { x: left.x + (right.x - left.x) * 0.58, y: left.y + (right.y - left.y) * 0.58 };
-      return {
-        d: `${open} A${arc} ${back} ${at(left)} Z`,
-        edge: open,
-        shade: `M${at(shadeFrom)} L${at(lift(shadeFrom))} L${at(lift(right))} L${at(right)} Z`,
-      };
-    });
+const ROOK_CAP_TOP = 7.0;
+const ROOK_CAP = 1.75;
+const ROOK_BORE = 1.3;
+const ROOK_NOTCH_DEPTH = 0.5;
+
+/**
+ * Four narrow notches cut into the rook's cap at the diagonals, as the
+ * Staunton pattern has them. Each takes a wedge out of the lit top ring; the
+ * two in front also open a slot down the outer wall.
+ */
+function RookNotches({ palette, roundness }: { palette: PiecePalette; roundness: number }) {
+  const halfSpan = (11 * Math.PI) / 180;
+  return (
+    <>
+      {[45, 135, 225, 315].map((degrees) => {
+        const angle = (degrees * Math.PI) / 180;
+        const outerA = around(ROOK_CAP, ROOK_CAP_TOP, angle - halfSpan, roundness);
+        const outerB = around(ROOK_CAP, ROOK_CAP_TOP, angle + halfSpan, roundness);
+        const innerA = around(ROOK_BORE, ROOK_CAP_TOP, angle - halfSpan, roundness);
+        const innerB = around(ROOK_BORE, ROOK_CAP_TOP, angle + halfSpan, roundness);
+        const drop = (point: Point) => ({ x: point.x, y: point.y + ROOK_NOTCH_DEPTH });
+        return (
+          <g key={degrees}>
+            <path
+              d={`M${at(outerA)} L${at(outerB)} L${at(innerB)} L${at(innerA)} Z`}
+              fill={palette.shade}
+              opacity="0.55"
+            />
+            {Math.sin(angle) > 0 ? (
+              <path
+                d={`M${at(outerA)} L${at(outerB)} L${at(drop(outerB))} L${at(drop(outerA))} Z`}
+                fill={palette.deep}
+                opacity="0.85"
+              />
+            ) : null}
+          </g>
+        );
+      })}
+    </>
+  );
 }
 
 /** Eight rounded teeth around the coronet, and the ball above its dish. */
@@ -521,7 +535,7 @@ const KING_CROSS_SHADE = "M0,-12.3 H0.36 V-11.78 H1.06 V-11.14 H0.36 V-10.2 H0 Z
 type PieceSpec = {
   /** A hole in the top, as a radius. */
   bore?: number;
-  details?: (palette: PiecePalette) => ReactNode;
+  details?: (palette: PiecePalette, roundness: number) => ReactNode;
   /** A shallow hollow in the top, as a radius. */
   dish?: number;
   parts?: (roundness: number) => Part[];
@@ -543,7 +557,10 @@ function Gleam({ center, palette, radius }: { center: number; palette: PiecePale
 
 const PIECES: Record<PieceKind, PieceSpec> = {
   p: { details: (palette) => <Gleam center={5.43} palette={palette} radius={1.2} /> },
-  r: { bore: 1.3, parts: rookParts },
+  r: {
+    bore: ROOK_BORE,
+    details: (palette, roundness) => <RookNotches palette={palette} roundness={roundness} />,
+  },
   n: {
     parts: knightParts,
     details: (palette) => (
@@ -677,7 +694,7 @@ function FaceArt({
           <>
             <ellipse
               cx="0"
-              cy={f(y + ry * 0.08)}
+              cy={f(y)}
               fill={palette.deep}
               opacity="0.9"
               rx={f(bore)}
@@ -789,7 +806,7 @@ export function PieceShape({
           {detail && part.edge ? <path d={part.edge} stroke={palette.line} {...lineProps} /> : null}
         </g>
       ))}
-      {detail && spec.details ? spec.details(palette) : null}
+      {detail && spec.details ? spec.details(palette, roundness) : null}
     </>
   );
 }
