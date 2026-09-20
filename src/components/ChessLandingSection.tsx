@@ -1,6 +1,9 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
-import { ChessboardWatermark } from "./hero/deferredHeroModels";
+// Imported directly rather than through deferredHeroModels: this board is the
+// landing's main content, so it belongs in the initial bundle instead of
+// popping in after first paint. The projects-card copy stays lazy.
+import ChessboardWatermark from "./hero/models/ChessboardWatermark";
 import IsoChessBoard from "./chess/IsoChessBoard";
 import { PieceShape, type PieceKind } from "./chess/isoPieces";
 import {
@@ -221,12 +224,10 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
                 opacity: 0.9,
               }}
             >
-              <Suspense fallback={null}>
-                <ChessboardWatermark
-                  dismiss={scatter}
-                  prefix="landing-chessboard-piece"
-                />
-              </Suspense>
+              <ChessboardWatermark
+                dismiss={scatter}
+                prefix="landing-chessboard-piece"
+              />
             </div>
           ) : (
             <IsoChessBoard
