@@ -372,7 +372,13 @@ export default function ChessLandingSection({
   // A manual restart takes over the pieces; otherwise the play sequence does.
   const pieceStage = restart.running ? restart.stage : play.pieceStage;
   const busy = restart.running || (!overlayUp && play.pieceStage !== null);
-  const showReset = phase === "playing" && engineState.isReady && !engineState.isThinking && !busy;
+  // Reset appears once the first move of the session has been played and
+  // then stays, across resets included.
+  const [everMoved, setEverMoved] = useState(false);
+  useEffect(() => {
+    if (animatedMove) setEverMoved(true);
+  }, [animatedMove]);
+  const showReset = phase === "playing" && everMoved;
   // The reset button sits under the board's right corner. The board's face is
   // narrower than its box, so its edge is measured rather than assumed.
   const [resetLeft, setResetLeft] = useState<number | null>(null);
@@ -595,8 +601,9 @@ export default function ChessLandingSection({
                 <button
                   type="button"
                   aria-label="Reset the game"
+                  disabled={busy}
                   onClick={restart.restart}
-                  className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-fuchsia-300/30 bg-fuchsia-900/30 text-fuchsia-100 transition-colors hover:border-fuchsia-300/50 hover:bg-fuchsia-900/50"
+                  className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-fuchsia-300/30 bg-fuchsia-900/30 text-fuchsia-100 transition-colors hover:border-fuchsia-300/50 hover:bg-fuchsia-900/50 disabled:cursor-default disabled:opacity-50"
                 >
                   <RotateCcw size={22} />
                 </button>
