@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CanvasComponent, type SectionCoordinates } from "@hunterchen/canvas";
 // Imported directly rather than through deferredHeroModels: this board is the
 // landing's main content, so it belongs in the initial bundle instead of
@@ -316,6 +316,8 @@ export default function ChessLandingSection({
   } = useChessGame({ holdEngine: boardBusy });
 
   const band = useViewportBand(offset);
+  const boardBoxRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoHovered, setInfoHovered] = useState(false);
   const infoHoverTimer = useRef<number | null>(null);
@@ -370,6 +372,29 @@ export default function ChessLandingSection({
   // A manual restart takes over the pieces; otherwise the play sequence does.
   const pieceStage = restart.running ? restart.stage : play.pieceStage;
   const busy = restart.running || (!overlayUp && play.pieceStage !== null);
+  const showReset = phase === "playing" && engineState.isReady && !engineState.isThinking && !busy;
+  // The reset button sits under the board's right corner. The board's face is
+  // narrower than its box, so its edge is measured rather than assumed.
+  const [resetLeft, setResetLeft] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (!showReset) return;
+    const measure = () => {
+      const face = boardBoxRef.current?.querySelector("[data-board-squares]");
+      const controls = controlsRef.current;
+      if (!face || !controls) return;
+      const edge = face.getBoundingClientRect().right - controls.getBoundingClientRect().left;
+      setResetLeft(edge - 48);
+    };
+    measure();
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    if (boardBoxRef.current) observer?.observe(boardBoxRef.current);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [showReset]);
   useEffect(() => {
     setBoardBusy(busy);
   }, [busy]);
@@ -400,6 +425,7 @@ export default function ChessLandingSection({
           <div className="flex h-[85%] w-full min-h-0 items-center justify-center">
             <div
               className="relative h-full max-w-full"
+              ref={boardBoxRef}
               style={{ aspectRatio: "1.28" }}
             >
               {showAmbient ? (
@@ -471,7 +497,7 @@ export default function ChessLandingSection({
             </div>
           </div>
 
-          <div className="mt-16 flex min-h-[44px] flex-col items-center">
+          <div className="relative mt-16 flex min-h-[44px] w-full flex-col items-center" ref={controlsRef}>
             {overlayUp && hasCachedModel !== null ? (
               <div className="flex flex-col items-center gap-2">
                 {/* The info button is positioned off the play button rather than
@@ -562,16 +588,26 @@ export default function ChessLandingSection({
             ) : null}
 
 
-            {phase === "playing" && engineState.isReady && !engineState.isThinking && !busy ? (
-              <button
-                type="button"
-                aria-label="Reset the game"
-                title="Reset"
-                onClick={restart.restart}
-                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-fuchsia-300/30 bg-fuchsia-900/30 text-fuchsia-100 transition-colors hover:border-fuchsia-300/50 hover:bg-fuchsia-900/50"
+            {showReset ? (
+              <div
+                className="group absolute top-0"
+                style={resetLeft === null ? { right: 0 } : { left: resetLeft }}
               >
-                <RotateCcw size={22} />
-              </button>
+                <button
+                  type="button"
+                  aria-label="Reset the game"
+                  onClick={restart.restart}
+                  className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-fuchsia-300/30 bg-fuchsia-900/30 text-fuchsia-100 transition-colors hover:border-fuchsia-300/50 hover:bg-fuchsia-900/50"
+                >
+                  <RotateCcw size={22} />
+                </button>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1b1524]/95 px-2 py-1 font-mono text-xs text-purple-200/80 opacity-0 ring-1 ring-inset ring-fuchsia-300/20 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                >
+                  reset
+                </span>
+              </div>
             ) : null}
 
             {engineState.error ? (

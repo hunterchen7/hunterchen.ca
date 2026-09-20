@@ -58,7 +58,9 @@ const HIGHLIGHT = {
 /** Movement before a press on a piece becomes a drag rather than a click. */
 const DRAG_THRESHOLD_PX = 4;
 /** How high a dragged piece is held above the board, in board units. */
-const DRAG_LIFT = 1.5;
+const DRAG_LIFT = 1.0;
+/** The pickup eases up to that height rather than jumping to it. */
+const DRAG_LIFT_MS = 160;
 /** How long a piece dropped somewhere illegal takes to slide home. */
 const SNAP_BACK_MS = 220;
 
@@ -543,6 +545,12 @@ function IsoChessBoard({
     y: number;
   } | null>(null);
   const dragPositionRef = useRef<{ x: number; y: number } | null>(null);
+  // Counts drags so the pickup clock restarts with each one.
+  const [dragSeq, setDragSeq] = useState(0);
+  const liftElapsed = useKeyedClock(drag ? dragSeq : 0, DRAG_LIFT_MS);
+  const heldLift = DRAG_LIFT * easeOutCubic(liftElapsed / DRAG_LIFT_MS);
+  const heldLiftRef = useRef(0);
+  heldLiftRef.current = heldLift;
   // Bumped on every press so the window listeners below are (re)attached.
   const [press, setPress] = useState(0);
   // A piece let go somewhere it cannot go slides back to its square.
@@ -614,7 +622,7 @@ function IsoChessBoard({
     return rendered
       .map((piece) => {
         if (drag && piece.square === drag.square) {
-          return { ...piece, depth: Infinity, lift: DRAG_LIFT, x: drag.x, y: drag.y };
+          return { ...piece, depth: Infinity, lift: heldLift, x: drag.x, y: drag.y };
         }
         if (snapping && piece.square === snapping.square) {
           const t = easeOutCubic(snapElapsed / SNAP_BACK_MS);
@@ -630,7 +638,7 @@ function IsoChessBoard({
         return piece;
       })
       .sort((first, second) => first.depth - second.depth);
-  }, [drag, flipped, geometry, rendered, snapElapsed, snapping]);
+  }, [drag, flipped, geometry, heldLift, rendered, snapElapsed, snapping]);
 
   const dragTarget = drag
     ? squareUnderPoint(geometry, drag.pointerX, drag.pointerY, flipped)
@@ -675,7 +683,7 @@ function IsoChessBoard({
       setDrag(null);
       if (!held) return;
       // The move plays from where the piece is, not where the pointer is.
-      const origin = { lift: DRAG_LIFT, x: held.x, y: held.y };
+      const origin = { lift: heldLiftRef.current, x: held.x, y: held.y };
       const target =
         point && !cancelled ? squareUnderPoint(geometry, point.x, point.y, flipped) : null;
       if (isLegalTarget(target)) {
@@ -701,11 +709,23 @@ function IsoChessBoard({
     const svg = svgRef.current;
     const point = svg ? clientToBoard(svg, event.clientX, event.clientY) : null;
     if (!point) return;
+    if (!pending.active) setDragSeq((count) => count + 1);
     pending.active = true;
     const position = { x: point.x + pending.offsetX, y: point.y + pending.offsetY };
     dragPositionRef.current = position;
     setDrag({ pointerX: point.x, pointerY: point.y, square: pending.square, ...position });
   }, []);
+
+  // The grabbing cursor has to hold wherever the pointer goes, over squares
+  // the piece is carried across and off the board alike.
+  useEffect(() => {
+    if (!drag) return;
+    const previous = document.body.style.cursor;
+    document.body.style.cursor = "grabbing";
+    return () => {
+      document.body.style.cursor = previous;
+    };
+  }, [drag !== null]);
 
   // The gesture is followed on the window rather than through pointer capture:
   // the canvas underneath takes and releases capture on every press of an
@@ -811,7 +831,7 @@ function IsoChessBoard({
     // Matches the canvas library's interactive selector, so pressing a square
     // never starts a canvas pan.
     role: "button",
-    style: { cursor: "pointer", outline: "none" } as React.CSSProperties,
+    style: { cursor: drag ? "grabbing" : "pointer", outline: "none" } as React.CSSProperties,
     tabIndex: focusable && square === focusSquare ? 0 : -1,
   });
 
