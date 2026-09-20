@@ -23,6 +23,10 @@ import { AccessibleCanvasSection } from "../contexts/SectionFocusContext";
 import { useChessGame } from "../hooks/useChessGame";
 import { totalDownloadBytes } from "../chess/config";
 
+/** One style for play, reset and new game, so the controls read as a set. */
+const CONTROL_CLASS =
+  "cursor-pointer px-4 py-1.5 font-mono text-2xl tracking-wide text-fuchsia-200/85 transition-colors hover:text-fuchsia-100";
+
 /** Depends on whether this browser takes the WebGPU runtime build. */
 const downloadSizeLabel = `${Math.round(totalDownloadBytes() / 1_000_000)} MB`;
 
@@ -51,9 +55,9 @@ interface ChessLandingSectionProps {
  * `rate` compresses the recorded timings without changing the motion, since the
  * original setup takes over five seconds on its own.
  */
-const SCATTER_RATE = 1.25;
-const SETUP_RATE = 1.8;
-export const SWING_MS = 1_000;
+const SCATTER_RATE = 1.5;
+const SETUP_RATE = 2.3;
+export const SWING_MS = 850;
 
 export const SCATTER_MS = RESET.totalMs / SCATTER_RATE;
 export const SETUP_MS = SETUP_DURATION_MS / SETUP_RATE;
@@ -213,6 +217,10 @@ function DownloadProgress({
 }
 
 export default function ChessLandingSection({ offset }: ChessLandingSectionProps) {
+  // True while the board is being swept, turned or laid out. Fed to the game
+  // hook so the engine does not move over the animation, and used to keep the
+  // board non-interactive for the same window.
+  const [boardBusy, setBoardBusy] = useState(false);
   const {
     animatedMove,
     boardIsInteractive,
@@ -230,7 +238,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
     selectSquare,
     startGame,
     startNewGame,
-  } = useChessGame();
+  } = useChessGame({ holdEngine: boardBusy });
 
   const [infoOpen, setInfoOpen] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
@@ -271,13 +279,17 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
   const showAmbient = overlayUp || play.restingBoard;
   // A manual restart takes over the pieces; otherwise the play sequence does.
   const pieceStage = restart.running ? restart.stage : play.pieceStage;
+  const busy = restart.running || (!overlayUp && play.pieceStage !== null);
+  useEffect(() => {
+    setBoardBusy(busy);
+  }, [busy]);
 
   return (
     <CanvasComponent offset={offset}>
       <AccessibleCanvasSection
         sectionId="home"
         label="Play chess"
-        className="relative flex h-full w-full flex-col items-center justify-center gap-2 px-3 pb-[76px] pt-2"
+        className="relative flex h-full w-full flex-col items-center justify-center gap-1 px-3 pb-[180px] pt-2"
       >
         {/* One container aspect across the whole swing: each view frames itself
             inside it, so the camera can move without reflowing the page. The
@@ -304,7 +316,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
                 pieceStage={pieceStage}
                 flipped={playerColor === "b"}
                 highlights={highlights}
-                interactive={boardIsInteractive && !restart.running}
+                interactive={boardIsInteractive && !busy}
                 onSelectSquare={selectSquare}
               />
             )}
@@ -361,7 +373,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
           </div>
         </div>
 
-        <div className="flex min-h-[58px] flex-col items-center gap-1.5">
+        <div className="flex min-h-[48px] flex-col items-center gap-1">
           {overlayUp && hasCachedModel !== null ? (
             <div className="flex flex-col items-center gap-2">
               {/* The info button is positioned off the play button rather than
@@ -371,7 +383,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
                 <button
                   type="button"
                   onClick={startGame}
-                  className="cursor-pointer px-4 py-2 font-mono text-2xl tracking-wide text-fuchsia-200/85 transition-colors hover:text-fuchsia-100"
+                  className={CONTROL_CLASS}
                 >
                   play
                 </button>
@@ -433,7 +445,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
               <button
                 type="button"
                 onClick={restart.restart}
-                className="cursor-pointer rounded-lg border border-fuchsia-300/30 bg-fuchsia-900/30 px-4 py-1.5 font-mono text-xs text-fuchsia-200 transition-colors hover:bg-fuchsia-900/50"
+                className={CONTROL_CLASS}
               >
                 new game
               </button>
@@ -441,11 +453,7 @@ export default function ChessLandingSection({ offset }: ChessLandingSectionProps
           ) : null}
 
           {phase === "playing" && engineState.isReady && !engineState.isThinking ? (
-            <button
-              type="button"
-              onClick={restart.restart}
-              className="cursor-pointer font-mono text-xs text-fuchsia-300/40 transition-colors hover:text-fuchsia-300/70"
-            >
+            <button type="button" onClick={restart.restart} className={CONTROL_CLASS}>
               reset
             </button>
           ) : null}

@@ -92,7 +92,12 @@ function findCheckedKing(game: Chess): string | null {
  * selection/promotion flow and the phase machine. Renderer-agnostic — it deals
  * in square names, never pixels.
  */
-export function useChessGame() {
+/**
+ * @param holdEngine While true the engine will not start a search, even on its
+ *   turn. The landing sets it while the board is being swept and laid out again,
+ *   so the engine's first move never plays over that animation.
+ */
+export function useChessGame({ holdEngine = false }: { holdEngine?: boolean } = {}) {
   const gameRef = useRef(new Chess());
   const game = gameRef.current;
   const [, forceUpdate] = useReducer((tick: number) => tick + 1, 0);
@@ -203,6 +208,7 @@ export function useChessGame() {
   // Engine's turn. Fires off the growing fenHistory.
   useEffect(() => {
     if (
+      holdEngine ||
       phase !== "playing" ||
       !engineState.isReady ||
       engineState.isThinking ||
@@ -248,7 +254,7 @@ export function useChessGame() {
       });
     // `game` is a stable ref; fenHistory growing is the intended trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [engineState.isReady, engineState.isThinking, fenHistory, engineColor, phase]);
+  }, [engineState.isReady, engineState.isThinking, fenHistory, engineColor, holdEngine, phase]);
 
   const describeResult = useCallback((): string => {
     if (game.isCheckmate()) {
