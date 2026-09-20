@@ -539,6 +539,9 @@ export default function ChessLandingSection({
                       aria-label="About this chess engine"
                       onMouseEnter={hoverInfo}
                       onMouseLeave={unhoverInfo}
+                      // The canvas pans on any press it sees; keep a press here
+                      // for selecting text.
+                      onPointerDown={(event) => event.stopPropagation()}
                       className="absolute bottom-full left-1/2 z-20 mb-3 w-[300px] -translate-x-1/2 select-text rounded-xl bg-[#1b1524]/95 px-4 py-3 text-left text-xs leading-5 text-purple-200/75 shadow-xl ring-1 ring-inset ring-fuchsia-300/20 backdrop-blur-sm"
                     >
                       You're playing against an engine that plays like me.{" "}
