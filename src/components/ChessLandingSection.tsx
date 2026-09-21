@@ -562,14 +562,14 @@ export default function ChessLandingSection({
                         fine-tuned a version of it
                       </AnimatedLink>{" "}
                       on ~2000 of my games to play like me.
+                      {hasCachedModel === false ? (
+                        <p className="mt-2 text-purple-200/45">
+                          Playing needs a one-time {downloadSizeLabel} download.
+                        </p>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
-                {hasCachedModel === false ? (
-                  <p className="font-mono text-[10px] leading-4 text-purple-100/55">
-                    one-time {downloadSizeLabel} download
-                  </p>
-                ) : null}
               </div>
             ) : null}
 

@@ -13,6 +13,8 @@ const SEARCH_NODES = 400;
 const SEARCH_TEMPERATURE = 0.55;
 /** Deliberate pause so an instant reply still reads as thinking. */
 const THINKING_PAUSE_MS = 1_000;
+/** The loading bar stays up at least this long, cached model or not. */
+const MIN_LOADING_MS = 1_000;
 /** How long the finished position stays up before the board resets. */
 const GAME_OVER_HOLD_MS = 2_600;
 
@@ -172,14 +174,27 @@ export function useChessGame({ holdEngine = false }: { holdEngine?: boolean } = 
     const engine = new Lc0Engine();
     engineRef.current = engine;
     setEngineState(INITIAL_ENGINE_STATE);
+    const startedAt = performance.now();
 
     engine.subscribe((state) => {
-      setEngineState((previous) => ({ ...previous, ...state }));
-      if (state.error) {
-        engine.terminate();
-        if (engineRef.current === engine) engineRef.current = null;
-        setPhase("idle");
+      const apply = () => {
+        setEngineState((previous) => ({ ...previous, ...state }));
+        if (state.error) {
+          engine.terminate();
+          if (engineRef.current === engine) engineRef.current = null;
+          setPhase("idle");
+        }
+      };
+      // A cached model is ready almost at once; hold the loading bar up for
+      // its minimum so the hand-over doesn't flash past.
+      const remaining = MIN_LOADING_MS - (performance.now() - startedAt);
+      if (state.isReady && remaining > 0) {
+        setTimeout(() => {
+          if (engineRef.current === engine) apply();
+        }, remaining);
+        return;
       }
+      apply();
     });
 
     engine.init(MODEL_URL);
