@@ -67,6 +67,8 @@ type TimelinePhase = "setup" | "game" | "mate" | "reset" | "empty";
 
 type Timeline = {
   activeMove: number;
+  /** Knockback of a captured piece; 0 when the move takes nothing. */
+  captureProgress: number;
   landingProgress: number;
   moveProgress: number;
   phase: TimelinePhase;
@@ -304,6 +306,7 @@ function timelineAt(elapsed: number): Timeline {
   if (localTime < SETUP_DURATION_MS) {
     return {
       activeMove: -1,
+      captureProgress: 0,
       landingProgress: 0,
       moveProgress: 0,
       phase: "setup",
@@ -323,6 +326,7 @@ function timelineAt(elapsed: number): Timeline {
     const withinStep = sequenceTime - activeMove * STEP_MS;
     return {
       activeMove,
+      captureProgress: captureProgressAt(withinStep, MOVE_MS),
       landingProgress: clamp(
         (withinStep - MOVE_MS) / LANDING_EFFECT_MS,
       ),
@@ -341,6 +345,7 @@ function timelineAt(elapsed: number): Timeline {
   if (finaleTime <= MATE_HOLD_MS) {
     return {
       activeMove: -1,
+      captureProgress: 0,
       landingProgress: 0,
       moveProgress: 1,
       phase: "mate",
@@ -355,6 +360,7 @@ function timelineAt(elapsed: number): Timeline {
   if (resetTime <= RESET_SCATTER_MS) {
     return {
       activeMove: -1,
+      captureProgress: 0,
       landingProgress: 0,
       moveProgress: 1,
       phase: "reset",
@@ -367,6 +373,7 @@ function timelineAt(elapsed: number): Timeline {
 
   return {
     activeMove: -1,
+    captureProgress: 0,
     landingProgress: 0,
     moveProgress: 1,
     phase: "empty",
@@ -420,6 +427,7 @@ function useTimeline(frame: number | null): {
         const nextTimeline = timelineAt(nextElapsed);
         const visualFrame = [
           nextTimeline.activeMove,
+          nextTimeline.captureProgress.toFixed(3),
           nextTimeline.landingProgress.toFixed(3),
           nextTimeline.phase,
           nextTimeline.phaseElapsed.toFixed(1),
@@ -482,9 +490,8 @@ function renderPiecesForTimeline(
       }
 
       if (piece.id === captured?.id) {
-        const captureProgress = captureProgressAt(timeline.moveProgress);
         const knockback = capturedPieceMotion({
-          captureProgress,
+          captureProgress: timeline.captureProgress,
           fallSeed: piece.id.charCodeAt(piece.id.length - 1),
           moverFrom: squareCenter(move?.from ?? piece.square),
           victimAt: start,
@@ -711,17 +718,12 @@ function ChessboardWatermark({
   const checkPulse =
     0.5 +
     Math.sin(elapsed / (checkCue?.mate ? 118 : 172)) * 0.5;
-  const captureProgress = moveContext?.captured
-    ? captureProgressAt(timeline.moveProgress)
-    : 0;
+  const captureProgress = moveContext?.captured ? timeline.captureProgress : 0;
   const mateShake = mateShakeAt(
     timeline.landingProgress,
     !!activeMove?.san.includes("#"),
   );
-  const captureShake = captureShakeAt(
-    timeline.moveProgress,
-    !!moveContext?.captured,
-  );
+  const captureShake = captureShakeAt(captureProgress);
   const boardShake = {
     x: mateShake.x + captureShake.x,
     y: mateShake.y + captureShake.y,

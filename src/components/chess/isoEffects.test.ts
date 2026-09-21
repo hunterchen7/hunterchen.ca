@@ -33,10 +33,21 @@ describe("move motion", () => {
     expect(pieceMotionAt(0.5).travel).toBeGreaterThan(0);
   });
 
-  it("does not start the capture knockback until the mover is most of the way there", () => {
-    expect(captureProgressAt(0)).toBe(0);
-    expect(captureProgressAt(0.5)).toBe(0);
-    expect(captureProgressAt(1)).toBe(1);
+  it("starts the capture knockback at contact and lets it outlast the travel", () => {
+    expect(captureProgressAt(0, 700)).toBe(0);
+    expect(captureProgressAt(350, 700)).toBe(0);
+    expect(captureProgressAt(700, 700)).toBeGreaterThan(0);
+    expect(captureProgressAt(700, 700)).toBeLessThan(1);
+    expect(captureProgressAt(1000, 700)).toBe(1);
+  });
+
+  it("shoves the victim hardest at contact", () => {
+    const args = { fallSeed: 1, moverFrom: { x: 0, y: 0 }, victimAt: { x: 10, y: 0 } };
+    const early = capturedPieceMotion({ ...args, captureProgress: 0.25 }).dx;
+    const late =
+      capturedPieceMotion({ ...args, captureProgress: 1 }).dx -
+      capturedPieceMotion({ ...args, captureProgress: 0.75 }).dx;
+    expect(early).toBeGreaterThan(late);
   });
 
   it("leaves the victim standing before the knockback and gone after it", () => {

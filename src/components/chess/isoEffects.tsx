@@ -78,8 +78,19 @@ export function landingImpactAt(progress: number): number {
   return Math.sin(Math.PI * clamp(progress / 0.62));
 }
 
-export function captureProgressAt(moveProgress: number): number {
-  return smoothstep((moveProgress - 0.52) / 0.44);
+/** The mover makes contact this far through its travel: descending, nearly there. */
+export const CAPTURE_CONTACT = 0.68;
+/** The knockback runs on past the landing so the victim isn't rushed off. */
+export const CAPTURE_TAIL_MS = 260;
+
+/**
+ * Linear progress of the capture, 0 at contact and 1 when the victim is gone.
+ * It runs on elapsed time rather than travel progress because it outlasts the
+ * travel: the victim is still falling as the mover settles.
+ */
+export function captureProgressAt(elapsedMs: number, travelMs: number): number {
+  const contact = CAPTURE_CONTACT * travelMs;
+  return clamp((elapsedMs - contact) / (travelMs - contact + CAPTURE_TAIL_MS));
 }
 
 const LANDING_DUST_PARTICLES = [
@@ -237,12 +248,9 @@ export function mateShakeAt(landingProgress: number, isMate: boolean): Point {
   };
 }
 
-/** Smaller jolt as a capture connects. */
-export function captureShakeAt(moveProgress: number, hasCapture: boolean): Point {
-  if (!hasCapture) return { x: 0, y: 0 };
-
-  const captureProgress = captureProgressAt(moveProgress);
-  const t = clamp((captureProgress - 0.42) / 0.58);
+/** Smaller jolt as a capture connects, over the first part of the knockback. */
+export function captureShakeAt(captureProgress: number): Point {
+  const t = clamp(captureProgress / 0.5);
   if (t <= 0 || t >= 1) return { x: 0, y: 0 };
 
   const envelope = Math.sin(Math.PI * t);
@@ -254,8 +262,10 @@ export function captureShakeAt(moveProgress: number, hasCapture: boolean): Point
 
 /**
  * A captured piece is knocked back along the line of the capture, tips over,
- * drops and fades. `fallSeed` only decides which way it topples when the
- * capture comes straight down the screen.
+ * drops and fades. The hit lands all at once: the shove and the tip are
+ * ease-out, so the piece is moving fastest at contact and slows as it falls.
+ * `fallSeed` only decides which way it topples when the capture comes
+ * straight down the screen.
  */
 export function capturedPieceMotion({
   captureProgress,
@@ -272,19 +282,19 @@ export function capturedPieceMotion({
   const distance = Math.hypot(vector.x, vector.y) || 1;
   const directionX = vector.x / distance;
   const directionY = vector.y / distance;
-  const tipProgress = smoothstep(captureProgress / 0.72);
-  const dropProgress = smoothstep((captureProgress - 0.48) / 0.52);
+  const k = clamp(captureProgress);
+  const push = easeOutCubic(k);
+  const tipProgress = easeOutCubic(clamp(k / 0.7));
+  const dropProgress = smoothstep((k - 0.42) / 0.58);
   const fallDirection =
     Math.abs(directionX) > 0.08 ? Math.sign(directionX) : fallSeed % 2 === 0 ? -1 : 1;
 
   return {
-    dx: directionX * (captureProgress * 1.55 + dropProgress * 0.35),
-    dy:
-      directionY * (captureProgress * 1.05 + dropProgress * 0.28) +
-      dropProgress * 0.34,
-    lift: Math.sin(Math.PI * captureProgress) * 0.68 - dropProgress * 0.38,
-    opacity: 1 - smoothstep((captureProgress - 0.55) / 0.45),
-    rotation: fallDirection * (tipProgress * 48 + dropProgress * 6),
+    dx: directionX * (push * 1.7 + dropProgress * 0.25),
+    dy: directionY * (push * 1.15 + dropProgress * 0.2) + dropProgress * 0.34,
+    lift: Math.sin(Math.PI * clamp(k / 0.62)) * 0.55 - dropProgress * 0.38,
+    opacity: 1 - smoothstep((k - 0.58) / 0.42),
+    rotation: fallDirection * (tipProgress * 50 + dropProgress * 6),
     scale: 1 - dropProgress * 0.16,
     verticalScale: 1 - dropProgress * 0.08,
   };

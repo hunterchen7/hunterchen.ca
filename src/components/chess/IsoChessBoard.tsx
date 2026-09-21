@@ -293,7 +293,7 @@ export function useMoveClock(
   const moveProgress = clamp(elapsed / travelMs);
   return {
     clock: {
-      capture: move.capturedSquare ? captureProgressAt(moveProgress) : 0,
+      capture: move.capturedSquare ? captureProgressAt(elapsed, travelMs) : 0,
       landing: clamp((elapsed - travelMs) / LANDING_EFFECT_MS),
       move: moveProgress,
       settle: clamp((elapsed - travelMs) / LANDING_SETTLE_MS),
@@ -454,7 +454,9 @@ export function renderPieces({
 
     list.push({
       color: playing.capturedColor,
-      depth: at.y,
+      // Sorted by where it is knocked to, so a victim shoved towards the
+      // viewer is drawn in front of the piece that took it.
+      depth: at.y + knockback.dy,
       id: `captured-${playing.seq}`,
       impact: 0,
       kind: playing.capturedKind as PieceKind,
@@ -649,9 +651,9 @@ function IsoChessBoard({
 
   const shake = useMemo(() => {
     const mate = mateShakeAt(clock.landing, playing?.isMate ?? false);
-    const capture = captureShakeAt(clock.move, !!playing?.capturedSquare);
+    const capture = captureShakeAt(clock.capture);
     return { x: mate.x + capture.x, y: mate.y + capture.y };
-  }, [clock.landing, clock.move, playing]);
+  }, [clock.capture, clock.landing, playing]);
 
   const handleSelect = useCallback(
     (square: string) => {

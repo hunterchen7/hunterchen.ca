@@ -95,8 +95,16 @@ const f = (value: number) => value.toFixed(2);
 
 /** Stroke widths are in root units (non-scaling), like the board's grid. */
 const RIM_WIDTH = 0.56;
-/** The outline sits under the rim and shows past it by half the difference. */
-const OUTLINE_WIDTH = RIM_WIDTH + 1.5;
+/**
+ * The outline sits under the rim and shows past it by half the difference.
+ * Wider, fainter strokes under that fake a soft shadow, which is far cheaper
+ * than a blur filter repeated across 32 moving pieces.
+ */
+const HALO = [
+  { opacity: 0.14, width: RIM_WIDTH + 6.5 },
+  { opacity: 0.3, width: RIM_WIDTH + 3.6 },
+  { opacity: 1, width: RIM_WIDTH + 1.5 },
+] as const;
 const LINE_WIDTH = 0.2;
 
 // ---------------------------------------------------------------------------
@@ -877,14 +885,21 @@ export function PieceShape({
   const parts = spec.parts?.(roundness) ?? [];
   return (
     <>
-      {/* The outline, then the rim: everything once, stroked, in each colour.
+      {/* The halo, then the rim: everything once, stroked, in each colour.
           The fills go over them, so only the outside of the union shows: a
-          dark line with the rim inside it. */}
+          soft dark edge with the pale rim inside it. */}
       {[
-        { colour: palette.outline, width: OUTLINE_WIDTH },
-        { colour: palette.stroke, width: RIM_WIDTH },
-      ].map(({ colour, width }) => (
-        <g fill={colour} key={width} stroke={colour} strokeLinejoin="round" strokeWidth={width}>
+        ...HALO.map((ring) => ({ ...ring, colour: palette.outline })),
+        { colour: palette.stroke, opacity: 1, width: RIM_WIDTH },
+      ].map(({ colour, opacity, width }) => (
+        <g
+          fill={colour}
+          key={width}
+          opacity={opacity}
+          stroke={colour}
+          strokeLinejoin="round"
+          strokeWidth={width}
+        >
           {stack.map((layer, index) => (
             <path d={layer.d} key={`rim-${index}`} vectorEffect="non-scaling-stroke" />
           ))}

@@ -9,7 +9,7 @@ import IsoChessBoard, {
   type MoveClock,
   type RenderInput,
 } from "./IsoChessBoard";
-import { RESET, SETUP_DURATION_MS, captureProgressAt } from "./isoEffects";
+import { GAME_MOVE_MS, RESET, SETUP_DURATION_MS, captureProgressAt } from "./isoEffects";
 import { STRAIGHT } from "./isoGeometry";
 import { BASE_RADIUS, PieceDefinitions, PieceModel } from "./isoPieces";
 import type { AnimatedMove, BoardHighlights } from "../../hooks/useChessGame";
@@ -42,7 +42,7 @@ const CAPTURE_EXD5: AnimatedMove = {
 /** A move clock at a given travel progress, with the dependent stages derived. */
 function clockAt(move: number, hasCapture = false): MoveClock {
   return {
-    capture: hasCapture ? captureProgressAt(move) : 0,
+    capture: hasCapture ? captureProgressAt(move * GAME_MOVE_MS, GAME_MOVE_MS) : 0,
     landing: 0,
     move,
     settle: 0,
