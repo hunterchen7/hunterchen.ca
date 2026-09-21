@@ -554,7 +554,7 @@ export default function ChessLandingSection({
                       onPointerDown={(event) => event.stopPropagation()}
                       className="absolute bottom-full left-1/2 z-20 mb-3 w-[300px] -translate-x-1/2 select-text rounded-xl bg-[#1b1524]/95 px-4 py-3 text-left text-xs leading-5 text-purple-200/75 shadow-xl ring-1 ring-inset ring-fuchsia-300/20 backdrop-blur-sm"
                     >
-                      You're playing against an engine that plays like me.{" "}
+                      Play a game against an engine that plays like me.{" "}
                       <AnimatedLink
                         href="https://www.maiachess.com/"
                         className="text-fuchsia-300/80"
@@ -562,14 +562,14 @@ export default function ChessLandingSection({
                         Maia
                       </AnimatedLink>{" "}
                       is a chess engine trained on human games to play like
-                      humans, I{" "}
+                      humans; I{" "}
                       <AnimatedLink
                         href="https://github.com/hunterchen7/hunter-chessbot/"
                         className="text-fuchsia-300/80"
                       >
                         fine-tuned a version of it
                       </AnimatedLink>{" "}
-                      on ~2000 of my games to play like me.
+                      on ~2000 of my own games so it plays like me.
                       {hasCachedModel === false ? (
                         <p className="mt-2 text-purple-200/45">
                           Playing needs a one-time {downloadSizeLabel} download.
