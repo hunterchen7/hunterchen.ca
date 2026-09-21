@@ -108,7 +108,8 @@ export function useChessGame({ holdEngine = false }: { holdEngine?: boolean } = 
   const [engineState, setEngineState] = useState<EngineState>(INITIAL_ENGINE_STATE);
   const [phase, setPhase] = useState<ChessPhase>("idle");
   const [hasCachedModel, setHasCachedModel] = useState<boolean | null>(null);
-  const [playerColor, setPlayerColor] = useState<"w" | "b">("w");
+  // The engine opens the first game; the sides swap on every reset after.
+  const [playerColor, setPlayerColor] = useState<"w" | "b">("b");
   const engineColor = playerColor === "w" ? "b" : "w";
 
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);

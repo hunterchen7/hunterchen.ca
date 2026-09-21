@@ -43,6 +43,8 @@ export type PiecePalette = {
   shade: string;
   /** The rim drawn around the whole silhouette. */
   stroke: string;
+  /** A darker line just outside the rim, so overlapping pieces separate. */
+  outline: string;
 };
 
 export type RenderPiece = BoardPiece & {
@@ -67,6 +69,7 @@ export const LIGHT_PIECE: PiecePalette = {
   eyeStroke: "none",
   line: heroRgba("deep", 0.3),
   stroke: heroRgba("light", 0.96),
+  outline: heroRgba("deep", 0.55),
 };
 
 // The dark side sits below the board's own dark tone rather than on it. The
@@ -85,12 +88,15 @@ export const DARK_PIECE: PiecePalette = {
   eyeStroke: heroRgba("light", 0.78),
   line: heroRgba("light", 0.32),
   stroke: heroRgba("light", 0.4),
+  outline: heroRgba("ink", 0.6),
 };
 
 const f = (value: number) => value.toFixed(2);
 
 /** Stroke widths are in root units (non-scaling), like the board's grid. */
 const RIM_WIDTH = 0.56;
+/** The outline sits under the rim and shows past it by half the difference. */
+const OUTLINE_WIDTH = RIM_WIDTH + 1.5;
 const LINE_WIDTH = 0.2;
 
 // ---------------------------------------------------------------------------
@@ -871,21 +877,27 @@ export function PieceShape({
   const parts = spec.parts?.(roundness) ?? [];
   return (
     <>
-      {/* The rim: everything once, stroked, in the rim colour. The fills go
-          over it, so only the outside of the union shows. */}
-      <g fill={palette.stroke} stroke={palette.stroke} strokeLinejoin="round" strokeWidth={RIM_WIDTH}>
-        {stack.map((layer, index) => (
-          <path d={layer.d} key={`rim-${index}`} vectorEffect="non-scaling-stroke" />
-        ))}
-        {parts.flatMap((part, index) =>
-          (part.surfaces
-            ? part.surfaces.filter((surface) => surface.tone !== "shade").map((surface) => surface.d)
-            : [part.d ?? ""]
-          ).map((d, face) => (
-            <path d={d} key={`rim-part-${index}-${face}`} vectorEffect="non-scaling-stroke" />
-          )),
-        )}
-      </g>
+      {/* The outline, then the rim: everything once, stroked, in each colour.
+          The fills go over them, so only the outside of the union shows: a
+          dark line with the rim inside it. */}
+      {[
+        { colour: palette.outline, width: OUTLINE_WIDTH },
+        { colour: palette.stroke, width: RIM_WIDTH },
+      ].map(({ colour, width }) => (
+        <g fill={colour} key={width} stroke={colour} strokeLinejoin="round" strokeWidth={width}>
+          {stack.map((layer, index) => (
+            <path d={layer.d} key={`rim-${index}`} vectorEffect="non-scaling-stroke" />
+          ))}
+          {parts.flatMap((part, index) =>
+            (part.surfaces
+              ? part.surfaces.filter((surface) => surface.tone !== "shade").map((surface) => surface.d)
+              : [part.d ?? ""]
+            ).map((d, face) => (
+              <path d={d} key={`rim-part-${index}-${face}`} vectorEffect="non-scaling-stroke" />
+            )),
+          )}
+        </g>
+      ))}
       {stack.map((layer, index) => (
         <g key={`layer-${index}`}>
           <path d={layer.d} fill={palette.body} />
