@@ -131,13 +131,15 @@ const IMMORTAL_GAME: GameMove[] = [
   { from: "d6", to: "e7", san: "Be7#" },
 ];
 
-const SETUP_EMPTY_HOLD_MS = 60;
+// The opening setup runs a quarter quicker than the recording's own timings,
+// so the board is playable sooner; every stage is scaled alike.
+const SETUP_EMPTY_HOLD_MS = 45;
 const SETUP_BACK_RANK_PAIR_COUNT = 8;
 const SETUP_PAWN_PAIR_COUNT = 8;
-const SETUP_PAIR_INTERVAL_MS = 170;
-const SETUP_PIECE_MS = 720;
-const SETUP_PAWN_GAP_MS = 140;
-const SETUP_SETTLE_MS = 420;
+const SETUP_PAIR_INTERVAL_MS = 128;
+const SETUP_PIECE_MS = 540;
+const SETUP_PAWN_GAP_MS = 105;
+const SETUP_SETTLE_MS = 315;
 const SETUP_BACK_RANK_END_MS =
   SETUP_EMPTY_HOLD_MS +
   (SETUP_BACK_RANK_PAIR_COUNT - 1) * SETUP_PAIR_INTERVAL_MS +

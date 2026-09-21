@@ -376,7 +376,10 @@ export default function ChessLandingSection({
   const showAmbient = overlayUp || play.restingBoard;
   // A manual restart takes over the pieces; otherwise the play sequence does.
   const pieceStage = restart.running ? restart.stage : play.pieceStage;
-  const busy = restart.running || (!overlayUp && play.pieceStage !== null);
+  // Busy for the whole of play's sequence, sweep included: the resting board
+  // is still up while the pieces are swept, and the engine must not open
+  // behind it.
+  const busy = restart.running || (!overlayUp && (play.restingBoard || play.pieceStage !== null));
   // Reset appears once the first move of the session has been played and
   // then stays, across resets included.
   const [everMoved, setEverMoved] = useState(false);
