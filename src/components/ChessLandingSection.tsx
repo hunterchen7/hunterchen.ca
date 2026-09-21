@@ -371,7 +371,9 @@ export default function ChessLandingSection({
   const markPiecesSet = useCallback(() => setPiecesSet(true), []);
   // The board only turns to play once the engine is ready: until then the
   // resting demo keeps running with the download's progress under it.
-  const play = usePlaySequence(phase === "playing" && engineState.isReady);
+  // Stays on once play has begun, over phase included: dropping it after mate
+  // brought the resting demo board back over the final position.
+  const play = usePlaySequence(!overlayUp && engineState.isReady);
   const restart = useRestartSequence(startNewGame);
   const showAmbient = overlayUp || play.restingBoard;
   // A manual restart takes over the pieces; otherwise the play sequence does.
@@ -386,7 +388,7 @@ export default function ChessLandingSection({
   useEffect(() => {
     if (animatedMove) setEverMoved(true);
   }, [animatedMove]);
-  const showReset = phase === "playing" && everMoved;
+  const showReset = (phase === "playing" || phase === "over") && everMoved;
   // The reset button sits under the board's right corner. The board's face is
   // narrower than its box, so its edge is measured rather than assumed.
   const [resetLeft, setResetLeft] = useState<number | null>(null);

@@ -17,8 +17,6 @@ const SEARCH_TEMPERATURE = 0.55;
 const THINKING_PAUSE_MS = 1_000;
 /** The loading bar stays up at least this long, cached model or not. */
 const MIN_LOADING_MS = 1_000;
-/** How long the finished position stays up before the board resets. */
-const GAME_OVER_HOLD_MS = 2_600;
 
 const INITIAL_ENGINE_STATE: EngineState = {
   isReady: false,
@@ -290,7 +288,7 @@ export function useChessGame({ holdEngine = false }: { holdEngine?: boolean } = 
     return "game over";
   }, [game, playerColor]);
 
-  // Game over: hold the final position briefly, then reset to a static board.
+  // Game over: the final position stays up until a new game is started.
   useEffect(() => {
     if (phase !== "playing" || !game.isGameOver()) return;
 
@@ -298,18 +296,6 @@ export function useChessGame({ holdEngine = false }: { holdEngine?: boolean } = 
     setPlayerWon(game.isCheckmate() && game.turn() !== playerColor);
     setPhase("over");
     clearSelection();
-
-    const generation = generationRef.current;
-    const timer = setTimeout(() => {
-      if (generation !== generationRef.current) return;
-      game.reset();
-      setFenHistory([game.fen()]);
-      setLastMoveSquares(null);
-      setAnimatedMove(null);
-      forceUpdate();
-    }, GAME_OVER_HOLD_MS);
-
-    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, fenHistory, describeResult, clearSelection, playerColor]);
 
