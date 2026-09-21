@@ -512,7 +512,10 @@ export default function ChessLandingSection({
             </div>
           </div>
 
-          <div className="relative mt-16 flex min-h-[44px] w-full flex-col items-center" ref={controlsRef}>
+          {/* A fixed height, not a minimum: the band centres its contents and
+              shrinks the board to fit, so a control that grew would move the
+              board. Anything taller than this overflows instead. */}
+          <div className="relative mt-16 flex h-12 w-full flex-col items-center" ref={controlsRef}>
             {overlayUp && piecesSet && hasCachedModel !== null ? (
               <div className="fade-in flex flex-col items-center gap-2">
                 {/* The info button is positioned off the play button rather than
