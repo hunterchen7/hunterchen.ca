@@ -8,7 +8,9 @@ import type { EngineState } from "../chess/types";
 import { playSoundForMove } from "../components/chess/sounds";
 
 /** MCTS simulations per engine move. */
-const SEARCH_NODES = 400;
+const SEARCH_NODES = 300;
+/** As white the engine always opens 1. e4, with no search: it plays after the pause. */
+const OPENING_MOVE = "e2e4";
 /** Sharpens toward the top move while still picking second-best sometimes. */
 const SEARCH_TEMPERATURE = 0.55;
 /** Deliberate pause so an instant reply still reads as thinking. */
@@ -239,9 +241,12 @@ export function useChessGame({ holdEngine = false }: { holdEngine?: boolean } = 
 
     const searchFen = game.fen();
     const generation = generationRef.current;
+    const reply =
+      game.history().length === 0
+        ? Promise.resolve({ move: OPENING_MOVE })
+        : engine.mctsSearch(searchFen, fenHistory, SEARCH_NODES, SEARCH_TEMPERATURE);
 
-    engine
-      .mctsSearch(searchFen, fenHistory, SEARCH_NODES, SEARCH_TEMPERATURE)
+    reply
       .then((result) => {
         setEngineState((previous) => ({ ...previous, isThinking: true }));
         return new Promise<string>((resolve) =>
