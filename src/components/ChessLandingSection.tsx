@@ -594,6 +594,12 @@ export default function ChessLandingSection({
               </span>
             ) : null}
 
+            {boardIsInteractive && !busy ? (
+              <span className="fade-in font-mono text-sm text-fuchsia-300/50">
+                your move
+              </span>
+            ) : null}
+
             {finishedStatus ? (
               <div className="flex flex-col items-center gap-2">
                 <span className="font-mono text-sm text-fuchsia-200">
