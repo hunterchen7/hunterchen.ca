@@ -83,7 +83,7 @@ export function CanvasSectionTracker() {
       const viewportCenterX = window.innerWidth / 2;
       const viewportCenterY = window.innerHeight / 2;
 
-      let closestSection: SectionName = "hero";
+      let closestSection: SectionName = "home";
       let closestDistance = Number.POSITIVE_INFINITY;
 
       for (const [section, bounds] of sectionEntries) {

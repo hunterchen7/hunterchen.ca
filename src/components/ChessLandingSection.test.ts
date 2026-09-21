@@ -1,0 +1,110 @@
+import { describe, expect, it } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import {
+  bandFor,
+  useElapsed,
+  SCATTER_MS,
+  SEQUENCE_MS,
+  SETUP_AT,
+  SWING_AT,
+  playSequenceAt,
+} from "./ChessLandingSection";
+import { DIAMOND, STRAIGHT } from "./chess/isoGeometry";
+
+describe("play sequence", () => {
+  it("sweeps the resting board first, without touching the live board", () => {
+    for (const t of [0, SCATTER_MS / 2, SCATTER_MS - 1]) {
+      const stage = playSequenceAt(t);
+      expect(stage.restingBoard).toBe(true);
+      expect(stage.pieceStage).toBeNull();
+      expect(stage.geometry).toBe(DIAMOND);
+    }
+    expect(playSequenceAt(SCATTER_MS - 1).scatter).toBeGreaterThan(playSequenceAt(0).scatter);
+  });
+
+  // Regression: the drop-in once overlapped the rotation, so the board never
+  // turned empty. Every sample inside the swing must draw the setup at elapsed
+  // 0, which the renderer turns into an empty board.
+  it("turns the board with nothing on it", () => {
+    for (let t = SWING_AT; t < SETUP_AT; t += 25) {
+      const stage = playSequenceAt(t);
+      expect(stage.restingBoard, `resting board still up at ${t}`).toBe(false);
+      expect(stage.pieceStage, `no stage at ${t}`).not.toBeNull();
+      expect(stage.pieceStage!.mode).toBe("setup");
+      expect(stage.pieceStage!.elapsed, `pieces already entering at ${t}`).toBe(0);
+    }
+  });
+
+  it("starts the swing on the diamond and ends it head-on", () => {
+    expect(playSequenceAt(SWING_AT).geometry.viewBox).toBe(DIAMOND.viewBox);
+    expect(playSequenceAt(SETUP_AT).geometry).toBe(STRAIGHT);
+  });
+
+  it("only begins laying pieces out after the swing has finished", () => {
+    expect(playSequenceAt(SETUP_AT).pieceStage!.elapsed).toBe(0);
+    expect(playSequenceAt(SETUP_AT + 100).pieceStage!.elapsed).toBeGreaterThan(0);
+    let previous = 0;
+    for (let t = SETUP_AT; t < SEQUENCE_MS; t += 50) {
+      const elapsed = playSequenceAt(t).pieceStage!.elapsed;
+      expect(elapsed).toBeGreaterThanOrEqual(previous);
+      previous = elapsed;
+    }
+  });
+
+  it("settles to a resting head-on board", () => {
+    const done = playSequenceAt(SEQUENCE_MS);
+    expect(done.geometry).toBe(STRAIGHT);
+    expect(done.pieceStage).toBeNull();
+    expect(done.restingBoard).toBe(false);
+  });
+});
+
+describe("bandFor", () => {
+  const section = { height: 1500, width: 1700 };
+
+  it("is the viewport's size, centred in the section, when the section is larger", () => {
+    const band = bandFor({ height: 900, width: 1440 }, section);
+    expect(band).toEqual({ height: 900, left: 130, paddingBottom: 84, top: 300, width: 1440 });
+  });
+
+  it("never exceeds the section", () => {
+    const band = bandFor({ height: 1600, width: 3000 }, section);
+    expect(band.width).toBe(1700);
+    expect(band.height).toBe(1500);
+    expect(band.top).toBe(0);
+    expect(band.left).toBe(0);
+  });
+
+  it("only clears the navbar as far as it reaches into the section", () => {
+    // A section 40px shorter than the viewport ends 20px above the bottom, so
+    // 20px of the navbar's strip falls outside it.
+    expect(bandFor({ height: 900, width: 1440 }, { height: 860, width: 1200 }).paddingBottom).toBe(
+      64,
+    );
+    expect(bandFor({ height: 900, width: 1440 }, { height: 600, width: 1200 }).paddingBottom).toBe(
+      0,
+    );
+  });
+
+  it("reserves more above the navbar on phones", () => {
+    expect(bandFor({ height: 844, width: 390 }, section).paddingBottom).toBe(120);
+  });
+});
+
+describe("useElapsed", () => {
+  // Regression: a new run once read the previous run's final time for one
+  // render, so a second reset swapped the sides before the sweep had begun.
+  it("reads zero on the first render of a new run", async () => {
+    const { rerender, result } = renderHook(({ key }) => useElapsed(key, 200), {
+      initialProps: { key: 1 },
+    });
+    await waitFor(() => expect(result.current).toBeGreaterThan(0));
+    act(() => rerender({ key: 2 }));
+    expect(result.current).toBe(0);
+  });
+
+  it("is idle with no run", () => {
+    const { result } = renderHook(() => useElapsed(0, 200));
+    expect(result.current).toBe(0);
+  });
+});

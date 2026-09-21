@@ -1,16 +1,18 @@
 import type { SectionCoordinates, NavItem } from "@hunterchen/canvas";
-import { ChessKnight } from "lucide-react";
+// Passed as components, not names. The canvas library resolves a string icon by
+// dynamically importing the whole lucide barrel and indexing it, which pulls the
+// entire icon set (~526 kB) at runtime; handing it the component skips that.
+import { Camera, Folders, Home, Info } from "lucide-react";
 
 /**
  * Canvas Layout (7000 x 4000 — width set via CANVAS_WIDTH in App.tsx):
  *
- *              [About]
+ *      [Home: play chess]            [About: who I am]
  *
- *              [Hero]
+ *          [Projects]                    [Gallery]
  *
- *      [Gallery]       [Projects]
- *
- * Grid layout with Hero and About centered vertically, Gallery and Projects at bottom
+ * `home` is the landing: the playable isometric board. `about` holds the card
+ * grid that used to be the landing.
  */
 
 // Layout constants
@@ -22,11 +24,16 @@ const SECTION_HEIGHT = 700;
 // reveals the off-canvas area on wide screens. Rightmost edge (chess) is 4300 +
 // 1200 = 5500, leaving ~1500px of open space on the right of the 7000-wide canvas.
 export const coordinates = {
-  hero: {
-    x: 1900,
-    y: 800,
-    width: 1000,
-    height: 900,
+  home: {
+    // The canvas shows the home section at zoom 1, centred, so one unit here is
+    // one CSS pixel of viewport. The section is sized past any common desktop
+    // viewport; the landing lays its board out in a band the size of the
+    // viewport in the middle of it, so the board fills whatever screen it is
+    // on rather than a fixed box.
+    x: 1550,
+    y: 700,
+    width: 1700,
+    height: 1500,
   },
 
   projects: {
@@ -35,7 +42,7 @@ export const coordinates = {
     width: 1200,
     height: 1000,
   },
-  chess: {
+  about: {
     x: 4300,
     y: 700,
     width: 1200,
@@ -51,23 +58,23 @@ export const coordinates = {
 
 export const navItems: NavItem[] = [
   {
-    id: "hero",
+    id: "home",
     label: "Home",
-    icon: "Home",
-    ...coordinates.hero,
+    icon: Home,
+    ...coordinates.home,
     isHome: true,
   },
   {
     id: "projects",
     label: "Projects",
-    icon: "Folders",
+    icon: Folders,
     ...coordinates.projects,
   },
-  { id: "chess", label: "Chess", icon: ChessKnight, ...coordinates.chess },
+  { id: "about", label: "About", icon: Info, ...coordinates.about },
   {
     id: "gallery",
     label: "Gallery",
-    icon: "Camera",
+    icon: Camera,
     ...coordinates.gallery,
   },
 ];

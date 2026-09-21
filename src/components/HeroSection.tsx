@@ -242,7 +242,7 @@ export default function HeroSection({ offset }: HeroSectionProps) {
   return (
     <CanvasComponent offset={offset}>
       <AccessibleCanvasSection
-        sectionId="hero"
+        sectionId="about"
         label="Home"
         className="relative flex h-full w-full items-center justify-center p-8"
       >

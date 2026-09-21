@@ -48,7 +48,7 @@ export default function ProjectsCard() {
               chess neural network
             </AnimatedLink>{" "}
             trained on my games to play like me, play against it{" "}
-            <AnimatedLink onClick={() => navigateTo("chess")}>
+            <AnimatedLink onClick={() => navigateTo("home")}>
               here
             </AnimatedLink>
           </ListItem>

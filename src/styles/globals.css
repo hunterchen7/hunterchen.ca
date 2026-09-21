@@ -610,3 +610,25 @@ html {
     opacity: 0.72;
   }
 }
+
+/* Board cues (square highlights, move dots, capture rings) fade in as they appear. */
+@keyframes board-cue-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.board-cue {
+  animation: board-cue-in 140ms ease-out;
+}
+
+/* Controls that arrive after a wait, such as play once the board is set. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fade-in 600ms ease-out;
+}
